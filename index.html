@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Booking Demo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background: #eef2f7; }
+    header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 30px; text-align: center; }
+    header h1 { margin: 0; }
+    .container { padding: 20px; }
+    .rooms { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
+    .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-5px); }
+    .card img { width: 100%; border-radius: 10px; }
+    .btn { background: #2a5298; color: white; padding: 10px; border: none; border-radius: 6px; cursor: pointer; width: 100%; }
+    .btn:hover { background: #1e3c72; }
+    .booking, .admin { margin-top: 30px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    input { width: 100%; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #ccc; }
+    .nav { display: flex; gap: 10px; justify-content: center; margin-top: 10px; }
+    .nav button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; }
+    .active { background: #2a5298; color: white; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Grand Stay Hotel</h1>
+  <p>Modern Hotel Booking Experience</p>
+  <div class="nav">
+    <button onclick="showSection('user')" class="active" id="userTab">User View</button>
+    <button onclick="showSection('admin')" id="adminTab">Admin Dashboard</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- USER VIEW -->
+  <div id="userSection">
+    <h2>Available Rooms</h2>
+    <div class="rooms">
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x200" />
+        <h3>Deluxe Room</h3>
+        <p>$100 / night</p>
+        <button class="btn" onclick="selectRoom('Deluxe Room', 100)">Book Now</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x200" />
+        <h3>Suite Room</h3>
+        <p>$180 / night</p>
+        <button class="btn" onclick="selectRoom('Suite Room', 180)">Book Now</button>
+      </div>
+
+      <div class="card">
+        <img src="https://via.placeholder.com/300x200" />
+        <h3>Standard Room</h3>
+        <p>$70 / night</p>
+        <button class="btn" onclick="selectRoom('Standard Room', 70)">Book Now</button>
+      </div>
+
+    </div>
+
+    <div class="booking" id="bookingSection" style="display:none;">
+      <h2>Booking</h2>
+      <p id="roomSelected"></p>
+
+      <label>Check-in</label>
+      <input type="date" id="checkin">
+
+      <label>Check-out</label>
+      <input type="date" id="checkout">
+
+      <label>Guests</label>
+      <input type="number" id="guests" min="1" value="1">
+
+      <button class="btn" onclick="confirmBooking()">Confirm Booking</button>
+
+      <p id="confirmation" style="margin-top:10px; color:green;"></p>
+    </div>
+  </div>
+
+  <!-- ADMIN VIEW -->
+  <div id="adminSection" style="display:none;">
+    <div class="admin">
+      <h2>Admin Dashboard</h2>
+      <p><strong>Total Bookings:</strong> <span id="totalBookings">0</span></p>
+
+      <h3>Recent Bookings</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Room</th>
+            <th>Check-in</th>
+            <th>Check-out</th>
+            <th>Guests</th>
+          </tr>
+        </thead>
+        <tbody id="bookingTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let selectedRoom = '';
+  let price = 0;
+  let bookings = [];
+
+  function showSection(section) {
+    document.getElementById('userSection').style.display = section === 'user' ? 'block' : 'none';
+    document.getElementById('adminSection').style.display = section === 'admin' ? 'block' : 'none';
+    document.getElementById('userTab').classList.toggle('active', section === 'user');
+    document.getElementById('adminTab').classList.toggle('active', section === 'admin');
+  }
+
+  function selectRoom(room, roomPrice) {
+    selectedRoom = room;
+    price = roomPrice;
+    document.getElementById('bookingSection').style.display = 'block';
+    document.getElementById('roomSelected').innerText = `Selected: ${room} ($${roomPrice}/night)`;
+  }
+
+  function confirmBooking() {
+    const checkin = document.getElementById('checkin').value;
+    const checkout = document.getElementById('checkout').value;
+    const guests = document.getElementById('guests').value;
+
+    if (!checkin || !checkout) {
+      alert('Please select dates');
+      return;
+    }
+
+    bookings.push({ room: selectedRoom, checkin, checkout, guests });
+    updateAdmin();
+
+    document.getElementById('confirmation').innerText =
+      `Booking confirmed for ${selectedRoom} from ${checkin} to ${checkout}`;
+  }
+
+  function updateAdmin() {
+    document.getElementById('totalBookings').innerText = bookings.length;
+
+    const table = document.getElementById('bookingTable');
+    table.innerHTML = '';
+
+    bookings.forEach(b => {
+      const row = `<tr>
+        <td>${b.room}</td>
+        <td>${b.checkin}</td>
+        <td>${b.checkout}</td>
+        <td>${b.guests}</td>
+      </tr>`;
+      table.innerHTML += row;
+    });
+  }
+</script>
+
+</body>
+</html>
