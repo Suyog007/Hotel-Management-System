@@ -1,0 +1,124 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Surfaces */
+    --background: 35 35% 96%;          /* sand */
+    --foreground: 20 25% 16%;          /* espresso */
+    --card: 0 0% 100%;
+    --card-foreground: 20 25% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 25% 16%;
+
+    /* Brand */
+    --primary: 15 55% 38%;             /* terracotta */
+    --primary-foreground: 35 35% 96%;
+    --secondary: 30 25% 92%;
+    --secondary-foreground: 20 25% 16%;
+    --accent: 25 70% 55%;              /* copper */
+    --accent-foreground: 20 25% 12%;
+
+    /* Neutrals */
+    --muted: 30 20% 92%;
+    --muted-foreground: 25 12% 42%;
+    --border: 30 18% 86%;
+    --input: 30 18% 86%;
+    --ring: 25 70% 55%;
+
+    /* Status */
+    --success: 85 35% 35%;             /* olive */
+    --success-foreground: 85 40% 96%;
+    --warning: 35 80% 50%;             /* amber */
+    --warning-foreground: 35 80% 14%;
+    --danger: 0 65% 45%;
+    --danger-foreground: 0 65% 96%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 0 65% 96%;
+
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    --background: 20 20% 8%;
+    --foreground: 35 25% 92%;
+    --card: 20 20% 11%;
+    --card-foreground: 35 25% 92%;
+    --popover: 20 20% 11%;
+    --popover-foreground: 35 25% 92%;
+
+    --primary: 15 55% 55%;
+    --primary-foreground: 20 25% 10%;
+    --secondary: 20 15% 18%;
+    --secondary-foreground: 35 25% 92%;
+    --accent: 25 70% 60%;
+    --accent-foreground: 20 25% 10%;
+
+    --muted: 20 15% 14%;
+    --muted-foreground: 30 12% 65%;
+    --border: 20 15% 20%;
+    --input: 20 15% 20%;
+    --ring: 25 70% 60%;
+
+    --success: 85 35% 50%;
+    --success-foreground: 85 40% 96%;
+    --warning: 35 80% 55%;
+    --warning-foreground: 35 80% 14%;
+    --danger: 0 60% 55%;
+    --danger-foreground: 0 65% 96%;
+    --destructive: 0 60% 55%;
+    --destructive-foreground: 0 65% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  html,
+  body {
+    /* Decorative absolute-positioned elements (mobile-nav drawer when closed,
+       CTA-card blur dots, slider's overflowing cards) must not extend the
+       document horizontally. `overflow-x: clip` lets horizontal sticky/
+       scroll-snap children work without leaking into the page width. */
+    overflow-x: clip;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  ::selection {
+    background-color: hsl(var(--accent) / 0.25);
+  }
+
+  .font-display {
+    font-family: var(--font-display), Georgia, "Times New Roman", serif;
+    font-feature-settings: "ss01", "ss02", "kern";
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 8px 24px -8px rgba(15, 23, 42, 0.08);
+  }
+  .shadow-soft-lg {
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 16px 40px -12px rgba(15, 23, 42, 0.14);
+  }
+  .bg-linen {
+    background-image:
+      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.12) 0px, transparent 40%),
+      radial-gradient(at 0% 100%, hsl(var(--primary) / 0.12) 0px, transparent 40%);
+    background-color: hsl(var(--background));
+  }
+}

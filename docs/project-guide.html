@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Hotel Management System — Features & Usage Guide</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  :root {
+    --primary: #B5563A;        /* terracotta */
+    --primary-soft: #F4E5DD;
+    --sand: #F7F1E8;
+    --ink: #1F1B17;
+    --muted: #6B6258;
+    --line: #E4DACB;
+    --accent: #A87437;         /* copper */
+    --success: #2F7D4F;
+    --warning: #B58205;
+    --danger: #B5283A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--ink);
+    font-size: 10.5pt;
+    line-height: 1.55;
+    background: #fff;
+  }
+  h1, h2, h3, h4 { font-family: "Playfair Display", Georgia, "Times New Roman", serif; font-weight: 600; color: var(--ink); }
+  h1 { font-size: 28pt; margin: 0 0 4pt; letter-spacing: -0.01em; line-height: 1.1; }
+  h2 { font-size: 18pt; margin: 22pt 0 8pt; padding-bottom: 6pt; border-bottom: 1px solid var(--line); page-break-after: avoid; }
+  h3 { font-size: 13.5pt; margin: 16pt 0 4pt; color: var(--primary); page-break-after: avoid; }
+  h4 { font-size: 11pt; margin: 10pt 0 3pt; font-family: "Inter", sans-serif; font-weight: 600; color: var(--ink); }
+  p { margin: 4pt 0 6pt; }
+  ul, ol { margin: 4pt 0 8pt; padding-left: 18pt; }
+  li { margin: 2pt 0; }
+  strong { color: var(--ink); font-weight: 600; }
+  code, .mono { font-family: "Consolas", "SF Mono", Menlo, monospace; font-size: 9.5pt; background: var(--sand); padding: 1pt 4pt; border-radius: 3pt; color: #5a4030; }
+  pre { background: var(--sand); border: 1px solid var(--line); border-radius: 6pt; padding: 8pt 10pt; font-family: "Consolas", monospace; font-size: 9pt; line-height: 1.45; overflow: hidden; white-space: pre-wrap; }
+
+  /* Cover */
+  .cover {
+    height: 250mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 6mm;
+    page-break-after: always;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-size: 9pt;
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 14pt;
+  }
+  .cover h1 { font-size: 44pt; line-height: 1.05; margin: 0 0 12pt; }
+  .cover .lede { font-size: 13pt; color: var(--muted); max-width: 145mm; line-height: 1.5; }
+  .cover .meta {
+    margin-top: 40pt;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12pt 24pt;
+    max-width: 145mm;
+    padding-top: 16pt;
+    border-top: 1px solid var(--line);
+  }
+  .cover .meta div { font-size: 9.5pt; }
+  .cover .meta .label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-size: 8pt; margin-bottom: 2pt; }
+  .cover .meta .value { color: var(--ink); font-weight: 500; }
+
+  /* Section intros */
+  .section-intro {
+    background: var(--sand);
+    border-left: 3pt solid var(--primary);
+    padding: 8pt 12pt;
+    margin: 8pt 0 12pt;
+    font-size: 10pt;
+    color: var(--muted);
+  }
+
+  /* Cards / tiles */
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8pt; margin: 8pt 0 12pt; }
+  .card { border: 1px solid var(--line); border-radius: 6pt; padding: 8pt 10pt; background: #fff; }
+  .card h4 { margin: 0 0 3pt; color: var(--primary); font-family: "Playfair Display", serif; font-size: 11.5pt; }
+  .card p { margin: 0; font-size: 9.5pt; color: var(--muted); line-height: 1.45; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.5pt; }
+  th, td { text-align: left; padding: 5pt 8pt; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--sand); font-weight: 600; color: var(--ink); text-transform: uppercase; letter-spacing: 0.06em; font-size: 8.5pt; }
+  td code { font-size: 9pt; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 1pt 6pt; border-radius: 10pt; font-size: 8pt; font-weight: 600; letter-spacing: 0.04em; }
+  .badge-ok { background: #E5F1E9; color: var(--success); }
+  .badge-warn { background: #FAEFD3; color: var(--warning); }
+  .badge-info { background: var(--primary-soft); color: var(--primary); }
+
+  /* Step list */
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps li { counter-increment: step; position: relative; padding-left: 26pt; margin: 6pt 0; }
+  .steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 0;
+    width: 18pt; height: 18pt; line-height: 18pt; text-align: center;
+    border-radius: 50%; background: var(--primary); color: #fff;
+    font-size: 9pt; font-weight: 600;
+  }
+
+  /* TOC */
+  .toc { margin: 18pt 0; }
+  .toc-item { display: flex; justify-content: space-between; padding: 5pt 0; border-bottom: 1px dotted var(--line); font-size: 10.5pt; }
+  .toc-item .name { color: var(--ink); }
+  .toc-item .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .toc h3 { color: var(--ink); border-bottom: 1px solid var(--line); padding-bottom: 4pt; }
+
+  /* Callout */
+  .callout {
+    border: 1px solid var(--line);
+    border-left: 3pt solid var(--accent);
+    background: #FBF7F0;
+    padding: 8pt 12pt;
+    border-radius: 4pt;
+    margin: 8pt 0 12pt;
+    font-size: 10pt;
+  }
+  .callout strong { color: var(--accent); }
+
+  /* Misc */
+  .small { font-size: 9pt; color: var(--muted); }
+  hr { border: none; border-top: 1px solid var(--line); margin: 18pt 0; }
+
+  /* Page break helpers */
+  .page-break { page-break-before: always; }
+  h2, h3 { page-break-after: avoid; }
+  table, .cards, .callout, pre { page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- ====== COVER ====== -->
+<section class="cover">
+  <div class="eyebrow">Project documentation</div>
+  <h1>Hotel Management<br/>System</h1>
+  <p class="lede">A single-property hotel platform — guest-facing site, staff operations dashboard, and admin CMS — built on Next.js 15 and Supabase. This guide walks through every feature and how to use it.</p>
+  <div class="meta">
+    <div>
+      <div class="label">Stack</div>
+      <div class="value">Next.js 15 · Supabase · Tailwind · shadcn/ui</div>
+    </div>
+    <div>
+      <div class="label">Status</div>
+      <div class="value">Phases 1–7 complete</div>
+    </div>
+    <div>
+      <div class="label">Payments</div>
+      <div class="value">Khalti · eSewa · Pay-at-hotel</div>
+    </div>
+    <div>
+      <div class="label">Deployment</div>
+      <div class="value">Vercel + Supabase Pro</div>
+    </div>
+    <div>
+      <div class="label">Version</div>
+      <div class="value">v1 (pre-launch)</div>
+    </div>
+    <div>
+      <div class="label">Document date</div>
+      <div class="value">2026-05-27</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== TOC ====== -->
+<section class="toc">
+  <h3>Contents</h3>
+  <div class="toc-item"><span class="name">1. Overview</span><span class="num">3</span></div>
+  <div class="toc-item"><span class="name">2. Architecture & tech stack</span><span class="num">3</span></div>
+  <div class="toc-item"><span class="name">3. Roles & access</span><span class="num">4</span></div>
+  <div class="toc-item"><span class="name">4. Getting started (local setup)</span><span class="num">5</span></div>
+  <div class="toc-item"><span class="name">5. For guests — public site</span><span class="num">6</span></div>
+  <div class="toc-item"><span class="name">6. For staff — reception dashboard</span><span class="num">8</span></div>
+  <div class="toc-item"><span class="name">7. For managers — operations & reports</span><span class="num">10</span></div>
+  <div class="toc-item"><span class="name">8. For super admins — CMS & system</span><span class="num">11</span></div>
+  <div class="toc-item"><span class="name">9. Out of scope (v1 constraints)</span><span class="num">13</span></div>
+  <div class="toc-item"><span class="name">10. Useful commands & references</span><span class="num">14</span></div>
+</section>
+
+<!-- ====== 1. OVERVIEW ====== -->
+<h2>1. Overview</h2>
+<p>The Hotel Management System is a complete, end-to-end platform for a single boutique property. It bundles three experiences into one codebase:</p>
+
+<div class="cards">
+  <div class="card">
+    <h4>Public website</h4>
+    <p>A boutique hero, image-led room listings, a menu, services, FAQs, and Google-cached reviews — all driven by a database-backed CMS.</p>
+  </div>
+  <div class="card">
+    <h4>Booking flow</h4>
+    <p>Browse → pick dates → live total preview → email-OTP verification → confirmation. No guest signup required.</p>
+  </div>
+  <div class="card">
+    <h4>Staff dashboard</h4>
+    <p>Today's arrivals/departures, check-in / check-out, walk-in bookings, service requests, live chat with guests, reports.</p>
+  </div>
+  <div class="card">
+    <h4>Admin CMS</h4>
+    <p>Site settings, branding, pages, gallery, FAQs, amenities, testimonials, email templates, staff invites, audit log.</p>
+  </div>
+</div>
+
+<p>The system is intentionally <strong>opinionated and small</strong>: one property, English-only text, manual refunds, no in-app reviews, no dynamic pricing. The "What NOT to do" guard rails are documented in §9.</p>
+
+<!-- ====== 2. ARCHITECTURE ====== -->
+<h2>2. Architecture &amp; tech stack</h2>
+
+<table>
+  <thead>
+    <tr><th>Layer</th><th>Choice</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Framework</td><td>Next.js 15 (App Router)</td><td>React 19, TypeScript, server actions</td></tr>
+    <tr><td>Styling</td><td>Tailwind CSS + shadcn/ui</td><td>Boutique terracotta + sand + copper palette</td></tr>
+    <tr><td>Type fonts</td><td>Inter + Playfair Display</td><td>Loaded via <code>next/font</code></td></tr>
+    <tr><td>Database</td><td>Supabase Postgres</td><td>Row-Level Security enforced everywhere</td></tr>
+    <tr><td>Auth</td><td>Supabase Auth — email OTP only</td><td>No password, no SMS, no guest signup</td></tr>
+    <tr><td>Storage</td><td>Supabase Storage</td><td>Bucket: <code>public-images</code></td></tr>
+    <tr><td>Realtime</td><td>Supabase Realtime</td><td>Used for guest ↔ staff chat</td></tr>
+    <tr><td>Email</td><td>Resend</td><td>Transactional + OTP</td></tr>
+    <tr><td>Validation</td><td>Zod</td><td>Server-action + webhook entry points</td></tr>
+    <tr><td>Payments</td><td>Khalti + eSewa + pay-at-hotel</td><td>Khalti/eSewa scaffolded, online flow deferred</td></tr>
+    <tr><td>Hosting</td><td>Vercel + Supabase Pro</td><td>Vercel Cron refreshes Google reviews daily</td></tr>
+  </tbody>
+</table>
+
+<h3>Key directories</h3>
+<pre>app/                    Next.js App Router (public, auth, staff, admin)
+  (auth)/               Login + verify-otp
+  (staff)/dashboard/    Reception + manager operations
+  (admin)/admin/        Super-admin CMS
+  rooms/, menu/, ...    Public pages
+components/             UI primitives + shell + public + chat
+lib/
+  supabase/             Browser, server, admin, middleware clients
+  pricing.ts            Total calculation
+  availability.ts       Date-range room search
+  cancellation.ts       Refund tier matching
+  email.ts              Resend wrapper
+  audit.ts              writeAudit() helper
+  validation/           Zod schemas grouped by domain
+supabase/
+  migrations/           0001–0007 SQL migrations
+middleware.ts           Role-based route gate
+types/database.ts       Generated Supabase types (stub by default)</pre>
+
+<h3>Database highlights</h3>
+<ul>
+  <li><strong>Decoupled profiles.</strong> <code>profiles</code> stays separate from <code>auth.users</code>; a trigger links new auth users back to existing stub profiles by email — supports walk-in guests without email accounts.</li>
+  <li><strong>Atomic availability.</strong> A <code>btree_gist</code> exclusion constraint on <code>bookings (room_id, daterange(check_in, check_out))</code> rejects double-bookings at the database level.</li>
+  <li><strong>Snapshotted totals.</strong> <code>bookings.total_amount</code> is computed at booking time so a later <code>base_price</code> change does not silently re-price old bookings.</li>
+  <li><strong>Audit log on every mutation.</strong> Server actions call <code>writeAudit</code>; super admins see the full reverse-chronological log with old → new diffs.</li>
+</ul>
+
+<!-- ====== 3. ROLES ====== -->
+<h2>3. Roles &amp; access</h2>
+
+<table>
+  <thead>
+    <tr><th>Role</th><th>Routes accessible</th><th>Capabilities</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-info">guest</span></td>
+      <td>Public pages, <code>/booking/[id]</code>, <code>/my-bookings</code>, <code>/chat</code></td>
+      <td>Browse, book, cancel own booking, request services, chat with reception</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">receptionist</span></td>
+      <td><code>/dashboard/**</code></td>
+      <td>Check guests in/out, walk-in bookings, handle service requests, reply in chat</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">manager</span></td>
+      <td>All staff routes + <code>/dashboard/rooms</code>, <code>/dashboard/menu</code>, <code>/dashboard/reports</code>, <code>/dashboard/cancellations</code></td>
+      <td>Receptionist capabilities + edit rooms, menu, services, run reports, record refunds</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-info">super_admin</span></td>
+      <td>Everything + <code>/admin/**</code></td>
+      <td>Full CMS control — settings, branding, pages, gallery, templates, staff invites, audit log</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <strong>Defence in depth.</strong> Routes are gated three ways: the middleware blocks at the edge, layout files re-check the role, and every mutating server action verifies the caller. Disabled accounts (<code>is_active=false</code>) are kicked out even if their session is still valid.
+</div>
+
+<!-- ====== 4. GETTING STARTED ====== -->
+<h2>4. Getting started — local setup</h2>
+
+<p>You need Node 20+, a Supabase project, and (optionally) a Resend API key for emails.</p>
+
+<ol class="steps">
+  <li><strong>Install dependencies.</strong>
+    <pre>npm install</pre>
+  </li>
+  <li><strong>Create a Supabase project</strong> at <code>https://supabase.com</code> and copy three values:
+    <ul>
+      <li>Project URL → <code>NEXT_PUBLIC_SUPABASE_URL</code></li>
+      <li>anon public key → <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></li>
+      <li>service role key → <code>SUPABASE_SERVICE_ROLE_KEY</code></li>
+    </ul>
+  </li>
+  <li><strong>Copy env file</strong> and fill in values.
+    <pre>cp .env.example .env.local</pre>
+    Required at minimum: the three Supabase keys, <code>SESSION_COOKIE_SECRET</code> (any random string), and <code>NEXT_PUBLIC_SITE_URL</code>.
+  </li>
+  <li><strong>Apply migrations.</strong> Run each SQL file in <code>supabase/migrations/</code> in order — through the Supabase Dashboard SQL editor, or via the CLI:
+    <pre>supabase db push</pre>
+  </li>
+  <li><strong>Promote yourself to super admin.</strong> Create a user in the Supabase dashboard, then in the SQL editor run <code>update profiles set role = 'super_admin' where email = 'you@example.com';</code></li>
+  <li><strong>Verify env.</strong> Sanity-check everything is wired up:
+    <pre>npm run check</pre>
+  </li>
+  <li><strong>Boot the dev server.</strong>
+    <pre>npm run dev</pre>
+    The app runs on <code>http://localhost:4000</code>.
+  </li>
+</ol>
+
+<div class="callout">
+  <strong>Auth template note.</strong> Supabase ships a magic-link email template by default. Switch it to a 6-digit OTP under <strong>Auth → Email Templates → Magic Link</strong> (use <code>{{ .Token }}</code>). Also wire Resend as the SMTP provider so emails go out with your domain.
+</div>
+
+<!-- ====== 5. GUESTS ====== -->
+<h2>5. For guests — using the public site</h2>
+<p class="section-intro">Guests never sign up. They browse anonymously and verify their email only at the moment of booking confirmation. A returning guest can sign in to see <code>/my-bookings</code>.</p>
+
+<h3>5.1 Browsing</h3>
+<ul>
+  <li><code>/</code> — boutique homepage rendered from the <code>pages</code> + <code>page_sections</code> tables. Sections can be hero, text, gallery, CTA, or FAQ.</li>
+  <li><code>/rooms</code> — image-led grid of every active room type with price, max guests, and amenities.</li>
+  <li><code>/rooms/[slug]</code> — detail page with a 5-image asymmetric gallery and a sticky booking card on desktop.</li>
+  <li><code>/menu</code> — browse food and beverages grouped by category. <strong>Not</strong> a cart — read-only.</li>
+  <li><code>/services</code> — list of services offered (housekeeping, laundry, transport, etc).</li>
+  <li><code>/reviews</code> — Google Reviews cached in the database, with an average-rating chip.</li>
+</ul>
+
+<h3>5.2 Booking flow</h3>
+<ol class="steps">
+  <li>Pick a room type at <code>/rooms/[slug]</code>; fill check-in, check-out, guest count, name, email, phone.</li>
+  <li>Choose payment method — <strong>Pay at hotel</strong> (no online step) or <strong>Pay online</strong> (deferred to a future Khalti/eSewa flow).</li>
+  <li>Submit → server re-validates availability and stashes a signed intent cookie.</li>
+  <li>An OTP email arrives via Resend. Enter the 6-digit code at <code>/verify-otp</code>.</li>
+  <li>The booking row is inserted and you land on <code>/booking/[id]</code> with a printable receipt.</li>
+</ol>
+
+<div class="callout">
+  <strong>Double-booking is impossible.</strong> Even if two guests submit at the same millisecond, the Postgres exclusion constraint on <code>(room_id, daterange)</code> rejects the second one. The second guest sees "no rooms available".
+</div>
+
+<h3>5.3 After booking</h3>
+<ul>
+  <li><code>/my-bookings</code> — list of all bookings tied to the signed-in email.</li>
+  <li><code>/booking/[id]</code> — receipt with status, payment status, dates, total, and a <strong>Cancel</strong> button while status is pending or confirmed.</li>
+  <li><strong>Request services</strong> — once a booking is confirmed or checked-in, a service-request widget appears on the booking page.</li>
+  <li><strong>Chat</strong> at <code>/chat</code> — a live conversation with reception over Supabase Realtime. The unread counter resets when you open the page.</li>
+</ul>
+
+<h3>5.4 Cancellation &amp; refunds</h3>
+<p>Refunds follow the policy stored in <code>cancellation_policy</code>:</p>
+<table>
+  <thead><tr><th>Hours before check-in</th><th>Refund tier</th></tr></thead>
+  <tbody>
+    <tr><td>&gt; 72h</td><td>100% of paid amount</td></tr>
+    <tr><td>24–72h</td><td>50% of paid amount</td></tr>
+    <tr><td>&lt; 24h</td><td>0% (forfeit)</td></tr>
+  </tbody>
+</table>
+<p>The system computes <code>refund_amount_due</code> automatically. Actual refunds are processed manually by a manager outside the app (Khalti/eSewa dashboards or cash) and recorded on <code>/dashboard/cancellations</code> — see §7.3.</p>
+
+<!-- ====== 6. STAFF ====== -->
+<h2>6. For staff — reception dashboard</h2>
+<p class="section-intro">Sign in at <code>/login</code> with your staff email. After OTP verification you land on <code>/dashboard</code> — six metric tiles plus a preview of today's arrivals.</p>
+
+<h3>6.1 Dashboard home</h3>
+<ul>
+  <li>Six <strong>metric tiles</strong>: today's arrivals, today's departures, occupancy %, open chats, pending refunds, open service requests.</li>
+  <li>Below the tiles: a list of today's arrivals with check-in actions one click away.</li>
+</ul>
+
+<h3>6.2 Bookings (<code>/dashboard/bookings</code>)</h3>
+<p>The operational heart of the dashboard. Four sections:</p>
+<ol>
+  <li><strong>Today's arrivals</strong> — each row has a <strong>Check in</strong> button that atomically flips the booking to <code>checked_in</code> and the room to <code>occupied</code>.</li>
+  <li><strong>Today's departures</strong> — each row has a <strong>Check out</strong> button that flips the booking to <code>checked_out</code> and the room to <code>cleaning</code>.</li>
+  <li><strong>Cleaning queue</strong> — rooms in <code>cleaning</code> status. The <strong>Mark ready</strong> button returns them to <code>available</code>.</li>
+  <li><strong>Recent bookings</strong> — last 20 entries with status + payment badges, useful for quick lookup.</li>
+</ol>
+
+<h3>6.3 Walk-in (<code>/dashboard/walk-in</code>)</h3>
+<p>For guests who arrive without a reservation. Receptionists can:</p>
+<ul>
+  <li>Pick dates and a room type — the system finds an available room.</li>
+  <li>Enter guest details (email <em>optional</em> — a stub profile is created if missing).</li>
+  <li>Optionally check the guest in immediately (room flips to <code>occupied</code> in the same action).</li>
+  <li>Mark as paid at desk — creates a <code>payments</code> row with the chosen method.</li>
+</ul>
+<p>Walk-in bookings carry <code>verification_method = 'staff_call'</code> and the staff member's ID in <code>verified_by</code>.</p>
+
+<h3>6.4 Service requests (<code>/dashboard/service-requests</code>)</h3>
+<p>A simple Kanban-style status flow: <strong>received → in progress → completed</strong> (or <strong>cancelled</strong>). Each transition is audit-logged.</p>
+
+<h3>6.5 Chat (<code>/dashboard/chat</code>)</h3>
+<ul>
+  <li>Inbox of all guest conversations sorted by <code>last_message_at</code> descending.</li>
+  <li>Unread conversations show an accent border and a count badge.</li>
+  <li>Click into <code>/dashboard/chat/[conversationId]</code> for the live message thread (Supabase Realtime — no refresh needed).</li>
+  <li>Viewing the conversation resets the staff unread counter to 0 via a trigger.</li>
+</ul>
+
+<!-- ====== 7. MANAGERS ====== -->
+<h2>7. For managers — operations &amp; reports</h2>
+<p class="section-intro">Managers see everything receptionists see, plus rooms / menu / services CRUD, the reports page, and the cancellations register.</p>
+
+<h3>7.1 Rooms (<code>/dashboard/rooms</code>)</h3>
+<p>A single page with two tables — <strong>room types</strong> (Standard / Deluxe / Suite by default) and <strong>rooms</strong> (individual numbered units linked to a type).</p>
+<ul>
+  <li>Create / edit / delete room types: name, slug (auto-generated), description, base price, max guests, amenities, images.</li>
+  <li>Create / edit / delete rooms: room number, type, floor, status (<code>available</code> / <code>occupied</code> / <code>cleaning</code> / <code>out_of_service</code>).</li>
+  <li><strong>Price changes only affect new bookings.</strong> Existing bookings keep their snapshotted <code>total_amount</code>.</li>
+</ul>
+
+<h3>7.2 Menu &amp; services</h3>
+<ul>
+  <li><code>/dashboard/menu</code> — food items: name, description, price, category, availability toggle.</li>
+  <li><code>/dashboard/services-manage</code> — services: name, description, price, category, availability toggle.</li>
+  <li>Both feed straight into the public-facing <code>/menu</code> and <code>/services</code> pages.</li>
+</ul>
+
+<h3>7.3 Cancellations &amp; refunds (<code>/dashboard/cancellations</code>)</h3>
+<ol>
+  <li>The page lists every cancelled booking in two buckets — <strong>refund pending</strong> and <strong>refund recorded</strong>.</li>
+  <li>For pending rows: open the row, see the computed <code>refund_amount_due</code>, process the refund out-of-band, then click <strong>Record refund</strong> with the actual amount + reference.</li>
+  <li>The action updates <code>refunded_amount</code>, <code>refund_reference</code>, <code>refunded_at</code>, flips <code>payment_status</code> to <code>refunded</code> (or <code>partially_refunded</code>), fires the <code>booking_refunded</code> email, and writes an audit row.</li>
+</ol>
+
+<h3>7.4 Reports (<code>/dashboard/reports</code>)</h3>
+<p>A snapshot — not analytics. The page shows:</p>
+<div class="cards">
+  <div class="card"><h4>Bookings</h4><p>Total · confirmed · cancelled (rate %).</p></div>
+  <div class="card"><h4>Revenue</h4><p>All-time gross from <code>payments</code>.</p></div>
+  <div class="card"><h4>Occupancy</h4><p>Snapshot % with a horizontal progress bar.</p></div>
+  <div class="card"><h4>Top room types</h4><p>Booked counts with relative-width bars.</p></div>
+</div>
+<p class="small">Charts and date filters are intentionally deferred.</p>
+
+<!-- ====== 8. SUPER ADMINS ====== -->
+<h2>8. For super admins — CMS &amp; system</h2>
+<p class="section-intro">The <code>/admin</code> section is super-admin-only. All edits are written to <code>audit_logs</code>; mistakes can be inspected (and corrected) any time.</p>
+
+<h3>8.1 Settings (<code>/admin/settings</code>)</h3>
+<p>Hotel name, tagline, address, contact, currency (default NPR), timezone (default Asia/Kathmandu), tax rate (default 13%), service rate (default 10%), Google Place ID. The homepage reads <code>hotel_name</code> live — no redeploy.</p>
+
+<h3>8.2 Branding (<code>/admin/branding</code>)</h3>
+<p>Primary / secondary / accent colors, font family. A live preview swatch lets you see changes before saving. <em>Note:</em> in v1 the boutique palette ships locked; branding fields are documentation-only.</p>
+
+<h3>8.3 Pages &amp; sections</h3>
+<ul>
+  <li><code>/admin/pages</code> lists the four fixed pages: <strong>home</strong>, <strong>about</strong>, <strong>contact</strong>, <strong>terms</strong>.</li>
+  <li>Open a page to edit metadata and manage its sections. Five section types: <code>hero</code>, <code>text</code>, <code>gallery</code>, <code>cta</code>, <code>faq</code>.</li>
+  <li>Each section has a Zod-validated form. Drag-via-sort-order, toggle visible, delete.</li>
+</ul>
+
+<h3>8.4 Gallery (<code>/admin/gallery</code>)</h3>
+<p>Image upload backed by Supabase Storage. 10MB cap, allowlist of image MIME types. Storage object is rolled back if the DB insert fails; on delete, the storage object is best-effort removed too.</p>
+
+<h3>8.5 FAQs, amenities, testimonials</h3>
+<p>Three near-identical CRUD pages. Each row has visible/hidden toggles, per-row edit/delete, and an audit log entry on every mutation.</p>
+
+<h3>8.6 Email + notification templates (<code>/admin/templates</code>)</h3>
+<p>Inline editor for subject, body, and active state for every template. Templates use <code>{{var}}</code> placeholders rendered at send time by <code>lib/email-from-template.ts</code>. Default templates include:</p>
+<ul>
+  <li><code>otp_login</code> — sign-in code</li>
+  <li><code>booking_confirmation</code> — sent on booking insert</li>
+  <li><code>booking_cancelled</code> — sent when status flips to cancelled</li>
+  <li><code>booking_refunded</code> — sent when a refund is recorded</li>
+  <li><code>review_request</code> — manual send (not auto-triggered in v1)</li>
+</ul>
+
+<h3>8.7 Google Reviews (<code>/admin/reviews</code>)</h3>
+<p>Shows the configured Place ID, last refresh timestamp, and a row count. A <strong>Refresh now</strong> button hits the Places API immediately. A Vercel Cron at <code>02:00 UTC</code> daily keeps the cache fresh automatically — gated by <code>CRON_SECRET</code>.</p>
+
+<h3>8.8 Staff (<code>/admin/staff</code>)</h3>
+<ol>
+  <li>List of every non-guest profile with role, active status, last sign-in.</li>
+  <li><strong>Invite staff</strong> form — creates a stub profile with the target role, then sends a Supabase Auth invite. When the invitee accepts, the trigger links their auth user to the stub.</li>
+  <li><strong>Change role</strong> and <strong>toggle active</strong> actions with safeguards: you cannot demote yourself or disable yourself.</li>
+</ol>
+
+<h3>8.9 Audit log (<code>/admin/audit</code>)</h3>
+<p>Reverse-chronological table of every mutation. Filter by action, entity type, actor email, or date range. Click a row to expand the JSON diff (old → new) inside a <code>&lt;details&gt;</code> dropdown.</p>
+
+<!-- ====== 9. OUT OF SCOPE ====== -->
+<h2>9. Out of scope — v1 constraints</h2>
+<p class="section-intro">These are intentional simplifications. Re-read this list before adding features.</p>
+
+<table>
+  <thead><tr><th>Not in v1</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><strong>No SMS OTP</strong></td><td>Email-only via Resend. Phone is collected for staff contact only.</td></tr>
+    <tr><td><strong>No guest signup</strong></td><td>OTP gate appears only at booking confirmation.</td></tr>
+    <tr><td><strong>No in-app food ordering</strong></td><td>The menu page is browse-only CMS content, not a cart.</td></tr>
+    <tr><td><strong>No in-app review writing</strong></td><td>Reviews live on Google; we cache them via the Places API.</td></tr>
+    <tr><td><strong>No dynamic pricing</strong></td><td>One <code>base_price</code> per room type. No weekend uplifts, no calendar overrides.</td></tr>
+    <tr><td><strong>No automatic refund</strong></td><td>System computes the recommended amount; admin processes it out-of-band.</td></tr>
+    <tr><td><strong>No multi-language</strong></td><td>English-only text columns in v1.</td></tr>
+    <tr><td><strong>No page builder</strong></td><td>Sections limited to 5 predefined types. No custom HTML/JS injection.</td></tr>
+    <tr><td><strong>No multi-property</strong></td><td>Single hotel only — no <code>properties</code> table.</td></tr>
+    <tr><td><strong>No Stripe</strong></td><td>Khalti + eSewa only at v1. Stripe deferred for foreign cards.</td></tr>
+  </tbody>
+</table>
+
+<!-- ====== 10. COMMANDS ====== -->
+<h2>10. Useful commands &amp; references</h2>
+
+<h3>NPM scripts</h3>
+<table>
+  <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+  <tbody>
+    <tr><td><code>npm run dev</code></td><td>Dev server on <code>http://localhost:4000</code></td></tr>
+    <tr><td><code>npm run build</code></td><td>Production build</td></tr>
+    <tr><td><code>npm run start</code></td><td>Run the production build on <code>:4000</code></td></tr>
+    <tr><td><code>npm run lint</code></td><td>ESLint (Next 15 flat config)</td></tr>
+    <tr><td><code>npm run type-check</code></td><td><code>tsc --noEmit</code></td></tr>
+    <tr><td><code>npm run db:types</code></td><td>Regenerate Supabase types (requires linked CLI)</td></tr>
+    <tr><td><code>npm run check</code></td><td>Verify env vars + Supabase connectivity</td></tr>
+  </tbody>
+</table>
+
+<h3>Environment variables</h3>
+<table>
+  <thead><tr><th>Var</th><th>Required</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>NEXT_PUBLIC_SUPABASE_URL</code></td><td>Yes</td><td>Supabase project URL</td></tr>
+    <tr><td><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code></td><td>Yes</td><td>Anon public key</td></tr>
+    <tr><td><code>SUPABASE_SERVICE_ROLE_KEY</code></td><td>Yes</td><td>Server-side admin key</td></tr>
+    <tr><td><code>SESSION_COOKIE_SECRET</code></td><td>Yes</td><td>HMAC secret for signed booking intent cookies</td></tr>
+    <tr><td><code>NEXT_PUBLIC_SITE_URL</code></td><td>Yes</td><td>Base URL for absolute links</td></tr>
+    <tr><td><code>GMAIL_USER</code></td><td>For emails</td><td>Gmail address used as the sender (must own the App Password)</td></tr>
+    <tr><td><code>GMAIL_APP_PASSWORD</code></td><td>For emails</td><td>Google App Password (not your normal Gmail password). If unset, emails are no-op'd with a log line.</td></tr>
+    <tr><td><code>GMAIL_FROM_NAME</code></td><td>For emails</td><td>Display name shown to recipients</td></tr>
+    <tr><td><code>GOOGLE_PLACES_API_KEY</code></td><td>For reviews</td><td>Powers the reviews cache (Places API New)</td></tr>
+    <tr><td><code>CRON_SECRET</code></td><td>For cron</td><td>Gates <code>/api/cron/refresh-google-reviews</code></td></tr>
+  </tbody>
+</table>
+
+<h3>Reference files inside the repo</h3>
+<ul>
+  <li><code>README.md</code> — quick-start setup.</li>
+  <li><code>BUILD_PLAN.md</code> — phase-by-phase progress log, source of truth.</li>
+  <li><code>hotel-system-architecture.docx.pdf</code> — original architecture spec. When this guide and the doc disagree, the doc wins.</li>
+  <li><code>supabase/README.md</code> — how to apply migrations + how to bootstrap a super admin.</li>
+</ul>
+
+<hr/>
+<p class="small">Generated 2026-05-27 from project sources. For implementation detail beyond this guide, consult <code>BUILD_PLAN.md</code> and the architecture PDF.</p>
+
+</body>
+</html>

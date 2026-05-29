@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh-google-reviews",
+      "schedule": "0 2 * * *"
+    }
+  ]
+}
