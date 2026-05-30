@@ -13,24 +13,26 @@ export function GalleryTeaser({ items }: { items: Item[] }) {
   return (
     <ImageLightbox images={images}>
       {(open) => (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-6">
-          {items.map((g, i) => (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+          {items.slice(0, 6).map((g, i) => (
             <button
               key={g.id}
               type="button"
               onClick={() => open(i)}
               aria-label={g.caption ?? `Photo ${i + 1}`}
-              className={`group relative overflow-hidden rounded-xl ${
-                i === 0
-                  ? "col-span-2 row-span-2 aspect-square lg:aspect-[3/4]"
-                  : "aspect-square"
+              className={`group relative overflow-hidden rounded-xl aspect-square ${
+                i === 0 ? "md:col-span-2 md:row-span-2" : ""
               }`}
             >
               <Image
                 src={g.image_url}
                 alt={g.caption ?? ""}
                 fill
-                sizes="(min-width: 1024px) 16vw, (min-width: 768px) 33vw, 50vw"
+                sizes={
+                  i === 0
+                    ? "(min-width: 768px) 66vw, 100vw"
+                    : "(min-width: 768px) 33vw, 50vw"
+                }
                 className="object-cover transition-transform duration-700 group-hover:scale-105"
               />
               {g.caption && (
