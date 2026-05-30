@@ -114,9 +114,11 @@ export async function sendBookingChatMessage(formData: FormData) {
     );
   }
 
+  // Don't redirect — let the calling page re-render in place. /my-bookings and
+  // /booking/[id] both render their own copy of the conversation, and
+  // revalidating the routes ensures the new message appears on next render.
   revalidatePath(`/booking/${bookingId}`);
+  revalidatePath("/my-bookings");
   revalidatePath("/dashboard/chat");
   revalidatePath(`/dashboard/chat/${conversationId}`);
-
-  redirect(`/booking/${bookingId}${token ? `?t=${token}` : ""}#chat`);
 }
