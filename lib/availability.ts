@@ -42,6 +42,40 @@ export async function findAvailableRoom(
   return free?.id ?? null;
 }
 
+/**
+ * Counts how many rooms of the given type are bookable for the requested
+ * range. Same overlap test as `findAvailableRoom` but returns a count so the
+ * listing page can show "3 left" / "Sold out" badges without iterating per
+ * room. Excludes maintenance rooms from the denominator.
+ */
+export async function countAvailableRooms(
+  supabase: Client,
+  roomTypeId: string,
+  checkIn: string,
+  checkOut: string,
+): Promise<number> {
+  const { data: rooms } = await supabase
+    .from("rooms")
+    .select("id")
+    .eq("type_id", roomTypeId)
+    .neq("status", "maintenance");
+  const all = (rooms as { id: string }[] | null) ?? [];
+  if (all.length === 0) return 0;
+
+  const ids = all.map((r) => r.id);
+  const { data: blocked } = await supabase
+    .from("bookings")
+    .select("room_id")
+    .in("room_id", ids)
+    .in("status", [...BLOCKING_STATUSES])
+    .lt("check_in", checkOut)
+    .gt("check_out", checkIn);
+  const blockedIds = new Set(
+    ((blocked as { room_id: string }[] | null) ?? []).map((b) => b.room_id),
+  );
+  return all.filter((r) => !blockedIds.has(r.id)).length;
+}
+
 export async function isStillAvailable(
   supabase: Client,
   roomId: string,

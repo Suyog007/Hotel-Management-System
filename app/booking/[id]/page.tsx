@@ -5,33 +5,16 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Badge,
   bookingStatusBadge,
   paymentStatusBadge,
-  requestStatusBadge,
 } from "@/components/ui/badge";
-import { cancelBooking, requestService } from "./actions";
-
-type ServiceOption = {
-  id: string;
-  name: string;
-  category: string;
-  price: number | null;
-};
-
-type RequestedService = {
-  id: string;
-  status: string;
-  scheduled_at: string | null;
-  notes: string | null;
-  services: { name: string; category: string } | null;
-};
+import { cancelBooking } from "./actions";
 
 type BookingDetail = {
   id: string;
@@ -129,34 +112,12 @@ export default async function BookingDetailPage(props: {
   }
 
   const cancellable = b.status === "pending" || b.status === "confirmed";
-  const canRequestServices =
-    (b.status === "confirmed" || b.status === "checked_in") &&
-    viewerMode !== "token";
 
-  // Token viewers can't go through RLS on service_requests — use admin for both.
-  const reqClient = viewerMode === "token" ? createAdminClient() : supabase;
-  const [servicesRes, requestsRes, settingsRes] = await Promise.all([
-    canRequestServices
-      ? supabase
-          .from("services")
-          .select("id, name, category, price")
-          .eq("is_active", true)
-          .order("category")
-          .order("sort_order")
-      : Promise.resolve({ data: [] }),
-    reqClient
-      .from("service_requests")
-      .select(
-        "id, status, scheduled_at, notes, services:service_id(name, category)",
-      )
-      .eq("booking_id", id)
-      .order("created_at", { ascending: false }),
-    supabase.from("site_settings").select("currency_symbol").single(),
-  ]);
-  const services = (servicesRes.data as ServiceOption[] | null) ?? [];
-  const requests =
-    (requestsRes.data as unknown as RequestedService[] | null) ?? [];
-  const symbol = (settingsRes.data?.currency_symbol as string) ?? "Rs.";
+  const { data: settingsRow } = await supabase
+    .from("site_settings")
+    .select("currency_symbol")
+    .single();
+  const symbol = (settingsRow?.currency_symbol as string) ?? "Rs.";
 
   const status = bookingStatusBadge(b.status);
   const payment = paymentStatusBadge(b.payment_status);
@@ -291,66 +252,6 @@ export default async function BookingDetailPage(props: {
               </dl>
             </section>
 
-            {(canRequestServices || requests.length > 0) && (
-              <section>
-                <h2 className="mb-3 font-display text-lg font-semibold">Services</h2>
-
-                {requests.length > 0 && (
-                  <ul className="mb-4 space-y-2 text-sm">
-                    {requests.map((r) => {
-                      const v = requestStatusBadge(r.status);
-                      return (
-                        <li
-                          key={r.id}
-                          className="flex items-center justify-between rounded-md border border-border bg-muted/30 px-3 py-2"
-                        >
-                          <span>
-                            {r.services?.name ?? "—"}{" "}
-                            <span className="text-xs text-muted-foreground">
-                              ({r.services?.category})
-                            </span>
-                          </span>
-                          <Badge variant={v.variant}>{v.label}</Badge>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-
-                {canRequestServices && services.length > 0 && (
-                  <form action={requestService} className="space-y-3 rounded-md border border-border bg-card p-4">
-                    <input type="hidden" name="booking_id" value={b.id} />
-                    <div className="space-y-2">
-                      <Label>Pick a service</Label>
-                      <select
-                        name="service_id"
-                        required
-                        className="flex h-10 w-full rounded-md border border-input bg-card px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        {services.map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name} ({s.category})
-                            {s.price !== null && ` — ${symbol} ${Number(s.price).toLocaleString()}`}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="sched">Preferred time <span className="text-muted-foreground">(optional)</span></Label>
-                        <Input id="sched" name="scheduled_at" type="datetime-local" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="req-notes">Notes <span className="text-muted-foreground">(optional)</span></Label>
-                        <Input id="req-notes" name="notes" />
-                      </div>
-                    </div>
-                    <Button type="submit" size="sm">Request service</Button>
-                  </form>
-                )}
-              </section>
-            )}
-
             {cancellable && (
               <section className="border-t border-border pt-6">
                 <h2 className="mb-2 text-sm font-semibold">Need to cancel?</h2>
@@ -366,9 +267,13 @@ export default async function BookingDetailPage(props: {
                     <Label htmlFor="cancel-reason">Reason <span className="text-muted-foreground">(optional)</span></Label>
                     <Textarea id="cancel-reason" name="reason" rows={2} />
                   </div>
-                  <Button type="submit" variant="destructive" size="sm">
+                  <SubmitButton
+                    variant="destructive"
+                    size="sm"
+                    pendingLabel="Cancelling…"
+                  >
                     Cancel booking
-                  </Button>
+                  </SubmitButton>
                 </form>
               </section>
             )}

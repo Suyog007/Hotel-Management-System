@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { computeRefund, type CancellationTier } from "@/lib/cancellation";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
-import { serviceRequestSchema } from "@/lib/validation/services";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
 const CANCELLABLE_STATUSES = new Set(["pending", "confirmed"]);
@@ -122,68 +121,3 @@ export async function cancelBooking(formData: FormData) {
   redirect(`/booking/${id}${tail}`);
 }
 
-export async function requestService(formData: FormData) {
-  const bookingId = formData.get("booking_id") as string;
-  if (!bookingId) redirect("/?error=Missing+booking");
-
-  const parsed = serviceRequestSchema.safeParse({
-    booking_id: bookingId,
-    service_id: formData.get("service_id"),
-    scheduled_at: formData.get("scheduled_at"),
-    notes: formData.get("notes"),
-  });
-  if (!parsed.success) {
-    redirect(`/booking/${bookingId}?error=${encodeURIComponent(parsed.error.issues.map((i) => i.message).join("; "))}`);
-  }
-
-  const supabase = await createServerClient();
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) redirect(`/login?next=/booking/${bookingId}`);
-
-  const { data: actor } = await supabase
-    .from("profiles")
-    .select("id, role")
-    .eq("auth_user_id", auth.user.id)
-    .single();
-  const a = actor as { id: string; role: string } | null;
-  if (!a) redirect("/");
-
-  const { data: booking } = await supabase
-    .from("bookings")
-    .select("guest_id, status")
-    .eq("id", bookingId)
-    .single();
-  const b = booking as { guest_id: string; status: string } | null;
-  if (!b) redirect(`/?error=${encodeURIComponent("Booking not found")}`);
-  const isOwner = b.guest_id === a.id;
-  const isStaff = ["receptionist", "manager", "super_admin"].includes(a.role);
-  if (!isOwner && !isStaff) {
-    redirect(`/?error=${encodeURIComponent("Not authorized")}`);
-  }
-  if (b.status !== "confirmed" && b.status !== "checked_in") {
-    redirect(`/booking/${bookingId}?error=${encodeURIComponent("Service requests are only available for confirmed or checked-in bookings.")}`);
-  }
-
-  const { data, error } = await supabase
-    .from("service_requests")
-    .insert({
-      booking_id: bookingId,
-      service_id: parsed.data.service_id,
-      scheduled_at: parsed.data.scheduled_at ?? null,
-      notes: parsed.data.notes ?? null,
-    })
-    .select("id")
-    .single();
-  if (error) redirect(`/booking/${bookingId}?error=${encodeURIComponent(error.message)}`);
-
-  await writeAudit({
-    action: "create",
-    entityType: "service_requests",
-    entityId: (data as { id: string }).id,
-    newValues: { ...parsed.data, requested_by: isOwner ? "guest" : "staff" },
-  });
-
-  revalidatePath(`/booking/${bookingId}`);
-  revalidatePath("/dashboard/service-requests");
-  redirect(`/booking/${bookingId}?service_requested=1`);
-}

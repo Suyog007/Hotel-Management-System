@@ -24,9 +24,15 @@ type RoomTypeRow = {
 
 export default async function RoomDetailPage(props: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    check_in?: string;
+    check_out?: string;
+    guests?: string;
+  }>;
 }) {
   const [{ slug }, sp] = await Promise.all([props.params, props.searchParams]);
+  const initialGuests = sp.guests ? parseInt(sp.guests, 10) || 1 : undefined;
 
   const supabase = await createServerClient();
   const { data } = await supabase
@@ -148,6 +154,9 @@ export default async function RoomDetailPage(props: {
                   serviceRate={serviceRate}
                   currencySymbol={symbol}
                   action={initiateBooking}
+                  initialCheckIn={sp.check_in}
+                  initialCheckOut={sp.check_out}
+                  initialGuests={initialGuests}
                 />
               </CardContent>
             </Card>

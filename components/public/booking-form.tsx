@@ -2,10 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { CreditCard, Building2, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
 import { DateRangePicker } from "./date-range-picker";
@@ -25,15 +25,19 @@ export function BookingForm(props: {
   serviceRate: number;
   currencySymbol: string;
   action: (formData: FormData) => Promise<void>;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
 }) {
   const today = useMemo(() => isoDate(0), []);
   const tomorrow = useMemo(() => isoDate(1), []);
-  const [checkIn, setCheckIn] = useState(today);
-  const [checkOut, setCheckOut] = useState(tomorrow);
-  const [guests, setGuests] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "pay_at_hotel">(
-    "pay_at_hotel",
+  const [checkIn, setCheckIn] = useState(props.initialCheckIn || today);
+  const [checkOut, setCheckOut] = useState(props.initialCheckOut || tomorrow);
+  const [guests, setGuests] = useState(
+    Math.min(Math.max(1, props.initialGuests || 1), props.maxGuests),
   );
+  // Online payment (Khalti / eSewa) deferred — locked to pay_at_hotel for v1.
+  const paymentMethod = "pay_at_hotel" as const;
 
   const nights = nightsBetween(checkIn, checkOut);
   const totals = calculateBookingTotal({
@@ -126,15 +130,14 @@ export function BookingForm(props: {
             icon={Building2}
             label="Pay at hotel"
             hint="Settle on arrival"
-            selected={paymentMethod === "pay_at_hotel"}
-            onClick={() => setPaymentMethod("pay_at_hotel")}
+            selected
           />
           <PaymentChoice
             icon={CreditCard}
             label="Pay online"
-            hint="Khalti / eSewa"
-            selected={paymentMethod === "online"}
-            onClick={() => setPaymentMethod("online")}
+            hint="Coming soon"
+            selected={false}
+            disabled
           />
         </div>
       </div>
@@ -181,10 +184,15 @@ export function BookingForm(props: {
         )}
       </div>
 
-      <Button type="submit" size="lg" className="w-full gap-2" disabled={!datesValid}>
+      <SubmitButton
+        size="lg"
+        className="w-full gap-2"
+        disabled={!datesValid}
+        pendingLabel="Sending verification code…"
+      >
         Continue
         <ArrowRight className="h-4 w-4" />
-      </Button>
+      </SubmitButton>
       <p className="text-center text-xs text-muted-foreground">
         We&apos;ll email a 6-digit code to verify. Final price is recomputed on
         the server.
@@ -199,29 +207,35 @@ function PaymentChoice({
   hint,
   selected,
   onClick,
+  disabled,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   hint: string;
   selected: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       aria-pressed={selected}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
       className={cn(
         "flex flex-col gap-1 rounded-md border p-3 text-left text-sm transition-all",
-        selected
+        disabled && "cursor-not-allowed opacity-50",
+        !disabled && selected
           ? "border-accent bg-accent/10 ring-2 ring-accent/30"
-          : "border-border bg-card hover:border-accent/40",
+          : !disabled && "border-border bg-card hover:border-accent/40",
+        disabled && "border-border bg-muted/30",
       )}
     >
       <Icon
         className={cn(
           "h-5 w-5",
-          selected ? "text-accent" : "text-muted-foreground",
+          selected && !disabled ? "text-accent" : "text-muted-foreground",
         )}
       />
       <span className="font-medium">{label}</span>

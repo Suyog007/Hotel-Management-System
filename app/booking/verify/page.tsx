@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { ShieldCheck } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { ResendBookingOtpButton } from "./resend-button";
 import { verify as verifySignedCookie } from "@/lib/signed-cookie";
 import { bookingIntentSchema, type BookingIntent } from "@/lib/validation/rooms";
 import { resendBookingOtp, verifyAndCreateBooking } from "./actions";
@@ -106,18 +107,17 @@ export default async function BookingVerifyPage(props: {
                 A fresh code is on its way. Check your inbox.
               </p>
             )}
-            <Button type="submit" size="lg" className="w-full">
+            <SubmitButton
+              size="lg"
+              className="w-full"
+              pendingLabel="Confirming your booking…"
+            >
               Confirm booking
-            </Button>
+            </SubmitButton>
           </form>
 
           <form action={resendBookingOtp} className="mt-4">
-            <button
-              type="submit"
-              className="block w-full text-center text-xs text-muted-foreground underline hover:text-foreground"
-            >
-              Didn&apos;t get the code? Resend
-            </button>
+            <ResendBookingOtpButton />
           </form>
 
           <p className="mt-2 text-center text-xs text-muted-foreground">
