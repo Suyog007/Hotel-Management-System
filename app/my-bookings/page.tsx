@@ -8,6 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge, bookingStatusBadge, paymentStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { RealtimeChat, type ChatMessage } from "@/components/chat/realtime-chat";
+import { sendBookingChatMessage } from "@/app/booking/[id]/chat-actions";
 
 type BookingRow = {
   id: string;
@@ -48,6 +50,29 @@ export default async function MyBookingsPage() {
     .single();
   const symbol = (settings?.currency_symbol as string) ?? "Rs.";
 
+  // One chat panel for the guest, shared across all their bookings (conversation
+  // is keyed on guest_id, not booking_id). Only render if they have at least
+  // one booking — chat needs a booking_id to authorize against the action.
+  let chatConversationId: string | null = null;
+  let chatMessages: ChatMessage[] = [];
+  if (rows.length > 0) {
+    const { data: convRow } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("guest_id", p.id)
+      .maybeSingle();
+    chatConversationId = (convRow as { id: string } | null)?.id ?? null;
+    if (chatConversationId) {
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("id, conversation_id, sender_id, sender_role, body, created_at")
+        .eq("conversation_id", chatConversationId)
+        .order("created_at", { ascending: true })
+        .limit(200);
+      chatMessages = (msgs as ChatMessage[] | null) ?? [];
+    }
+  }
+
   return (
     <>
       <SiteHeader />
@@ -70,7 +95,33 @@ export default async function MyBookingsPage() {
             }
           />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-10">
+            <section>
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <h2 className="font-display text-lg font-semibold">
+                  Chat with reception
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  {chatMessages.length > 0
+                    ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"}`
+                    : "New conversation"}
+                </span>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                One thread for all your bookings. Reception typically replies within
+                a few minutes during the day.
+              </p>
+              <RealtimeChat
+                conversationId={chatConversationId}
+                initialMessages={chatMessages}
+                currentProfileId={p.id}
+                sendAction={sendBookingChatMessage}
+                hiddenFields={{ booking_id: rows[0].id }}
+                emptyHint="Say hi — front desk is here to help."
+              />
+            </section>
+
+            <section className="space-y-4">
             {rows.map((b) => {
               const s = bookingStatusBadge(b.status);
               const ps = paymentStatusBadge(b.payment_status);
@@ -103,6 +154,7 @@ export default async function MyBookingsPage() {
                 </Link>
               );
             })}
+            </section>
           </div>
         )}
       </main>

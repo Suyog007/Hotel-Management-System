@@ -283,32 +283,32 @@ export default async function BookingDetailPage(props: {
             </section>
 
             <section id="chat" className="border-t border-border pt-6 scroll-mt-20">
-              <details>
-                <summary className="flex cursor-pointer select-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
-                  <h2 className="text-sm font-semibold">Chat with reception</h2>
-                  <span className="text-xs text-muted-foreground group-open:rotate-180">
-                    {chatMessages.length > 0
-                      ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} · open`
-                      : "open"}
-                  </span>
-                </summary>
-                <p className="mb-3 mt-2 text-xs text-muted-foreground">
-                  Reception typically replies within a few minutes during the day.
-                  New replies appear on page refresh.
+              <div className="mb-3 flex items-baseline justify-between gap-2">
+                <h2 className="font-display text-lg font-semibold">
+                  Chat with reception
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  {chatMessages.length > 0
+                    ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"}`
+                    : "New conversation"}
+                </span>
+              </div>
+              <p className="mb-3 text-xs text-muted-foreground">
+                Reception typically replies within a few minutes during the day.
+                New replies appear on page refresh.
+              </p>
+              {sp.chat_error && (
+                <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  {sp.chat_error}
                 </p>
-                {sp.chat_error && (
-                  <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                    {sp.chat_error}
-                  </p>
-                )}
-                <ChatPanel
-                  bookingId={b.id}
-                  accessToken={viewerMode === "token" ? b.access_token : ""}
-                  conversationId={chatConversationId}
-                  initialMessages={chatMessages}
-                  currentProfileId={b.guest_id}
-                />
-              </details>
+              )}
+              <ChatPanel
+                bookingId={b.id}
+                accessToken={viewerMode === "token" ? b.access_token : ""}
+                conversationId={chatConversationId}
+                initialMessages={chatMessages}
+                currentProfileId={b.guest_id}
+              />
             </section>
 
             {cancellable && (
