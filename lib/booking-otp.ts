@@ -138,3 +138,32 @@ export async function sendBookingOtpEmail(
   const text = `Your ${hotelName} booking code: ${code}\n\nThis code expires in 15 minutes.\nIf you didn't request a booking, ignore this email.`;
   await sendEmail({ to: email, subject, html, text });
 }
+
+/**
+ * Send the staff sign-in OTP via Gmail SMTP. The code itself is minted by
+ * Supabase Auth (admin.generateLink) so /verify-otp can validate it the
+ * normal way; we just bypass Supabase's flaky default SMTP for delivery.
+ */
+export async function sendStaffOtpEmail(
+  email: string,
+  code: string,
+  hotelName: string,
+): Promise<void> {
+  const subject = `Staff sign-in code for ${hotelName}`;
+  const html = `
+    <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+      <h2 style="margin: 0 0 8px; font-size: 18px;">Staff sign-in</h2>
+      <p style="margin: 0 0 16px; color: #555;">
+        Enter this 6-digit code on the sign-in page to access the <strong>${hotelName}</strong> back office.
+      </p>
+      <p style="margin: 24px 0; font-size: 28px; font-weight: 600; letter-spacing: 6px; text-align: center; font-family: ui-monospace, monospace;">
+        ${code}
+      </p>
+      <p style="margin: 0; font-size: 13px; color: #888;">
+        This code expires in 60 minutes. If you didn't request this, you can ignore this email.
+      </p>
+    </div>
+  `;
+  const text = `Your ${hotelName} staff sign-in code: ${code}\n\nThis code expires in 60 minutes.\nIf you didn't request this, ignore this email.`;
+  await sendEmail({ to: email, subject, html, text });
+}
