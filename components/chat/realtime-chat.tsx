@@ -36,6 +36,7 @@ export function RealtimeChat(props: {
   currentProfileId: string;
   sendAction: (formData: FormData) => Promise<void>;
   emptyHint?: string;
+  hiddenFields?: Record<string, string>;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(props.initialMessages);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -157,6 +158,10 @@ export function RealtimeChat(props: {
         {props.conversationId && (
           <input type="hidden" name="conversation_id" value={props.conversationId} />
         )}
+        {props.hiddenFields &&
+          Object.entries(props.hiddenFields).map(([name, value]) => (
+            <input key={name} type="hidden" name={name} value={value} />
+          ))}
         <div className="flex items-end gap-2">
           <Textarea
             name="body"

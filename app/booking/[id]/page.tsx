@@ -14,7 +14,9 @@ import {
   bookingStatusBadge,
   paymentStatusBadge,
 } from "@/components/ui/badge";
+import { RealtimeChat, type ChatMessage } from "@/components/chat/realtime-chat";
 import { cancelBooking } from "./actions";
+import { sendBookingChatMessage } from "./chat-actions";
 
 type BookingDetail = {
   id: string;
@@ -55,6 +57,7 @@ export default async function BookingDetailPage(props: {
     cancelled?: string;
     error?: string;
     service_requested?: string;
+    chat_error?: string;
     t?: string;
   }>;
 }) {
@@ -118,6 +121,33 @@ export default async function BookingDetailPage(props: {
     .select("currency_symbol")
     .single();
   const symbol = (settingsRow?.currency_symbol as string) ?? "Rs.";
+
+  // Chat thread: keyed on this booking's guest. Token viewers + owners use
+  // admin reads (RLS would block anon for messages); staff use their RLS
+  // path. The conversation may not exist yet — we surface an empty thread
+  // and the first sent message will create it.
+  const chatClient =
+    viewerMode === "token" ? createAdminClient() : supabase;
+  const { data: convRow } = await chatClient
+    .from("conversations")
+    .select("id")
+    .eq("guest_id", b.guest_id)
+    .maybeSingle();
+  const chatConversationId =
+    (convRow as { id: string } | null)?.id ?? null;
+
+  let chatMessages: ChatMessage[] = [];
+  if (chatConversationId) {
+    const { data: msgs } = await chatClient
+      .from("messages")
+      .select(
+        "id, conversation_id, sender_id, sender_role, body, created_at",
+      )
+      .eq("conversation_id", chatConversationId)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    chatMessages = (msgs as ChatMessage[] | null) ?? [];
+  }
 
   const status = bookingStatusBadge(b.status);
   const payment = paymentStatusBadge(b.payment_status);
@@ -252,6 +282,35 @@ export default async function BookingDetailPage(props: {
               </dl>
             </section>
 
+            <section id="chat" className="border-t border-border pt-6 scroll-mt-20">
+              <details>
+                <summary className="flex cursor-pointer select-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                  <h2 className="text-sm font-semibold">Chat with reception</h2>
+                  <span className="text-xs text-muted-foreground group-open:rotate-180">
+                    {chatMessages.length > 0
+                      ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"} · open`
+                      : "open"}
+                  </span>
+                </summary>
+                <p className="mb-3 mt-2 text-xs text-muted-foreground">
+                  Reception typically replies within a few minutes during the day.
+                  New replies appear on page refresh.
+                </p>
+                {sp.chat_error && (
+                  <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                    {sp.chat_error}
+                  </p>
+                )}
+                <ChatPanel
+                  bookingId={b.id}
+                  accessToken={viewerMode === "token" ? b.access_token : ""}
+                  conversationId={chatConversationId}
+                  initialMessages={chatMessages}
+                  currentProfileId={b.guest_id}
+                />
+              </details>
+            </section>
+
             {cancellable && (
               <section className="border-t border-border pt-6">
                 <h2 className="mb-2 text-sm font-semibold">Need to cancel?</h2>
@@ -282,6 +341,33 @@ export default async function BookingDetailPage(props: {
       </main>
       <SiteFooter />
     </>
+  );
+}
+
+function ChatPanel({
+  bookingId,
+  accessToken,
+  conversationId,
+  initialMessages,
+  currentProfileId,
+}: {
+  bookingId: string;
+  accessToken: string;
+  conversationId: string | null;
+  initialMessages: ChatMessage[];
+  currentProfileId: string;
+}) {
+  const hidden: Record<string, string> = { booking_id: bookingId };
+  if (accessToken) hidden.access_token = accessToken;
+  return (
+    <RealtimeChat
+      conversationId={conversationId}
+      initialMessages={initialMessages}
+      currentProfileId={currentProfileId}
+      sendAction={sendBookingChatMessage}
+      hiddenFields={hidden}
+      emptyHint="Say hi — front desk is here to help."
+    />
   );
 }
 
