@@ -37,7 +37,7 @@ export function FloatingChatBubble(props: {
         aria-label={open ? "Close chat" : "Open chat with reception"}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-5 right-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-soft-lg transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:right-6"
+        className="fixed bottom-5 left-5 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-soft-lg transition-transform hover:scale-105 active:scale-95 md:bottom-6 md:left-6"
       >
         {open ? (
           <X className="h-6 w-6" />
@@ -56,7 +56,7 @@ export function FloatingChatBubble(props: {
 
       {/* Slide-in chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm overflow-hidden rounded-xl border border-border bg-card shadow-soft-lg md:right-6 md:max-w-md">
+        <div className="fixed bottom-24 left-5 z-40 w-[calc(100vw-2.5rem)] max-w-sm overflow-hidden rounded-xl border border-border bg-card shadow-soft-lg md:left-6 md:max-w-md">
           <div className="flex items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-4 py-3">
             <div>
               <p className="text-sm font-semibold">Chat with reception</p>
