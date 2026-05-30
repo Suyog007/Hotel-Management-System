@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, CalendarPlus, CalendarMinus, Sparkles, Calendar } from "lucide-react";
+import { ClipboardList, CalendarPlus, CalendarMinus, Sparkles, Calendar, BedDouble } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +11,8 @@ import {
   bookingStatusBadge,
   paymentStatusBadge,
 } from "@/components/ui/badge";
-import { checkIn, checkOut, markRoomReady } from "./actions";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { checkIn, checkOut, extendStay, markRoomReady } from "./actions";
 
 type BookingRow = {
   id: string;
@@ -28,7 +29,7 @@ type BookingRow = {
 };
 
 export default async function DashboardBookingsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; extended?: string; nights?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createServerClient();
@@ -40,7 +41,7 @@ export default async function DashboardBookingsPage(props: {
     rooms:room_id(id, room_number, status, room_types:type_id(name))
   `;
 
-  const [arrivalsRes, departuresRes, recentRes, cleaningRes] = await Promise.all([
+  const [arrivalsRes, departuresRes, inHouseRes, recentRes, cleaningRes] = await Promise.all([
     supabase
       .from("bookings")
       .select(selectClause)
@@ -51,6 +52,12 @@ export default async function DashboardBookingsPage(props: {
       .from("bookings")
       .select(selectClause)
       .eq("check_out", today)
+      .eq("status", "checked_in")
+      .order("check_out"),
+    supabase
+      .from("bookings")
+      .select(selectClause)
+      .gt("check_out", today)
       .eq("status", "checked_in")
       .order("check_out"),
     supabase
@@ -67,6 +74,7 @@ export default async function DashboardBookingsPage(props: {
 
   const arrivals = (arrivalsRes.data as unknown as BookingRow[] | null) ?? [];
   const departures = (departuresRes.data as unknown as BookingRow[] | null) ?? [];
+  const inHouse = (inHouseRes.data as unknown as BookingRow[] | null) ?? [];
   const recent = (recentRes.data as unknown as BookingRow[] | null) ?? [];
   const cleaning = (cleaningRes.data as { id: string; room_number: string }[] | null) ?? [];
 
@@ -95,7 +103,9 @@ export default async function DashboardBookingsPage(props: {
 
       {sp.saved && (
         <div className="rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm">
-          Saved.
+          {sp.extended && sp.nights
+            ? `Extended booking ${sp.extended} by ${sp.nights} night${sp.nights === "1" ? "" : "s"}.`
+            : "Saved."}
         </div>
       )}
       {sp.error && (
@@ -137,6 +147,22 @@ export default async function DashboardBookingsPage(props: {
           <div className="space-y-2">
             {departures.map((b) => (
               <BookingItem key={b.id} b={b} symbol={symbol} action="checkout" />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section>
+        <SectionHead icon={BedDouble} title="In-house now" count={inHouse.length} />
+        {inHouse.length === 0 ? (
+          <EmptyState
+            title="No guests in-house"
+            description="No checked-in guests are staying beyond today."
+          />
+        ) : (
+          <div className="space-y-2">
+            {inHouse.map((b) => (
+              <BookingItem key={b.id} b={b} symbol={symbol} action="none" today={today} />
             ))}
           </div>
         )}
@@ -217,13 +243,25 @@ function BookingItem({
   b,
   symbol,
   action,
+  today,
 }: {
   b: BookingRow;
   symbol: string;
   action: "checkin" | "checkout" | "none";
+  today?: string;
 }) {
   const s = bookingStatusBadge(b.status);
   const ps = paymentStatusBadge(b.payment_status);
+  const nightsLeft =
+    today && b.status === "checked_in"
+      ? Math.max(
+          0,
+          Math.round(
+            (new Date(b.check_out).getTime() - new Date(today).getTime()) /
+              86400000,
+          ),
+        )
+      : null;
   return (
     <Card className="transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
@@ -244,6 +282,11 @@ function BookingItem({
         <div className="flex flex-wrap items-center gap-1">
           <Badge variant={s.variant}>{s.label}</Badge>
           <Badge variant={ps.variant}>{ps.label}</Badge>
+          {nightsLeft !== null && nightsLeft > 0 && (
+            <Badge variant="outline">
+              {nightsLeft} night{nightsLeft === 1 ? "" : "s"} left
+            </Badge>
+          )}
         </div>
         <div className="text-right text-sm">
           <p className="font-semibold">{symbol} {Number(b.total_amount).toLocaleString()}</p>
@@ -251,16 +294,66 @@ function BookingItem({
         {action === "checkin" && (
           <form action={checkIn}>
             <input type="hidden" name="id" value={b.id} />
-            <Button type="submit" size="sm">Check in</Button>
+            <SubmitButton size="sm" pendingLabel="Checking in…">
+              Check in
+            </SubmitButton>
           </form>
         )}
         {action === "checkout" && (
           <form action={checkOut}>
             <input type="hidden" name="id" value={b.id} />
-            <Button type="submit" size="sm" variant="accent">Check out</Button>
+            <SubmitButton size="sm" variant="accent" pendingLabel="Checking out…">
+              Check out
+            </SubmitButton>
           </form>
         )}
       </CardContent>
+      {(b.status === "confirmed" || b.status === "checked_in") && (
+        <ExtendStayRow bookingId={b.id} currentCheckOut={b.check_out} />
+      )}
     </Card>
+  );
+}
+
+function ExtendStayRow({
+  bookingId,
+  currentCheckOut,
+}: {
+  bookingId: string;
+  currentCheckOut: string;
+}) {
+  // Min new check-out = one day after the current one.
+  const d = new Date(currentCheckOut);
+  d.setUTCDate(d.getUTCDate() + 1);
+  const minDate = d.toISOString().slice(0, 10);
+  return (
+    <details className="border-t border-border/60 px-4 py-3 text-sm [&_summary::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer select-none text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
+        + Extend stay
+      </summary>
+      <form
+        action={extendStay}
+        className="mt-3 flex flex-wrap items-end gap-3"
+      >
+        <input type="hidden" name="id" value={bookingId} />
+        <label className="flex flex-col text-xs text-muted-foreground">
+          <span className="mb-1">New check-out</span>
+          <input
+            type="date"
+            name="new_check_out"
+            min={minDate}
+            defaultValue={minDate}
+            required
+            className="h-9 rounded-md border border-input bg-card px-2 text-sm text-foreground"
+          />
+        </label>
+        <SubmitButton size="sm" variant="outline" pendingLabel="Extending…">
+          Extend
+        </SubmitButton>
+        <p className="text-xs text-muted-foreground">
+          Same room only. Extra nights billed at current room rate + tax/service.
+        </p>
+      </form>
+    </details>
   );
 }
