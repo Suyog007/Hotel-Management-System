@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge, bookingStatusBadge, paymentStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { RealtimeChat, type ChatMessage } from "@/components/chat/realtime-chat";
+import { type ChatMessage } from "@/components/chat/realtime-chat";
+import { FloatingChatBubble } from "@/components/chat/floating-chat-bubble";
 import { sendBookingChatMessage } from "@/app/booking/[id]/chat-actions";
 
 type BookingRow = {
@@ -95,33 +96,7 @@ export default async function MyBookingsPage() {
             }
           />
         ) : (
-          <div className="space-y-10">
-            <section>
-              <div className="mb-3 flex items-baseline justify-between gap-2">
-                <h2 className="font-display text-lg font-semibold">
-                  Chat with reception
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {chatMessages.length > 0
-                    ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"}`
-                    : "New conversation"}
-                </span>
-              </div>
-              <p className="mb-3 text-xs text-muted-foreground">
-                One thread for all your bookings. Reception typically replies within
-                a few minutes during the day.
-              </p>
-              <RealtimeChat
-                conversationId={chatConversationId}
-                initialMessages={chatMessages}
-                currentProfileId={p.id}
-                sendAction={sendBookingChatMessage}
-                hiddenFields={{ booking_id: rows[0].id }}
-                emptyHint="Say hi — front desk is here to help."
-              />
-            </section>
-
-            <section className="space-y-4">
+          <div className="space-y-4">
             {rows.map((b) => {
               const s = bookingStatusBadge(b.status);
               const ps = paymentStatusBadge(b.payment_status);
@@ -154,8 +129,16 @@ export default async function MyBookingsPage() {
                 </Link>
               );
             })}
-            </section>
           </div>
+        )}
+        {rows.length > 0 && (
+          <FloatingChatBubble
+            conversationId={chatConversationId}
+            initialMessages={chatMessages}
+            currentProfileId={p.id}
+            sendAction={sendBookingChatMessage}
+            hiddenFields={{ booking_id: rows[0].id }}
+          />
         )}
       </main>
       <SiteFooter />

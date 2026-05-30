@@ -14,7 +14,8 @@ import {
   bookingStatusBadge,
   paymentStatusBadge,
 } from "@/components/ui/badge";
-import { RealtimeChat, type ChatMessage } from "@/components/chat/realtime-chat";
+import { type ChatMessage } from "@/components/chat/realtime-chat";
+import { FloatingChatBubble } from "@/components/chat/floating-chat-bubble";
 import { cancelBooking } from "./actions";
 import { sendBookingChatMessage } from "./chat-actions";
 
@@ -282,34 +283,13 @@ export default async function BookingDetailPage(props: {
               </dl>
             </section>
 
-            <section id="chat" className="border-t border-border pt-6 scroll-mt-20">
-              <div className="mb-3 flex items-baseline justify-between gap-2">
-                <h2 className="font-display text-lg font-semibold">
-                  Chat with reception
-                </h2>
-                <span className="text-xs text-muted-foreground">
-                  {chatMessages.length > 0
-                    ? `${chatMessages.length} message${chatMessages.length === 1 ? "" : "s"}`
-                    : "New conversation"}
-                </span>
-              </div>
-              <p className="mb-3 text-xs text-muted-foreground">
-                Reception typically replies within a few minutes during the day.
-                New replies appear on page refresh.
-              </p>
-              {sp.chat_error && (
-                <p className="mb-3 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  {sp.chat_error}
+            {sp.chat_error && (
+              <section className="border-t border-border pt-6">
+                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                  Chat: {sp.chat_error}
                 </p>
-              )}
-              <ChatPanel
-                bookingId={b.id}
-                accessToken={viewerMode === "token" ? b.access_token : ""}
-                conversationId={chatConversationId}
-                initialMessages={chatMessages}
-                currentProfileId={b.guest_id}
-              />
-            </section>
+              </section>
+            )}
 
             {cancellable && (
               <section className="border-t border-border pt-6">
@@ -340,34 +320,18 @@ export default async function BookingDetailPage(props: {
         </Card>
       </main>
       <SiteFooter />
+      <FloatingChatBubble
+        conversationId={chatConversationId}
+        initialMessages={chatMessages}
+        currentProfileId={b.guest_id}
+        sendAction={sendBookingChatMessage}
+        hiddenFields={
+          viewerMode === "token"
+            ? { booking_id: b.id, access_token: b.access_token }
+            : { booking_id: b.id }
+        }
+      />
     </>
-  );
-}
-
-function ChatPanel({
-  bookingId,
-  accessToken,
-  conversationId,
-  initialMessages,
-  currentProfileId,
-}: {
-  bookingId: string;
-  accessToken: string;
-  conversationId: string | null;
-  initialMessages: ChatMessage[];
-  currentProfileId: string;
-}) {
-  const hidden: Record<string, string> = { booking_id: bookingId };
-  if (accessToken) hidden.access_token = accessToken;
-  return (
-    <RealtimeChat
-      conversationId={conversationId}
-      initialMessages={initialMessages}
-      currentProfileId={currentProfileId}
-      sendAction={sendBookingChatMessage}
-      hiddenFields={hidden}
-      emptyHint="Say hi — front desk is here to help."
-    />
   );
 }
 
