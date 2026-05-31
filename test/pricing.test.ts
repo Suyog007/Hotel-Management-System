@@ -75,6 +75,28 @@ describe("calculateBookingTotal", () => {
     expect(t.total).toBe(450);
   });
 
+  it("folds an add-on (e.g. AC +500) into the subtotal before tax/service", () => {
+    const without = calculateBookingTotal({ basePrice: 2500, nights: 2, taxRate: 0.13, serviceRate: 0.1 });
+    const withAc = calculateBookingTotal({
+      basePrice: 2500,
+      nights: 2,
+      taxRate: 0.13,
+      serviceRate: 0.1,
+      addonAmount: 500,
+    });
+    expect(without.subtotal).toBe(5000);
+    expect(withAc.subtotal).toBe(5500); // 2500*2 + 500
+    expect(withAc.taxAmount).toBe(715); // 5500 * 0.13
+    expect(withAc.serviceAmount).toBe(550); // 5500 * 0.10
+    expect(withAc.total).toBe(6765);
+  });
+
+  it("treats a zero/absent add-on as no change", () => {
+    const a = calculateBookingTotal({ basePrice: 1000, nights: 1, taxRate: 0.1, serviceRate: 0, addonAmount: 0 });
+    const b = calculateBookingTotal({ basePrice: 1000, nights: 1, taxRate: 0.1, serviceRate: 0 });
+    expect(a).toEqual(b);
+  });
+
   it("rounds fractional money to 2 decimals", () => {
     const t = calculateBookingTotal({
       basePrice: 99.99,
