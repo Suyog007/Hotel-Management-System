@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, CalendarPlus, CalendarMinus, BedDouble } fro
 import { createServerClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
 
-const ACTIVE_STATUSES = ["pending", "confirmed", "checked_in"];
+const ACTIVE_STATUSES = ["pending", "confirmed", "checked_in"] as const;
 
 type BookingSpan = {
   id: string;

@@ -6,6 +6,7 @@ import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
+import type { TablesUpdate, Enums } from "@/types/database";
 
 const MANAGER_PLUS = new Set(["manager", "super_admin"]);
 
@@ -66,11 +67,11 @@ export async function recordRefund(formData: FormData) {
         ? "refunded"
         : "partially_refunded";
 
-  const update = {
+  const update: TablesUpdate<"bookings"> = {
     refunded_amount,
     refund_reference,
     refunded_at: new Date().toISOString(),
-    payment_status: newPaymentStatus,
+    payment_status: newPaymentStatus as Enums<"payment_status">,
   };
   const { error } = await supabase.from("bookings").update(update).eq("id", id);
   if (error) {

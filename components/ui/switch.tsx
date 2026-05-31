@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils";
  * Lightweight switch built on a native checkbox to avoid pulling in
  * @radix-ui/react-switch this early. Visually styled like shadcn's Switch.
  */
-export interface SwitchProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type"> {}
+export type SwitchProps = Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "type"
+>;
 
 export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
   ({ className, ...props }, ref) => (

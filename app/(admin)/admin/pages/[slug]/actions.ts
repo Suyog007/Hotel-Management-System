@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { pageMetaSchema, SECTION_TYPES, defaultSectionContent, parseSectionContent, type SectionType } from "@/lib/validation/sections";
+import type { TablesInsert } from "@/types/database";
 
 export async function updatePageMeta(formData: FormData) {
   const slug = formData.get("slug") as string;
@@ -72,9 +73,9 @@ export async function createSection(formData: FormData) {
   const nextOrder =
     ((existing as { sort_order: number }[] | null)?.[0]?.sort_order ?? -1) + 1;
 
-  const insert = {
+  const insert: TablesInsert<"page_sections"> = {
     page_id: (page as { id: string }).id,
-    section_type: type,
+    section_type: type as SectionType,
     sort_order: nextOrder,
     is_visible: true,
     content: defaultSectionContent(type as SectionType),

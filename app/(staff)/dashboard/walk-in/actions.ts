@@ -8,6 +8,7 @@ import { writeAudit } from "@/lib/audit";
 import { findAvailableRoom } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
 import { walkInBookingSchema } from "@/lib/validation/staff";
+import type { TablesInsert } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
 
@@ -132,7 +133,7 @@ export async function createWalkInBooking(formData: FormData) {
     input.initial_status === "checked_in"
       ? "checked_in"
       : "confirmed";
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: TablesInsert<"bookings"> = {
     guest_id: guestId,
     guest_name: input.guest_name,
     guest_email: input.guest_email ?? `walkin-${guestId}@example.invalid`,

@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, TablesInsert, Json } from "@/types/database";
 
-type Client = SupabaseClient<unknown>;
+type Client = SupabaseClient<Database>;
 
 /**
  * Shape we cache in `google_reviews_cache`. Normalised across Places API
@@ -156,7 +157,7 @@ export async function refreshGoogleReviewsCache(
       .select("id")
       .eq("external_id", externalId)
       .maybeSingle();
-    const payload = {
+    const payload: TablesInsert<"google_reviews_cache"> = {
       external_id: externalId,
       author_name: r.author_name,
       author_photo_url: r.profile_photo_url ?? null,
@@ -164,7 +165,7 @@ export async function refreshGoogleReviewsCache(
       comment: r.text,
       published_at: new Date(r.time * 1000).toISOString(),
       fetched_at: new Date().toISOString(),
-      raw: r as unknown as Record<string, unknown>,
+      raw: r as unknown as Json,
     };
     if (existing) {
       await admin

@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { computeRefund, type CancellationTier } from "@/lib/cancellation";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
+import type { TablesUpdate } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
 const CANCELLABLE_STATUSES = new Set(["pending", "confirmed"]);
@@ -78,7 +79,7 @@ export async function cancelBooking(formData: FormData) {
     tiers: (tiers as CancellationTier[] | null) ?? [],
   });
 
-  const updatePayload = {
+  const updatePayload: TablesUpdate<"bookings"> = {
     status: "cancelled",
     cancelled_at: new Date().toISOString(),
     cancelled_by: actorId,

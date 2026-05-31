@@ -8,6 +8,7 @@ import { sendTemplatedEmail } from "@/lib/email-from-template";
 import { sign, verify } from "@/lib/signed-cookie";
 import { isStillAvailable } from "@/lib/availability";
 import { bookingIntentSchema, type BookingIntent } from "@/lib/validation/rooms";
+import type { TablesInsert, TablesUpdate } from "@/types/database";
 import {
   createBookingOtp,
   sendBookingOtpEmail,
@@ -77,7 +78,7 @@ export async function verifyAndCreateBooking(formData: FormData) {
   if (existing) {
     guestId = (existing as { id: string }).id;
     const ex = existing as { phone: string | null; full_name: string | null };
-    const patch: Record<string, string> = {};
+    const patch: TablesUpdate<"profiles"> = {};
     if (!ex.phone && intent.guest_phone) patch.phone = intent.guest_phone;
     if (!ex.full_name && intent.guest_name) patch.full_name = intent.guest_name;
     if (Object.keys(patch).length) {
@@ -103,7 +104,7 @@ export async function verifyAndCreateBooking(formData: FormData) {
   }
 
   const status = intent.payment_method === "pay_at_hotel" ? "confirmed" : "pending";
-  const insertPayload = {
+  const insertPayload: TablesInsert<"bookings"> = {
     guest_id: guestId,
     guest_name: intent.guest_name,
     guest_email: intent.guest_email,

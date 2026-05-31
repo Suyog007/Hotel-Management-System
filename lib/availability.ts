@@ -1,7 +1,8 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
 
-type Client = SupabaseClient<unknown>;
+type Client = SupabaseClient<Database>;
 
 const BLOCKING_STATUSES = ["pending", "confirmed", "checked_in"] as const;
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-const ACTIVE_STATUSES = ["pending", "confirmed", "checked_in"];
+const ACTIVE_STATUSES = ["pending", "confirmed", "checked_in"] as const;
 const HORIZON_DAYS = 180;
 
 function ymd(d: Date): string {

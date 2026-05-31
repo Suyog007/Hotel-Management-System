@@ -44,3 +44,9 @@ supabase/.temp
 # Generated locally — don't commit
 screenshots/
 photos/
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+e2e/.auth/
