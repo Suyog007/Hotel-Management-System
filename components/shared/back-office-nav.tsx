@@ -8,8 +8,6 @@ import {
   XCircle,
   MessageCircle,
   UtensilsCrossed,
-  Sparkle,
-  ConciergeBell,
   Settings,
   Palette,
   FileText,
@@ -58,7 +56,6 @@ const GROUPS: NavGroup[] = [
       { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardList, minRole: "receptionist" },
       { href: "/dashboard/walk-in", label: "Walk-in", icon: UserPlus, minRole: "receptionist" },
       { href: "/dashboard/cancellations", label: "Cancellations", icon: XCircle, minRole: "receptionist" },
-      { href: "/dashboard/service-requests", label: "Service requests", icon: ConciergeBell, minRole: "receptionist" },
       { href: "/dashboard/chat", label: "Chat", icon: MessageCircle, minRole: "receptionist" },
     ],
   },
@@ -67,7 +64,6 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard/rooms", label: "Rooms", icon: BedDouble, minRole: "manager" },
       { href: "/dashboard/menu", label: "Menu", icon: UtensilsCrossed, minRole: "manager" },
-      { href: "/dashboard/services-manage", label: "Services", icon: Sparkle, minRole: "manager" },
     ],
   },
   {

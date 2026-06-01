@@ -16,7 +16,7 @@ export async function sendStaffMessage(formData: FormData) {
     .select("id, role")
     .eq("auth_user_id", auth.user.id)
     .single();
-  const p = profile as { id: string; role: string } | null;
+  const p = profile;
   if (!p || !STAFF_ROLES.has(p.role)) redirect("/?error=Staff+only");
 
   const conversationId = formData.get("conversation_id") as string | null;

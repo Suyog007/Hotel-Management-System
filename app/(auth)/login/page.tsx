@@ -2,9 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Mail } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { requestOtp } from "./actions";
 
 export default async function LoginPage(props: {
@@ -100,9 +100,13 @@ export default async function LoginPage(props: {
                 {sp.error}
               </p>
             )}
-            <Button type="submit" size="lg" className="w-full">
+            <SubmitButton
+              size="lg"
+              className="w-full"
+              pendingLabel="Sending verification code…"
+            >
               Send verification code
-            </Button>
+            </SubmitButton>
           </form>
 
           <p className="mt-8 text-center text-xs text-muted-foreground">

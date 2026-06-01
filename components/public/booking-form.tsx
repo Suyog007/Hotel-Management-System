@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CreditCard, Building2, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CreditCard, Building2, ArrowRight, Snowflake, Wind } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
-import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, round2 } from "@/lib/pricing";
 import { DateRangePicker } from "./date-range-picker";
 
 function isoDate(offsetDays: number): string {
@@ -24,23 +24,35 @@ export function BookingForm(props: {
   taxRate: number;
   serviceRate: number;
   currencySymbol: string;
+  /** > 0 enables the optional AC add-on (Standard rooms only). */
+  acAddonPrice?: number;
   action: (formData: FormData) => Promise<void>;
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
 }) {
   const today = useMemo(() => isoDate(0), []);
   const tomorrow = useMemo(() => isoDate(1), []);
-  const [checkIn, setCheckIn] = useState(today);
-  const [checkOut, setCheckOut] = useState(tomorrow);
-  const [guests, setGuests] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "pay_at_hotel">(
-    "pay_at_hotel",
+  const [checkIn, setCheckIn] = useState(props.initialCheckIn || today);
+  const [checkOut, setCheckOut] = useState(props.initialCheckOut || tomorrow);
+  const [guests, setGuests] = useState(
+    Math.min(Math.max(1, props.initialGuests || 1), props.maxGuests),
   );
+  // Online payment (Khalti / eSewa) deferred — locked to pay_at_hotel for v1.
+  const paymentMethod = "pay_at_hotel" as const;
+
+  const acAddonPrice = props.acAddonPrice ?? 0;
+  const [ac, setAc] = useState(false);
+  const addonAmount = acAddonPrice > 0 && ac ? acAddonPrice : 0;
 
   const nights = nightsBetween(checkIn, checkOut);
+  const roomCharge = round2(props.basePrice * nights);
   const totals = calculateBookingTotal({
     basePrice: props.basePrice,
     nights,
     taxRate: props.taxRate,
     serviceRate: props.serviceRate,
+    addonAmount,
   });
   const datesValid = nights >= 1;
 
@@ -78,6 +90,31 @@ export function BookingForm(props: {
           Max {props.maxGuests} per booking for this room.
         </p>
       </div>
+
+      {acAddonPrice > 0 && (
+        <div className="border-t border-border pt-4">
+          <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Air conditioning
+          </p>
+          <input type="hidden" name="ac_addon" value={ac ? "on" : "off"} />
+          <div className="grid grid-cols-2 gap-2">
+            <PaymentChoice
+              icon={Wind}
+              label="Non-AC"
+              hint="Included"
+              selected={!ac}
+              onClick={() => setAc(false)}
+            />
+            <PaymentChoice
+              icon={Snowflake}
+              label="AC"
+              hint={`+${props.currencySymbol} ${acAddonPrice.toLocaleString()}`}
+              selected={ac}
+              onClick={() => setAc(true)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="border-t border-border pt-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -126,15 +163,14 @@ export function BookingForm(props: {
             icon={Building2}
             label="Pay at hotel"
             hint="Settle on arrival"
-            selected={paymentMethod === "pay_at_hotel"}
-            onClick={() => setPaymentMethod("pay_at_hotel")}
+            selected
           />
           <PaymentChoice
             icon={CreditCard}
             label="Pay online"
-            hint="Khalti / eSewa"
-            selected={paymentMethod === "online"}
-            onClick={() => setPaymentMethod("online")}
+            hint="Coming soon"
+            selected={false}
+            disabled
           />
         </div>
       </div>
@@ -159,8 +195,14 @@ export function BookingForm(props: {
                 {props.currencySymbol} {props.basePrice.toLocaleString()} ×{" "}
                 {nights} night{nights === 1 ? "" : "s"}
               </dt>
-              <dd>{props.currencySymbol} {totals.subtotal.toLocaleString()}</dd>
+              <dd>{props.currencySymbol} {roomCharge.toLocaleString()}</dd>
             </div>
+            {addonAmount > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Air conditioning</dt>
+                <dd>+{props.currencySymbol} {addonAmount.toLocaleString()}</dd>
+              </div>
+            )}
             <div className="flex justify-between text-muted-foreground">
               <dt>Tax ({(props.taxRate * 100).toFixed(1)}%)</dt>
               <dd>
@@ -181,10 +223,15 @@ export function BookingForm(props: {
         )}
       </div>
 
-      <Button type="submit" size="lg" className="w-full gap-2" disabled={!datesValid}>
+      <SubmitButton
+        size="lg"
+        className="w-full gap-2"
+        disabled={!datesValid}
+        pendingLabel="Sending verification code…"
+      >
         Continue
         <ArrowRight className="h-4 w-4" />
-      </Button>
+      </SubmitButton>
       <p className="text-center text-xs text-muted-foreground">
         We&apos;ll email a 6-digit code to verify. Final price is recomputed on
         the server.
@@ -199,29 +246,35 @@ function PaymentChoice({
   hint,
   selected,
   onClick,
+  disabled,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   hint: string;
   selected: boolean;
-  onClick: () => void;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
       aria-pressed={selected}
+      aria-disabled={disabled || undefined}
+      disabled={disabled}
       className={cn(
         "flex flex-col gap-1 rounded-md border p-3 text-left text-sm transition-all",
-        selected
+        disabled && "cursor-not-allowed opacity-50",
+        !disabled && selected
           ? "border-accent bg-accent/10 ring-2 ring-accent/30"
-          : "border-border bg-card hover:border-accent/40",
+          : !disabled && "border-border bg-card hover:border-accent/40",
+        disabled && "border-border bg-muted/30",
       )}
     >
       <Icon
         className={cn(
           "h-5 w-5",
-          selected ? "text-accent" : "text-muted-foreground",
+          selected && !disabled ? "text-accent" : "text-muted-foreground",
         )}
       />
       <span className="font-medium">{label}</span>

@@ -8,6 +8,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge, bookingStatusBadge, paymentStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { type ChatMessage } from "@/components/chat/realtime-chat";
+import { FloatingChatBubble } from "@/components/chat/floating-chat-bubble";
+import { sendBookingChatMessage } from "@/app/booking/[id]/chat-actions";
 
 type BookingRow = {
   id: string;
@@ -47,6 +50,29 @@ export default async function MyBookingsPage() {
     .select("currency_symbol")
     .single();
   const symbol = (settings?.currency_symbol as string) ?? "Rs.";
+
+  // One chat panel for the guest, shared across all their bookings (conversation
+  // is keyed on guest_id, not booking_id). Only render if they have at least
+  // one booking — chat needs a booking_id to authorize against the action.
+  let chatConversationId: string | null = null;
+  let chatMessages: ChatMessage[] = [];
+  if (rows.length > 0) {
+    const { data: convRow } = await supabase
+      .from("conversations")
+      .select("id")
+      .eq("guest_id", p.id)
+      .maybeSingle();
+    chatConversationId = (convRow as { id: string } | null)?.id ?? null;
+    if (chatConversationId) {
+      const { data: msgs } = await supabase
+        .from("messages")
+        .select("id, conversation_id, sender_id, sender_role, body, created_at")
+        .eq("conversation_id", chatConversationId)
+        .order("created_at", { ascending: true })
+        .limit(200);
+      chatMessages = (msgs as ChatMessage[] | null) ?? [];
+    }
+  }
 
   return (
     <>
@@ -104,6 +130,15 @@ export default async function MyBookingsPage() {
               );
             })}
           </div>
+        )}
+        {rows.length > 0 && (
+          <FloatingChatBubble
+            conversationId={chatConversationId}
+            initialMessages={chatMessages}
+            currentProfileId={p.id}
+            sendAction={sendBookingChatMessage}
+            hiddenFields={{ booking_id: rows[0].id }}
+          />
         )}
       </main>
       <SiteFooter />

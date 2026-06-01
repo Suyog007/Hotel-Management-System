@@ -5,9 +5,9 @@ import { MobileNav } from "./mobile-nav";
 import { User } from "lucide-react";
 
 const NAV = [
-  { href: "/rooms", label: "Rooms" },
-  { href: "/menu", label: "Menu" },
-  { href: "/services", label: "Services" },
+  { href: "/#rooms", label: "Rooms" },
+  { href: "/#menu", label: "Menu" },
+  { href: "/#gallery", label: "Gallery" },
   { href: "/#reviews", label: "Reviews" },
 ];
 
@@ -62,7 +62,7 @@ export async function SiteHeader() {
             </Link>
           )}
           <Link
-            href="/rooms"
+            href="/#rooms"
             className="hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-soft hover:bg-primary/90 sm:inline-flex"
           >
             Book a room

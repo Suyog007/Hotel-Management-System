@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createServerClient } from "@/lib/supabase/server";
+import type { Json } from "@/types/database";
 
 export type AuditAction =
   | "create"
@@ -45,7 +46,7 @@ export async function writeAudit(args: {
     action: args.action,
     entity_type: args.entityType,
     entity_id: args.entityId ?? null,
-    old_values: (args.oldValues as object | undefined) ?? null,
-    new_values: (args.newValues as object | undefined) ?? null,
+    old_values: (args.oldValues as Json | undefined) ?? null,
+    new_values: (args.newValues as Json | undefined) ?? null,
   });
 }

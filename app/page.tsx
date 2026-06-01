@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
-  ArrowUpRight,
   Wifi,
   Sparkles,
   Coffee,
@@ -22,7 +21,8 @@ import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { GalleryTeaser } from "@/components/public/gallery-teaser";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
-import { ReviewsSlider, type SliderReview } from "@/components/public/reviews-slider";
+import { HeroSearch } from "@/components/public/hero-search";
+import { type SliderReview } from "@/components/public/reviews-slider";
 import { Button } from "@/components/ui/button";
 
 type RoomType = {
@@ -54,11 +54,11 @@ const AMENITY_ICONS: Record<string, LucideIcon> = {
 export default async function HomePage() {
   const supabase = await createServerClient();
 
-  const [settingsRes, roomsRes, amenitiesRes, galleryRes, faqsRes, reviewsRes, testimonialsRes] = await Promise.all([
+  const [settingsRes, roomsRes, amenitiesRes, galleryRes, faqsRes, reviewsRes, testimonialsRes, menuRes] = await Promise.all([
     supabase
       .from("site_settings")
       .select(
-        "hotel_name, tagline, address, currency_symbol, google_place_rating, google_place_rating_count, google_place_uri",
+        "hotel_name, tagline, address, currency_symbol, google_place_id, google_place_rating, google_place_rating_count, google_place_uri",
       )
       .single(),
     supabase
@@ -93,6 +93,13 @@ export default async function HomePage() {
       .eq("is_visible", true)
       .order("sort_order")
       .limit(8),
+    supabase
+      .from("food_items")
+      .select("id, name, description, price, category, image_url")
+      .eq("is_available", true)
+      .order("category")
+      .order("sort_order")
+      .limit(4),
   ]);
 
   const s = (settingsRes.data ?? {}) as {
@@ -100,6 +107,7 @@ export default async function HomePage() {
     tagline?: string;
     address?: string;
     currency_symbol?: string;
+    google_place_id?: string | null;
     google_place_rating?: number | null;
     google_place_rating_count?: number | null;
     google_place_uri?: string | null;
@@ -111,6 +119,9 @@ export default async function HomePage() {
     rating: s.google_place_rating ? Number(s.google_place_rating) : null,
     ratingCount: s.google_place_rating_count ?? null,
     uri: s.google_place_uri ?? null,
+    reviewsUri: s.google_place_id
+      ? `https://search.google.com/local/reviews?placeid=${s.google_place_id}`
+      : s.google_place_uri ?? null,
   };
 
   const rooms = ((roomsRes.data as RoomType[] | null) ?? []).map((r) => ({
@@ -120,6 +131,15 @@ export default async function HomePage() {
   const amenities = (amenitiesRes.data as Amenity[] | null) ?? [];
   const gallery = (galleryRes.data as GalleryItem[] | null) ?? [];
   const faqs = (faqsRes.data as Faq[] | null) ?? [];
+  const menuItems =
+    (menuRes.data as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      price: number;
+      category: string;
+      image_url: string | null;
+    }> | null) ?? [];
   const googleReviews =
     (reviewsRes.data as Array<{
       id: string;
@@ -171,14 +191,14 @@ export default async function HomePage() {
     rooms[0]?.images?.[0] ??
     null;
 
-  // Story photo: a warm interior — prefer Dining or Reception.
-  const storyPhoto =
-    gallery.find((g) => g.category === "Dining")?.image_url ??
-    gallery.find((g) => g.category === "Reception")?.image_url ??
-    gallery[1]?.image_url ??
-    null;
 
-  // Featured rooms: cheapest, median, top-tier — gives breadth of options.
+
+  const minPrice = rooms.reduce<number | undefined>(
+    (acc, r) => (acc === undefined || r.base_price < acc ? r.base_price : acc),
+    undefined,
+  );
+
+  // Featured rooms for the homepage teaser: cheapest, median, top-tier.
   const sortedByPrice = [...rooms].sort((a, b) => a.base_price - b.base_price);
   const featured =
     sortedByPrice.length >= 3
@@ -188,8 +208,6 @@ export default async function HomePage() {
           sortedByPrice[sortedByPrice.length - 1],
         ]
       : sortedByPrice;
-
-  const minPrice = sortedByPrice[0]?.base_price;
   const galleryStrip = gallery.filter((g) => g.image_url !== heroPhoto).slice(0, 6);
 
   return (
@@ -230,13 +248,13 @@ export default async function HomePage() {
                 {s.address ? <> · {s.address}</> : null}
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
-                <Link href="/rooms">
+                <Link href="/#rooms">
                   <Button size="lg" className="gap-2 bg-primary-foreground text-foreground hover:bg-primary-foreground/90">
                     Browse rooms
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/menu">
+                <Link href="/#menu">
                   <Button
                     size="lg"
                     variant="outline"
@@ -246,6 +264,10 @@ export default async function HomePage() {
                   </Button>
                 </Link>
               </div>
+            </div>
+
+            <div className="mt-12 max-w-4xl md:mt-16">
+              <HeroSearch />
             </div>
           </div>
         </section>
@@ -276,25 +298,24 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Featured rooms (image-led) ────────────────────────────────── */}
+        {/* ── Rooms teaser ─────────────────────────────────────────────── */}
         {featured.length > 0 && (
-          <section className="container py-20 md:py-28">
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-4 md:mb-14">
-              <div>
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
-                  Stay
-                </p>
-                <h2 className="font-display text-3xl font-semibold md:text-5xl">
-                  Rooms picked for the moment
-                </h2>
-              </div>
-              <Link
-                href="/rooms"
-                className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:text-accent"
-              >
-                See all {rooms.length} types
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
+          <section
+            id="rooms"
+            aria-label="Rooms"
+            className="container py-20 scroll-mt-20 md:py-28"
+          >
+            <div className="mb-10 max-w-2xl md:mb-14">
+              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+                Stay
+              </p>
+              <h2 className="font-display text-3xl font-semibold md:text-5xl">
+                Rooms for the trip you&apos;re taking
+              </h2>
+              <p className="mt-4 text-muted-foreground">
+                Pick a room to see availability and book. Prices are nightly
+                base rate; tax and service are added at checkout.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
@@ -302,59 +323,20 @@ export default async function HomePage() {
                 <RoomCard key={r.id} room={r} currency={currency} />
               ))}
             </div>
+
+            {rooms.length > featured.length && (
+              <div className="mt-10 text-center md:mt-14">
+                <Link
+                  href="/rooms"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                >
+                  View all {rooms.length} rooms
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </section>
         )}
-
-        {/* ── Story (asymmetric image + text) ───────────────────────────── */}
-        <section className="bg-linen">
-          <div className="container grid grid-cols-1 items-center gap-12 py-20 md:py-28 lg:grid-cols-12 lg:gap-16">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-2xl shadow-soft-lg lg:col-span-5">
-              {storyPhoto && (
-                <Image
-                  src={storyPhoto}
-                  alt={`${hotelName} interior`}
-                  fill
-                  sizes="(min-width: 1024px) 40vw, 100vw"
-                  className="object-cover"
-                />
-              )}
-            </div>
-            <div className="lg:col-span-7">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
-                Two wings, one quiet stay
-              </p>
-              <h2 className="font-display text-3xl font-semibold leading-tight md:text-5xl">
-                What sets {hotelName} apart
-              </h2>
-              <div className="mt-6 space-y-4 text-base leading-relaxed text-muted-foreground md:text-lg">
-                <p>
-                  From the rooftop terrace overlooking the valley to a kitchen
-                  that quietly nails both a continental breakfast and a Newari
-                  thali, every detail is chosen with restraint.
-                </p>
-                <p>
-                  Two wings — an original block with warm, well-priced rooms,
-                  and a newer addition with refurbished premium suites — mean
-                  there&apos;s a room for the trip you&apos;re actually taking.
-                </p>
-              </div>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/services">
-                  <Button variant="outline" className="gap-2">
-                    Spa & in-room services
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link href="/menu">
-                  <Button variant="ghost" className="gap-2">
-                    The menu
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
 
         {/* ── Amenities band ───────────────────────────────────────────── */}
         {amenities.length > 0 && (
@@ -367,7 +349,7 @@ export default async function HomePage() {
                 Quiet luxuries, on the house
               </h2>
             </div>
-            <ul className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
               {amenities.map((a) => {
                 const Icon = (a.icon && AMENITY_ICONS[a.icon]) || Sparkles;
                 return (
@@ -386,9 +368,87 @@ export default async function HomePage() {
           </section>
         )}
 
+        {/* ── Menu teaser ──────────────────────────────────────────────── */}
+        {menuItems.length > 0 && (
+          <section
+            id="menu"
+            aria-label="Menu"
+            className="bg-linen scroll-mt-20"
+          >
+            <div className="container py-20 md:py-28">
+              <div className="mb-12 max-w-2xl">
+                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+                  From our kitchen
+                </p>
+                <h2 className="font-display text-3xl font-semibold md:text-5xl">
+                  What we cook
+                </h2>
+                <p className="mt-4 text-muted-foreground">
+                  Continental, Newari, and a kitchen that quietly nails both.
+                  Browse only — order at the restaurant when you arrive.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+                {menuItems.map((item) => (
+                  <article
+                    key={item.id}
+                    className="flex gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-soft transition-shadow hover:shadow-soft-lg"
+                  >
+                    {item.image_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="h-24 w-24 shrink-0 rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary/15 to-accent/10">
+                        <Utensils className="h-6 w-6 text-foreground/30" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                        {item.category}
+                      </p>
+                      <div className="mt-1 flex items-baseline justify-between gap-3">
+                        <h3 className="font-display text-base font-semibold">
+                          {item.name}
+                        </h3>
+                        <p className="whitespace-nowrap text-sm font-medium">
+                          {currency} {Number(item.price).toLocaleString()}
+                        </p>
+                      </div>
+                      {item.description && (
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground line-clamp-2">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="mt-10 text-center md:mt-12">
+                <Link
+                  href="/menu"
+                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                >
+                  See the full menu
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* ── Gallery teaser ───────────────────────────────────────────── */}
         {galleryStrip.length > 0 && (
-          <section className="bg-card border-y border-border/60">
+          <section
+            id="gallery"
+            aria-label="Gallery"
+            className="bg-card border-y border-border/60 scroll-mt-20"
+          >
             <div className="container py-20 md:py-24">
               <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
                 <div>
@@ -401,28 +461,57 @@ export default async function HomePage() {
                 </div>
               </div>
               <GalleryTeaser items={galleryStrip} />
+
+              {gallery.length > galleryStrip.length && (
+                <div className="mt-10 text-center md:mt-12">
+                  <Link
+                    href="/gallery"
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                  >
+                    See all {gallery.length} photos
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              )}
             </div>
           </section>
         )}
 
         {/* ── Reviews ──────────────────────────────────────────────────── */}
         {(google.rating !== null || sliderReviews.length > 0) && (
-          <section id="reviews" className="container py-20 md:py-24 scroll-mt-24">
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+          <section
+            id="reviews"
+            aria-label="Guest reviews"
+            className="container py-20 md:py-24 scroll-mt-24"
+          >
+            <div className="mb-14 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
+              {google.rating !== null ? (
+                <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  <Star className="h-3.5 w-3.5 fill-accent text-accent" />
+                  <span className="text-foreground">
+                    {google.rating.toFixed(1)} on Google
+                  </span>
+                  {google.ratingCount !== null && (
+                    <>
+                      <span aria-hidden className="text-muted-foreground/40">·</span>
+                      <span>
+                        {google.ratingCount.toLocaleString()}{" "}
+                        {google.ratingCount === 1 ? "guest" : "guests"}
+                      </span>
+                    </>
+                  )}
+                </p>
+              ) : (
+                <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
                   From our guests
                 </p>
-                <h2 className="font-display text-3xl font-semibold md:text-5xl">
-                  What past guests say
-                </h2>
-              </div>
-              {google.uri && (
+              )}
+              {google.reviewsUri && (
                 <a
-                  href={google.uri}
+                  href={google.reviewsUri}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity hover:opacity-80"
                 >
                   Read all on Google
                   <ExternalLink className="h-4 w-4" />
@@ -430,52 +519,30 @@ export default async function HomePage() {
               )}
             </div>
 
-            {google.rating !== null && (
-              <div className="mb-8 grid items-center gap-6 rounded-2xl border border-border bg-card p-6 shadow-soft md:grid-cols-12 md:gap-8 md:p-8">
-                <div className="md:col-span-4 md:border-r md:border-border md:pr-8">
-                  <div className="flex items-baseline gap-2">
-                    <span className="font-display text-5xl font-semibold leading-none">
-                      {google.rating.toFixed(1)}
+            {sliderReviews.length > 0 && (
+              <div className="grid gap-12 md:grid-cols-3 md:gap-10 lg:gap-14">
+                {sliderReviews.slice(0, 3).map((q) => (
+                  <figure key={q.id} className="flex flex-col">
+                    <span
+                      aria-hidden
+                      className="font-display text-6xl leading-none text-accent"
+                    >
+                      &ldquo;
                     </span>
-                    <span className="text-sm text-muted-foreground">/ 5</span>
-                  </div>
-                  <p className="mt-2 text-sm">
-                    <span className="text-accent">
-                      {"★".repeat(Math.round(google.rating))}
-                    </span>
-                    <span className="text-muted-foreground/40">
-                      {"★".repeat(5 - Math.round(google.rating))}
-                    </span>
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Based on {(google.ratingCount ?? 0).toLocaleString()}{" "}
-                    {google.ratingCount === 1 ? "guest" : "guests"} on Google.
-                  </p>
-                </div>
-                <div className="md:col-span-8">
-                  <p className="text-base leading-relaxed text-muted-foreground">
-                    Our guests tell it straight on Google. The most recent
-                    written reviews appear below; the rating above counts every
-                    guest who&apos;s stayed and tapped a star.
-                  </p>
-                </div>
+                    <blockquote className="mt-3 flex-1 text-lg leading-relaxed text-foreground">
+                      {q.body}
+                    </blockquote>
+                    <figcaption className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                      — {q.author_name}
+                      {q.author_role && (
+                        <span className="ml-2 normal-case tracking-normal text-muted-foreground/70">
+                          · {q.author_role.toLowerCase()}
+                        </span>
+                      )}
+                    </figcaption>
+                  </figure>
+                ))}
               </div>
-            )}
-
-            {sliderReviews.length > 0 ? (
-              <ReviewsSlider reviews={sliderReviews} />
-            ) : (
-              google.rating !== null && (
-                <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
-                  <Star className="mx-auto mb-3 h-8 w-8 text-muted-foreground/50" />
-                  <p className="text-sm font-medium">No written reviews here yet</p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Guests have rated us. Curate a few in{" "}
-                    <span className="font-mono text-xs">/admin/testimonials</span>{" "}
-                    to fill this slider while Google&apos;s API catches up.
-                  </p>
-                </div>
-              )
             )}
           </section>
         )}
@@ -543,7 +610,7 @@ export default async function HomePage() {
                 </p>
               </div>
               <div className="md:col-span-4 md:text-right">
-                <Link href="/rooms">
+                <Link href="/#rooms">
                   <Button size="lg" variant="accent" className="gap-2">
                     Book a room
                     <ArrowRight className="h-4 w-4" />

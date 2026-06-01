@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { BookingForm } from "@/components/public/booking-form";
 import { RoomGallery } from "@/components/public/room-gallery";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
+import { AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
 import { initiateBooking } from "./actions";
 
 type RoomTypeRow = {
@@ -24,9 +25,15 @@ type RoomTypeRow = {
 
 export default async function RoomDetailPage(props: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    check_in?: string;
+    check_out?: string;
+    guests?: string;
+  }>;
 }) {
   const [{ slug }, sp] = await Promise.all([props.params, props.searchParams]);
+  const initialGuests = sp.guests ? parseInt(sp.guests, 10) || 1 : undefined;
 
   const supabase = await createServerClient();
   const { data } = await supabase
@@ -147,7 +154,11 @@ export default async function RoomDetailPage(props: {
                   taxRate={taxRate}
                   serviceRate={serviceRate}
                   currencySymbol={symbol}
+                  acAddonPrice={isAcAddonEligible(rt.slug) ? AC_ADDON_PRICE : 0}
                   action={initiateBooking}
+                  initialCheckIn={sp.check_in}
+                  initialCheckOut={sp.check_out}
+                  initialGuests={initialGuests}
                 />
               </CardContent>
             </Card>
