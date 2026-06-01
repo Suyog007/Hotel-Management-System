@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { CreditCard, Building2, ArrowRight, Snowflake, Wind } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,8 +56,33 @@ export function BookingForm(props: {
   });
   const datesValid = nights >= 1;
 
+  // Scroll the first invalid field into view + focus it on submit failure.
+  // The browser already fires its native "Please fill out this field" tooltip;
+  // this just ensures the field isn't below the fold on long mobile forms.
+  // `invalid` doesn't bubble — using `onInvalidCapture` to catch in capture
+  // phase. Ref guards against firing once per missing field.
+  const handledRef = useRef(false);
+  function handleInvalid(e: React.FormEvent) {
+    if (handledRef.current) return;
+    handledRef.current = true;
+    const target = e.target as HTMLElement;
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => {
+        (target as HTMLInputElement).focus?.({ preventScroll: true });
+      }, 200);
+    });
+    window.setTimeout(() => {
+      handledRef.current = false;
+    }, 800);
+  }
+
   return (
-    <form action={props.action} className="space-y-5">
+    <form
+      action={props.action}
+      onInvalidCapture={handleInvalid}
+      className="space-y-5"
+    >
       <input type="hidden" name="slug" value={props.slug} />
       <input type="hidden" name="room_type_id" value={props.roomTypeId} />
       <input type="hidden" name="payment_method" value={paymentMethod} />
