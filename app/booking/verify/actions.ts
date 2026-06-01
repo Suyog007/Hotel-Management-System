@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
 import { sign, verify } from "@/lib/signed-cookie";
+import { setGuestSession } from "@/lib/guest-session";
 import { isStillAvailable } from "@/lib/availability";
 import { bookingIntentSchema, type BookingIntent } from "@/lib/validation/rooms";
 import type { TablesInsert, TablesUpdate } from "@/types/database";
@@ -136,6 +137,10 @@ export async function verifyAndCreateBooking(formData: FormData) {
   const b = booking as { id: string; booking_code: string; access_token: string };
 
   cookieStore.delete(INTENT_COOKIE);
+
+  // Stamp the device with a guest_session cookie so /my-bookings works on
+  // this browser without login. 90-day TTL; user can clear via "Not you?".
+  await setGuestSession(guestId, intent.guest_email);
 
   await writeAudit({
     action: "create",
