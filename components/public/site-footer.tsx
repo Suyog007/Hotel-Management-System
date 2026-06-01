@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Facebook } from "lucide-react";
+import { Facebook, MapPin, Phone } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
+import { FloatingWhatsApp } from "./floating-whatsapp";
 
-// Hotel social presence. Kept inline (vs CMS-managed) because these change
-// rarely; promote to site_settings columns if/when more handles appear.
+// Hotel social + contact info. Kept inline (vs CMS-managed) because these
+// change rarely; promote to site_settings columns if/when more handles appear.
 const SOCIAL_LINKS = [
   {
     name: "Facebook",
@@ -17,60 +18,103 @@ const SOCIAL_LINKS = [
   },
 ] as const;
 
+const PHONES = [
+  { label: "Mobile", display: "+977 9742529499", tel: "+9779742529499" },
+  { label: "Landline", display: "01-5901317", tel: "+97715901317" },
+] as const;
+
+// wa.me number = international format without "+". Same number as mobile.
+const WHATSAPP_NUMBER = "9779742529499";
+
+// Opens Google Maps with directions panel from the user's current location to
+// Hotel Vardani. The `destination_place_id` keeps Maps anchored to the right
+// place even if the display name changes.
+const DIRECTIONS_URL =
+  "https://www.google.com/maps/dir/?api=1&destination=Hotel+Vardani&destination_place_id=ChIJCYr9TbcZ6zkR00tXRsiU3eE";
+
 export async function SiteFooter() {
   const supabase = await createServerClient();
   const { data: settings } = await supabase
     .from("site_settings")
-    .select("hotel_name, address, contact_phone, contact_email")
+    .select("hotel_name, address, contact_email")
     .single();
   const s = (settings ?? {}) as {
     hotel_name?: string;
     address?: string;
-    contact_phone?: string;
     contact_email?: string;
   };
 
   return (
-    <footer className="mt-24 border-t border-border/60 bg-card/40">
-      <div className="container flex flex-col gap-3 py-10 md:flex-row md:items-center md:justify-between md:py-8">
-        <div className="flex items-center gap-2">
-          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
-          <span className="font-display text-base font-semibold">
-            {s.hotel_name ?? "Hotel"}
-          </span>
-          {s.address && (
-            <span className="ml-2 text-sm text-muted-foreground">· {s.address}</span>
-          )}
-        </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-          {s.contact_phone && <span>{s.contact_phone}</span>}
-          {s.contact_email && <span>· {s.contact_email}</span>}
-          <div className="flex items-center gap-2">
-            {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+    <>
+      <footer className="mt-24 border-t border-border/60 bg-card/40">
+        <div className="container flex flex-col gap-4 py-10 md:flex-row md:items-center md:justify-between md:py-8">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+            <span className="font-display text-base font-semibold">
+              {s.hotel_name ?? "Hotel"}
+            </span>
+            {s.address && (
               <a
-                key={name}
-                href={href}
+                href={DIRECTIONS_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`${s.hotel_name ?? "Hotel"} on ${name}`}
-                className="grid h-8 w-8 place-items-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-accent/40 hover:text-foreground"
+                aria-label={`Get directions to ${s.hotel_name ?? "the hotel"}`}
+                className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-accent"
               >
-                <Icon className="h-3.5 w-3.5" />
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{s.address}</span>
+              </a>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+            {PHONES.map((p) => (
+              <a
+                key={p.tel}
+                href={`tel:${p.tel}`}
+                aria-label={`${p.label}: ${p.display}`}
+                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+              >
+                <Phone className="h-3.5 w-3.5" aria-hidden />
+                <span>{p.display}</span>
               </a>
             ))}
+            {s.contact_email && (
+              <a
+                href={`mailto:${s.contact_email}`}
+                className="transition-colors hover:text-accent"
+              >
+                {s.contact_email}
+              </a>
+            )}
+            <div className="flex items-center gap-2">
+              {SOCIAL_LINKS.map(({ name, href, icon: Icon }) => (
+                <a
+                  key={name}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${s.hotel_name ?? "Hotel"} on ${name}`}
+                  className="grid h-8 w-8 place-items-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-accent/40 hover:text-foreground"
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                </a>
+              ))}
+            </div>
+            <span className="md:ml-2 text-xs">
+              © {new Date().getFullYear()} {s.hotel_name ?? "Hotel"}
+            </span>
+            <Link
+              href="/login"
+              className="text-[11px] uppercase tracking-wider text-muted-foreground/50 transition-colors hover:text-foreground"
+            >
+              Staff
+            </Link>
           </div>
-          <span className="md:ml-2 text-xs">
-            © {new Date().getFullYear()} {s.hotel_name ?? "Hotel"}
-          </span>
-          <Link
-            href="/login"
-            className="text-[11px] uppercase tracking-wider text-muted-foreground/50 transition-colors hover:text-foreground"
-          >
-            Staff
-          </Link>
         </div>
-      </div>
-    </footer>
+      </footer>
+      <FloatingWhatsApp phone={WHATSAPP_NUMBER} />
+    </>
   );
 }
 
