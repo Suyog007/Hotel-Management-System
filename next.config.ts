@@ -7,9 +7,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
     ],
   },
-  devIndicators: {
-    position: "bottom-right",
-  },
+  devIndicators: false,
   experimental: {
     serverActions: {
       bodySizeLimit: "4mb",
