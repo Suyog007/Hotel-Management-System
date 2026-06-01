@@ -64,15 +64,16 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
           onClick={() => setOpen(false)}
           tabIndex={open ? 0 : -1}
           className={cn(
-            "absolute inset-0 bg-foreground/70 backdrop-blur-sm transition-opacity",
+            "absolute inset-0 z-0 bg-black/60 transition-opacity",
             open ? "opacity-100" : "opacity-0",
           )}
         />
         <aside
           className={cn(
-            "absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-card shadow-soft-lg transition-transform duration-200 ease-out",
+            "absolute right-0 top-0 z-10 flex h-full w-[85vw] max-w-sm flex-col bg-white shadow-2xl transition-transform duration-200 ease-out",
             open ? "translate-x-0" : "translate-x-full",
           )}
+          style={{ backgroundColor: "#ffffff" }}
         >
           <div className="flex items-center justify-between border-b border-border/60 p-4">
             <div className="flex items-center gap-2">
@@ -102,14 +103,14 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
                     "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
-                      : "text-foreground hover:bg-muted",
+                      : "text-gray-900 hover:bg-gray-100",
                   )}
                 >
                   {Icon && (
                     <Icon
                       className={cn(
-                        "h-4 w-4 shrink-0",
-                        active ? "text-primary" : "text-muted-foreground",
+                        "h-5 w-5 shrink-0",
+                        active ? "text-primary" : "text-gray-500",
                       )}
                     />
                   )}
