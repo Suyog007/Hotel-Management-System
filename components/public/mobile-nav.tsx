@@ -89,7 +89,7 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
               <X className="h-5 w-5" />
             </button>
           </div>
-          <nav className="space-y-1 p-3">
+          <nav className="space-y-2 p-3">
             {LINKS.map((l) => {
               const active =
                 pathname === l.href ||
@@ -100,11 +100,12 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
                   key={l.href}
                   href={l.href}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors",
+                    "flex items-center gap-3 rounded-lg border px-4 py-3.5 text-base font-medium shadow-sm transition-all active:scale-[0.98]",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-gray-900 hover:bg-gray-100",
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-gray-200 bg-white text-gray-900 hover:border-primary/30 hover:bg-gray-50",
                   )}
+                  style={!active ? { backgroundColor: "#ffffff" } : undefined}
                 >
                   {Icon && (
                     <Icon
