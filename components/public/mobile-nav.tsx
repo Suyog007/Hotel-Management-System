@@ -3,16 +3,29 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import {
+  BedDouble,
+  ImageIcon,
+  Menu,
+  Star,
+  UtensilsCrossed,
+  User,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function MobileNav({
-  hotelName,
-  links,
-}: {
-  hotelName: string;
-  links: { href: string; label: string }[];
-}) {
+// Defined here (vs in site-header.tsx) because Server Components can't pass
+// function references — like Lucide icon components — across the boundary.
+const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/#rooms", label: "Rooms", icon: BedDouble },
+  { href: "/#menu", label: "Menu", icon: UtensilsCrossed },
+  { href: "/#gallery", label: "Gallery", icon: ImageIcon },
+  { href: "/#reviews", label: "Reviews", icon: Star },
+  { href: "/my-bookings", label: "My bookings", icon: User },
+];
+
+export function MobileNav({ hotelName }: { hotelName: string }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -57,7 +70,7 @@ export function MobileNav({
         />
         <aside
           className={cn(
-            "absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-background shadow-soft-lg transition-transform duration-200 ease-out",
+            "absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-card shadow-soft-lg transition-transform duration-200 ease-out",
             open ? "translate-x-0" : "translate-x-full",
           )}
         >
@@ -76,22 +89,31 @@ export function MobileNav({
             </button>
           </div>
           <nav className="space-y-1 p-3">
-            {links.map((l) => {
+            {LINKS.map((l) => {
               const active =
                 pathname === l.href ||
                 (l.href !== "/" && pathname?.startsWith(l.href + "/"));
+              const Icon = l.icon;
               return (
                 <Link
                   key={l.href}
                   href={l.href}
                   className={cn(
-                    "block rounded-md px-3 py-3 text-base font-medium transition-colors",
+                    "flex items-center gap-3 rounded-md px-3 py-3 text-base font-medium transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
                       : "text-foreground hover:bg-muted",
                   )}
                 >
-                  {l.label}
+                  {Icon && (
+                    <Icon
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        active ? "text-primary" : "text-muted-foreground",
+                      )}
+                    />
+                  )}
+                  <span>{l.label}</span>
                 </Link>
               );
             })}

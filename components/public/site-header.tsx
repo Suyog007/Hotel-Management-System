@@ -19,13 +19,10 @@ export async function SiteHeader() {
   ]);
   const hotelName = (settings?.hotel_name as string) ?? "Hotel";
 
-  // Guests don't have accounts — the OTP path issues a tokenized booking link
-  // they keep in their email. The only signed-in surfaces are staff/admin, so
-  // we don't surface "Sign in" on the public header anymore.
-  const mobileLinks = [
-    ...NAV,
-    ...(auth.user ? [{ href: "/my-bookings", label: "My bookings" }] : []),
-  ];
+  // Show My bookings unconditionally in the mobile drawer — the page itself
+  // handles auth (anonymous users get bounced to /login). Suppress only the
+  // header pill when signed-out so the header stays clean.
+  const showMyBookingsPill = Boolean(auth.user);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -52,7 +49,7 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          {auth.user && (
+          {showMyBookingsPill && (
             <Link
               href="/my-bookings"
               aria-label="My bookings"
@@ -68,7 +65,7 @@ export async function SiteHeader() {
           >
             Book a room
           </Link>
-          <MobileNav hotelName={hotelName} links={mobileLinks} />
+          <MobileNav hotelName={hotelName} />
         </div>
       </div>
     </header>
