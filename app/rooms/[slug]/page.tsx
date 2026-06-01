@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, Users, Sparkles } from "lucide-react";
@@ -9,7 +10,45 @@ import { BookingForm } from "@/components/public/booking-form";
 import { RoomGallery } from "@/components/public/room-gallery";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
 import { AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
+import { HotelRoomJsonLd } from "@/components/seo/json-ld";
 import { initiateBooking } from "./actions";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:4000";
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await props.params;
+  const supabase = await createServerClient();
+  const { data } = await supabase
+    .from("room_types")
+    .select("name, description, base_price, images")
+    .eq("slug", slug)
+    .single();
+  const rt = data as
+    | { name: string; description: string | null; base_price: number | string; images: string[] | null }
+    | null;
+  if (!rt) return { title: "Room not found" };
+
+  const price = Number(rt.base_price).toLocaleString();
+  const description = rt.description
+    ? `${rt.description.slice(0, 140)}${rt.description.length > 140 ? "…" : ""} From Rs. ${price}/night at Hotel Vardani, Gaushala.`
+    : `${rt.name} at Hotel Vardani in Gaushala, Kathmandu — 5 min walk to Pashupatinath. From Rs. ${price}/night.`;
+  const cover = (rt.images ?? [])[0];
+
+  return {
+    title: rt.name,
+    description,
+    alternates: { canonical: `/rooms/${slug}` },
+    openGraph: {
+      title: `${rt.name} — Hotel Vardani`,
+      description,
+      url: `${SITE_URL}/rooms/${slug}`,
+      type: "website",
+      images: cover ? [{ url: cover, width: 1200, height: 630, alt: rt.name }] : [],
+    },
+  };
+}
 
 type RoomTypeRow = {
   id: string;
@@ -71,6 +110,16 @@ export default async function RoomDetailPage(props: {
 
   return (
     <>
+      <HotelRoomJsonLd
+        name={rt.name}
+        description={rt.description}
+        url={`${SITE_URL}/rooms/${rt.slug}`}
+        basePrice={Number(rt.base_price)}
+        currency="NPR"
+        maxGuests={rt.max_guests}
+        amenities={rt.amenities ?? []}
+        images={images}
+      />
       <SiteHeader />
       <main id="main" className="container py-8 md:py-12">
         <Link

@@ -219,7 +219,7 @@ export default async function HomePage() {
           {heroPhoto ? (
             <Image
               src={heroPhoto}
-              alt={`${hotelName} exterior`}
+              alt={`${hotelName} exterior — boutique hotel in Gaushala, Kathmandu, 5 minutes from Pashupatinath`}
               fill
               priority
               sizes="100vw"
@@ -649,7 +649,7 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
         {hero ? (
           <Image
             src={hero}
-            alt={room.name}
+            alt={`${room.name} room at Hotel Vardani, Gaushala`}
             fill
             sizes="(min-width: 768px) 33vw, 100vw"
             className="object-cover transition-transform duration-700 group-hover:scale-105"

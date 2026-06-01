@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { UtensilsCrossed } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Menu",
+  description:
+    "Continental and Newari menu at Hotel Vardani's in-house restaurant in Gaushala, Kathmandu — 5 minutes from Pashupatinath.",
+};
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";

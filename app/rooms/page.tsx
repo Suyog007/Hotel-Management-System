@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Users, Sparkles, CalendarDays } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Rooms",
+  description:
+    "Rooms at Hotel Vardani in Gaushala, Kathmandu — 5 minutes from Pashupatinath, 10 minutes from Tribhuvan International Airport. Standard, premium, and suite options.",
+};
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
@@ -122,7 +129,7 @@ export default async function RoomsListPage({
       <main id="main" className="container py-12 md:py-16">
         <PageHeader
           eyebrow="Stay with us"
-          title="Our rooms"
+          title="Rooms at Hotel Vardani, Gaushala"
           description={
             stay
               ? `Showing availability for ${stay.nights} night${stay.nights === 1 ? "" : "s"} · ${stay.guests} guest${stay.guests === 1 ? "" : "s"}. Totals include tax and service.`
@@ -214,7 +221,7 @@ function RoomCard({
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={cover}
-              alt={rt.name}
+              alt={`${rt.name} at Hotel Vardani, Gaushala`}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
