@@ -55,15 +55,16 @@ export async function SiteHeader() {
           {auth.user && (
             <Link
               href="/my-bookings"
-              className="hidden items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm font-medium hover:border-accent/40 hover:text-foreground md:inline-flex"
+              aria-label="My bookings"
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 text-sm font-medium hover:border-accent/40 hover:text-foreground md:px-3"
             >
               <User className="h-4 w-4" />
-              <span>My bookings</span>
+              <span className="hidden sm:inline">My bookings</span>
             </Link>
           )}
           <Link
             href="/#rooms"
-            className="hidden rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-soft hover:bg-primary/90 sm:inline-flex"
+            className="inline-flex rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-soft hover:bg-primary/90 sm:px-4"
           >
             Book a room
           </Link>

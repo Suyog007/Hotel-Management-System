@@ -51,13 +51,13 @@ export function MobileNav({
           onClick={() => setOpen(false)}
           tabIndex={open ? 0 : -1}
           className={cn(
-            "absolute inset-0 bg-foreground/40 backdrop-blur-sm transition-opacity",
+            "absolute inset-0 bg-foreground/70 backdrop-blur-sm transition-opacity",
             open ? "opacity-100" : "opacity-0",
           )}
         />
         <aside
           className={cn(
-            "absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-card shadow-soft-lg transition-transform duration-200 ease-out",
+            "absolute right-0 top-0 h-full w-72 max-w-[80vw] bg-background shadow-soft-lg transition-transform duration-200 ease-out",
             open ? "translate-x-0" : "translate-x-full",
           )}
         >
@@ -85,10 +85,10 @@ export function MobileNav({
                   key={l.href}
                   href={l.href}
                   className={cn(
-                    "block rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                    "block rounded-md px-3 py-3 text-base font-medium transition-colors",
                     active
                       ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                      : "text-foreground hover:bg-muted",
                   )}
                 >
                   {l.label}
