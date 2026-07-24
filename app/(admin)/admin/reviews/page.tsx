@@ -22,7 +22,7 @@ export default async function AdminReviewsPage(props: {
   searchParams: Promise<{ saved?: string; error?: string; inserted?: string; updated?: string; page?: string }>;
 }) {
   const sp = await props.searchParams;
-  const page = Math.max(1, Number(sp.page ?? 1));
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createServerClient();
 
