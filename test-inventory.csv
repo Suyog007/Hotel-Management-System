@@ -1,0 +1,199 @@
+Test Type,Tier,Suite,File,Test Case,What It Verifies,How to Run,Status,Last Verified
+QA,Static,Type check,tsconfig.json,tsc --noEmit,Zero TypeScript type errors gate,npm run type-check,Pass,2026-07-21
+QA,Static,Lint,eslint.config.mjs,next lint,Zero lint errors,npm run lint,Pass (warnings only),2026-07-21
+QA,Static,Production build,next.config.ts,next build,Full production compile succeeds,npm run build,Pass,2026-07-21
+Functional,Unit,Pricing,test/pricing.test.ts,nightsBetween counts whole nights between two dates,Night-count math over a date range,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,nightsBetween returns 0 for same-day or reversed ranges,Guards against zero/negative ranges,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,nightsBetween returns 0 for unparseable input,Bad date input yields 0 not NaN,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,nightsBetween spans month/year boundaries,Correct across month/year rollover,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,round2 rounds to two decimals,Money rounding helper,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal layers tax and service on top of base x nights,Tax/service applied on subtotal,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal handles zero nights as a zero total,Zero-night edge case,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal handles zero rates (total == subtotal),Zero tax/service rates,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal folds an add-on (AC +500) into subtotal before tax/service,Add-on ordering before tax,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal treats a zero/absent add-on as no change,No add-on leaves total unchanged,npm test,Pass,2026-07-20
+Functional,Unit,Pricing,test/pricing.test.ts,calculateBookingTotal rounds fractional money to 2 decimals,Final total rounding,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund gives a full refund well before check-in (>72h),Full-refund tier selection,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund gives a half refund in the 24-72h window,Mid-tier refund window,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund gives nothing inside 24h,No refund inside 24h,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund treats the threshold as inclusive (exactly 72h -> full),Inclusive threshold boundary,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund clamps past-due check-ins to 0 hours and lowest tier,Past-due clamp behavior,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund returns null tier and 0 refund when no tiers configured,Empty tier config handling,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund does not mutate the caller's tier array,No side effects on input,npm test,Pass,2026-07-20
+Functional,Unit,Refunds,test/cancellation.test.ts,computeRefund applies the tier percentage to the paid amount,Percentage applied to paid amount,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,findAvailableRoom returns the first room not blocked by an overlapping booking,Picks free room among overlaps,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,findAvailableRoom returns null when every room is blocked,No room free case,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,findAvailableRoom returns null when the room type has no rooms,Empty room type,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,findAvailableRoom returns a room when there are no overlapping bookings,All rooms free,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,countAvailableRooms counts rooms not blocked by an overlapping booking,Availability count with overlaps,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,countAvailableRooms returns 0 when there are no rooms,Zero rooms count,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,countAvailableRooms returns the full count when nothing is booked,Full count when free,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,isStillAvailable is true when no overlapping booking exists,Re-check availability true,npm test,Pass,2026-07-20
+Functional,Unit,Availability,test/availability.test.ts,isStillAvailable is false when an overlapping booking exists,Re-check availability false,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,sign/verify round-trips an object,HMAC sign/verify round-trip,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,rejects a tampered payload segment,Detects payload tampering,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,rejects a tampered signature segment,Detects signature tampering,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,rejects malformed / empty input,Rejects malformed tokens,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,rejects a token signed with a different secret,Secret mismatch rejected,npm test,Pass,2026-07-20
+Security,Unit,Signed cookies,test/signed-cookie.test.ts,throws when the secret is missing or too short,Weak/absent secret rejected,npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,verifyBookingOtp returns not_found when no active code exists,No active code path,npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,verifyBookingOtp returns expired for a past expiry,OTP expiry enforced,npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,verifyBookingOtp fails closed after max attempts,Attempt lockout (brute-force guard),npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,verifyBookingOtp returns mismatch and increments attempts on a wrong code,Wrong-code counting,npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,verifyBookingOtp succeeds and consumes the code on a correct match,Single-use code consumption,npm test,Pass,2026-07-20
+Security,Unit,Booking OTP,test/booking-otp.test.ts,createBookingOtp invalidates prior codes inserts a hashed 6-digit code and returns plaintext,Codes hashed not stored plaintext,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,bookingFormSchema accepts a valid booking and coerces/normalizes,Valid booking parse/normalize,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects check-out on or before check-in,Date order validation,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects a check-in in the past,No past-dated check-in,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects an invalid email,Email input validation,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects a bad phone number,Phone input validation,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects an out-of-range guest count,Guest count bounds,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,bookingFormSchema rejects an unknown payment method,Payment method whitelist,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,roomTypeSchema parses amenities from a newline/comma list and dedupes,Amenity list parse/dedupe,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,roomTypeSchema rejects an invalid slug,Slug format validation,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,roomTypeSchema treats an empty slug as undefined (auto-generated downstream),Empty slug defaulting,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,roomTypeSchema rejects a negative price,Non-negative price,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,roomSchema accepts a valid room and defaults status,Room parse + default status,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,roomSchema coerces an empty floor to undefined,Empty floor coercion,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,roomSchema rejects a non-uuid type_id,UUID validation on type_id,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,auth schemas normalize email,Email normalization for auth,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,auth schemas accept a 6-digit OTP token and reject others,OTP token format for auth,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,section content parses hero content and ignores extras,CMS hero content parse,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,section content provides sane defaults per section type,CMS section defaults,npm test,Pass,2026-07-20
+Security,Unit,Validation,test/validation.test.ts,section content validates gallery image_ids as uuids,Gallery UUID validation,npm test,Pass,2026-07-20
+Functional,Unit,Validation,test/validation.test.ts,section content requires a page title,Page title required,npm test,Pass,2026-07-20
+QA,Unit,Status badges,test/badge.test.ts,bookingStatusBadge falls back to the raw value for unknown statuses,Booking status enum -> variant/label,npm test,Pass,2026-07-20
+QA,Unit,Status badges,test/badge.test.ts,paymentStatusBadge maps values,Payment status enum -> variant/label,npm test,Pass,2026-07-20
+QA,Unit,Status badges,test/badge.test.ts,roomStatusBadge maps values,Room status enum -> variant/label,npm test,Pass,2026-07-20
+QA,Unit,Status badges,test/badge.test.ts,requestStatusBadge maps values,Request status enum -> variant/label,npm test,Pass,2026-07-20
+QA,Unit,cn() util,test/utils.test.ts,cn joins truthy class values,Class name joining,npm test,Pass,2026-07-20
+QA,Unit,cn() util,test/utils.test.ts,cn drops falsy/conditional values,Falsy class filtering,npm test,Pass,2026-07-20
+QA,Unit,cn() util,test/utils.test.ts,cn merges conflicting tailwind utilities (last wins),Tailwind-merge conflict resolution,npm test,Pass,2026-07-20
+Security,Unit,Audit logging,test/audit.test.ts,writeAudit resolves the actor from the session profile and inserts via the service-role client,Actor resolution + insert via service role,npm test,Pass,2026-07-21
+Security,Unit,Audit logging,test/audit.test.ts,writeAudit falls back to the auth user's own email when no profile row is found,Fallback actor identity,npm test,Pass,2026-07-21
+Security,Unit,Audit logging,test/audit.test.ts,writeAudit writes a null actor when there is no session,Unauthenticated write still logs,npm test,Pass,2026-07-21
+Security,Unit,Audit logging,test/audit.test.ts,writeAudit defaults old/new values to null when omitted,Optional field defaulting,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,redirects unauthenticated visitors of /admin to /login with a next param,Unauthenticated /admin redirect,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,redirects unauthenticated visitors of /dashboard to /login with a next param,Unauthenticated /dashboard redirect,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,bounces a non-super_admin authenticated user away from /admin,Role-mismatch gate on /admin,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,bounces a disabled (is_active=false) super_admin away from /admin,Disabled-account gate on /admin,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,bounces a guest (non-staff role) away from /dashboard,Role-mismatch gate on /dashboard,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,bounces a disabled staff member away from /dashboard,Disabled-account gate on /dashboard,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,lets an active super_admin through to /admin,Positive /admin authorization,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,lets an active receptionist through to /dashboard,Positive /dashboard authorization,npm test,Pass,2026-07-21
+Security,Unit,Route middleware,test/middleware.test.ts,lets anyone through on public routes regardless of session state,Public routes ungated,npm test,Pass,2026-07-21
+Security,Unit,Session resolution,test/supabase-middleware.test.ts,returns user=null role=null when there is no session,No-session resolution,npm test,Pass,2026-07-21
+Security,Unit,Session resolution,test/supabase-middleware.test.ts,resolves role and is_active from the profile linked to the session user,Role/isActive resolution,npm test,Pass,2026-07-21
+Security,Unit,Session resolution,test/supabase-middleware.test.ts,surfaces is_active=false from the profile,Disabled-account surfaced,npm test,Pass,2026-07-21
+Security,Unit,Session resolution,test/supabase-middleware.test.ts,defaults role to null and isActive to true when the user has no profile row,Orphaned-user defaulting,npm test,Pass,2026-07-21
+Security,Unit,Session resolution,test/supabase-middleware.test.ts,throws when Supabase env vars are missing,Fails closed on missing config,npm test,Pass,2026-07-21
+Security,Unit,Cron endpoint,test/cron-reviews.test.ts,rejects a request with no secret,Unauthenticated request rejected,npm test,Pass,2026-07-21
+Security,Unit,Cron endpoint,test/cron-reviews.test.ts,rejects a request with the wrong secret via ?secret=,Wrong query-param secret rejected,npm test,Pass,2026-07-21
+Security,Unit,Cron endpoint,test/cron-reviews.test.ts,rejects a request when CRON_SECRET itself is unset (fails closed not open),Missing server-side secret fails closed,npm test,Pass,2026-07-21
+Security,Unit,Cron endpoint,test/cron-reviews.test.ts,accepts the secret via the Authorization: Bearer header,Header-based auth accepted,npm test,Pass,2026-07-21
+Security,Unit,Cron endpoint,test/cron-reviews.test.ts,accepts the secret via ?secret= query param,Query-param auth accepted,npm test,Pass,2026-07-21
+Functional,Unit,Cron endpoint,test/cron-reviews.test.ts,400s when site_settings has no google_place_id configured,Missing config handled,npm test,Pass,2026-07-21
+Functional,Unit,Cron endpoint,test/cron-reviews.test.ts,500s when GOOGLE_PLACES_API_KEY is not set,Missing API key handled,npm test,Pass,2026-07-21
+Functional,Unit,Cron endpoint,test/cron-reviews.test.ts,500s and reports the error message when the refresh call throws,Upstream failure surfaced,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,rejects a missing room_type_id,Required param validation,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,rejects a non-uuid room_type_id,UUID format validation,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,rejects a malformed date,Date format validation,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,blocks every day in range when the room type has zero rooms,Zero-inventory edge case,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,blocks a day only when bookings meet or exceed room count,Blocked-day threshold logic,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,does not block a day when at least one room is free,Free-room day not blocked,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,ignores bookings for a different room type,Cross-room-type isolation,npm test,Pass,2026-07-21
+Functional,Unit,Public availability API,test/availability-api.test.ts,defaults to today .. +180 days when from/to are omitted,Default date-range horizon,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,no-ops and returns skipped:true when GMAIL_APP_PASSWORD is unset,Dev no-op path,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,throws a clear error if GMAIL_APP_PASSWORD is set but GMAIL_USER is not,Misconfiguration fails loudly,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,sends via the Gmail SMTP transport when fully configured,Real send path + payload shape,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,joins an array of recipients with a comma,Multi-recipient formatting,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,reuses the same transport across calls instead of recreating it,Transport singleton caching,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,renderTemplate replaces {{key}} placeholders with provided values,Template variable substitution,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,renderTemplate leaves unknown placeholders untouched so gaps are visible,Missing-variable visibility,npm test,Pass,2026-07-21
+Functional,Unit,Email sending,test/email.test.ts,renderTemplate tolerates whitespace inside the placeholder braces,Placeholder whitespace tolerance,npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,redirects to /rooms when there is no (or an expired) booking intent cookie,Missing/expired intent cookie handling,npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,redirects back to /booking/verify when the code isn't 6 digits,Code format validation,npm test,Pass,2026-07-21
+Security,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,redirects back to /booking/verify with an error when the OTP is wrong,Wrong-OTP rejection,npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,deletes the intent cookie and redirects to /rooms when the room was taken during the OTP window,Race-condition re-check on availability,npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,creates a booking + new stub profile writes an audit log sends the confirmation email and redirects to the booking page,End-to-end happy path (pay_at_hotel),npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,marks status pending and appends &pay=pending for the online payment method,Online-payment status branching,npm test,Pass,2026-07-21
+Functional,Unit,Booking creation orchestration,test/booking-verify-action.test.ts,reuses an existing profile by email instead of creating a duplicate backfilling only missing fields,Guest profile merge logic,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,redirects to /login when there is no session,Unauthenticated actor rejected,npm test,Pass,2026-07-21
+Security,Unit,Refund recording,test/cancellation-action.test.ts,rejects a non-manager (receptionist) actor,Manager+ role gate,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,rejects a booking that isn't cancelled,State-machine guard,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,rejects a booking that already has a refund recorded,Double-refund guard,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,marks payment_status 'refunded' when the refund covers the full total,Full-refund status transition,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,marks payment_status 'partially_refunded' for a partial refund,Partial-refund status transition,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,leaves payment_status untouched for a zero-amount refund (denied case),Zero-refund no-op,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,writes an audit log and sends the refund email then redirects with saved=1,Audit + email + redirect on success,npm test,Pass,2026-07-21
+Functional,Unit,Refund recording,test/cancellation-action.test.ts,rejects invalid form input (missing refund_reference) before touching the DB,Input validation before DB write,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,redirects to /login when there is no session,Unauthenticated actor rejected,npm test,Pass,2026-07-21
+Security,Unit,Walk-in booking,test/walkin-action.test.ts,bails for a non-staff actor,Staff-role gate,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,bails on invalid form input,Form validation gate,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,bails when the room type doesn't exist or is inactive,Room type existence/active check,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,bails when guests_count exceeds the room type's max_guests,Guest-count capacity check,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,bails when no room of that type is available,No-availability guard,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,bails when every room of that type is under maintenance,Maintenance-room exclusion,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,creates a confirmed unpaid booking a new stub guest profile and redirects to the booking page,End-to-end happy path,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,records a payments row when payment_status is paid,Paid-at-desk payment row,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,flips the room to occupied and stamps checked_in_at when initial_status is checked_in,Immediate check-in branching,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,reuses an existing guest profile matched by email instead of creating a duplicate,Guest profile reuse,npm test,Pass,2026-07-21
+Functional,Unit,Walk-in booking,test/walkin-action.test.ts,synthesizes a placeholder guest_email when none is supplied,Emailless guest handling,npm test,Pass,2026-07-21
+Security,Unit,Staff management,test/staff-actions.test.ts,inviteStaff redirects to /login when unauthenticated,requireSuperAdmin gate (unauthenticated),npm test,Pass,2026-07-21
+Security,Unit,Staff management,test/staff-actions.test.ts,changeRole rejects a non-super_admin actor,requireSuperAdmin gate (wrong role),npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,inviteStaff creates a new stub profile sends the invite writes an audit log and redirects saved=1,Invite happy path,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,inviteStaff updates an existing stub profile by email instead of inserting a duplicate,Invite dedupe by email,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,inviteStaff keeps the profile but surfaces an error when the invite email fails to send,Partial-failure handling,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,inviteStaff bails on invalid input without touching the DB,Input validation before DB write,npm test,Pass,2026-07-21
+Security,Unit,Staff management,test/staff-actions.test.ts,changeRole refuses to let a super_admin demote themselves,Self-demote safeguard,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,changeRole allows a super_admin to re-affirm their own role as super_admin,Self-reaffirm edge case,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,changeRole changes another profile's role and writes an audit log with old/new values,Role change + audit trail,npm test,Pass,2026-07-21
+Security,Unit,Staff management,test/staff-actions.test.ts,toggleActive refuses to let a super_admin disable themselves,Self-disable safeguard,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,toggleActive allows a super_admin to re-enable themselves,Self-reenable edge case,npm test,Pass,2026-07-21
+Functional,Unit,Staff management,test/staff-actions.test.ts,toggleActive disables another staff member and writes an audit log,Disable + audit trail,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage redirects to /login when unauthenticated,Unauthenticated actor rejected,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage rejects a guest (non-staff) session,Staff-role gate,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage redirects with an error when conversation_id is missing,Required field validation,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage silently no-ops on an empty message body,Empty-body no-op,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage rejects a message longer than 4000 chars,Message length cap,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage inserts the message with the staff sender's id and role,Message insert shape,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage redirects when the booking id isn't a uuid,Input validation,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage no-ops on an empty body redirecting back to the booking page,Empty-body no-op,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects a body over 4000 chars,Message length cap,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage redirects when the booking doesn't exist,Booking existence check,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects an unauthenticated request with no matching access_token,Anonymous auth rejected,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage accepts a matching access_token creates a conversation and sends as the guest,Token-based guest auth,npm test,Pass,2026-07-21
+Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage reuses an existing conversation instead of creating a duplicate,Conversation dedupe by guest,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage lets the signed-in guest owner send without a token,Session-based guest auth,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage lets signed-in staff reply on the guest's behalf tagged with the staff sender,Staff-on-behalf-of-guest auth,npm test,Pass,2026-07-21
+Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects a signed-in guest who doesn't own the booking and has no token,Cross-guest isolation,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,createAmenity inserts a row writes an audit log and redirects saved=1,Create happy path,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,createAmenity rejects invalid input (empty name) without inserting,Input validation,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,updateAmenity updates the row and logs old + new values,Update + audit old/new values,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,updateAmenity rejects a missing id,Input validation,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,deleteAmenity removes the row and logs the deleted values,Delete + audit trail,npm test,Pass,2026-07-21
+Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,deleteAmenity bails when id is missing,Input validation,npm test,Pass,2026-07-21
+Functional,Integration,Double booking,test/integration/double-booking.integration.test.ts,accepts the first booking and rejects an overlapping one on the same room,DB overlap exclusion constraint,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Functional,Integration,Double booking,test/integration/double-booking.integration.test.ts,allows an adjacent (non-overlapping) booking on the same room,Adjacent bookings allowed,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CAN read the public catalog (room_types),Public catalog readable by anon,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CAN read public CMS (site_settings),Public CMS readable by anon,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CANNOT see otp_verifications rows,OTP table hidden from anon,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CANNOT see audit_logs,Audit logs hidden from anon,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CANNOT see email_templates (super-admin only),Templates hidden from anon,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CANNOT insert into a manager-write table (room_types),Anon writes rejected,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,anon CANNOT insert a booking directly (no anon-insert policy),Anon booking insert rejected,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,guest CAN read their own booking,Guest reads own booking,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,a different guest CANNOT read someone else's booking,Cross-guest isolation,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,staff CAN read any booking,Staff read authorization,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,staff CAN update booking status (check-in/out write path),Staff write authorization,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,guest CANNOT update a booking (no guest-write policy),Guest write rejected,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Security,Integration,RLS,test/integration/rls.integration.test.ts,guest CANNOT read otp_verifications or audit_logs,Guest blocked from sensitive tables,RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Functional,E2E,Public smoke,e2e/public-smoke.spec.ts,every public route renders (HTTP < 400),Public routes load without error,npm run test:e2e,Pass,2026-07-21
+Functional,E2E,Public smoke,e2e/public-smoke.spec.ts,home page shows the hotel name from the DB,Home reads hotel name from DB,npm run test:e2e,Pass,2026-07-21
+Security,E2E,Public smoke,e2e/public-smoke.spec.ts,unauthenticated /dashboard redirects to /login,Dashboard auth-gated redirect,npm run test:e2e,Pass,2026-07-21
+Security,E2E,Public smoke,e2e/public-smoke.spec.ts,unauthenticated /admin redirects to /login,Admin auth-gated redirect,npm run test:e2e,Pass,2026-07-21
+Functional,E2E,Public smoke,e2e/public-smoke.spec.ts,a room detail page opens from the listing,Listing -> room detail navigation,npm run test:e2e,Pass,2026-07-21
+Functional,E2E,Staff back office (auth),e2e/dashboard.auth.spec.ts,logs in via OTP and reaches the bookings ops page,Authenticated OTP login -> bookings,RUN_DB_TESTS=1 npm run test:e2e,Pass,2026-07-21
+Security,Migration,Grants self-sufficiency,supabase/migrations/0012_grants.sql,Migrations alone (no manual DB patching) produce a fully working anon/authenticated/service_role permission set,"Fixed 2026-07-20 finding: none of 0001-0011 had a GRANT statement. 0012_grants.sql adds table grants + ALTER DEFAULT PRIVILEGES for future tables. Verified by removing the local Docker volume entirely, running `supabase start` from zero, and passing the full RLS + double-booking integration suite with no manual psql patching",RUN_DB_TESTS=1 npm run test:integration,Pass,2026-07-21
+Functional,Missing,Payment gateways,Khalti / eSewa integration,Does not exist,"BUILD_PLAN.md states webhooks are intentionally not implemented; the ""online"" payment branch redirects to confirmation with pay=pending and never actually moves money or verifies a signature. Feature gap, not a test gap -- nothing to test yet",N/A,Missing,-
+Functional,Missing,Admin CMS CRUD (remaining),"branding, faqs, gallery, pages/[slug], reviews, settings, templates, testimonials, menu, rooms actions.ts files under app/(admin) and app/(staff)/dashboard",No test at any tier,"Same create/update/delete shape as the now-tested amenities action (test/amenities-action.test.ts) -- lowest risk of the remaining gaps, content-management correctness only",N/A,Missing,-
