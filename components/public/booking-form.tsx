@@ -229,18 +229,22 @@ export function BookingForm(props: {
                 <dd>+{props.currencySymbol} {addonAmount.toLocaleString()}</dd>
               </div>
             )}
-            <div className="flex justify-between text-muted-foreground">
-              <dt>Tax ({(props.taxRate * 100).toFixed(1)}%)</dt>
-              <dd>
-                {props.currencySymbol} {totals.taxAmount.toLocaleString()}
-              </dd>
-            </div>
-            <div className="flex justify-between text-muted-foreground">
-              <dt>Service ({(props.serviceRate * 100).toFixed(1)}%)</dt>
-              <dd>
-                {props.currencySymbol} {totals.serviceAmount.toLocaleString()}
-              </dd>
-            </div>
+            {props.taxRate > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Tax ({(props.taxRate * 100).toFixed(1)}%)</dt>
+                <dd>
+                  {props.currencySymbol} {totals.taxAmount.toLocaleString()}
+                </dd>
+              </div>
+            )}
+            {props.serviceRate > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Service ({(props.serviceRate * 100).toFixed(1)}%)</dt>
+                <dd>
+                  {props.currencySymbol} {totals.serviceAmount.toLocaleString()}
+                </dd>
+              </div>
+            )}
             <div className="mt-2 flex justify-between border-t border-border pt-2 font-display text-base font-semibold">
               <dt>Total</dt>
               <dd>{props.currencySymbol} {totals.total.toLocaleString()}</dd>

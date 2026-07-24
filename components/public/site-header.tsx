@@ -25,14 +25,14 @@ export async function SiteHeader() {
   const showMyBookingsPill = Boolean(auth.user);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header className="sticky top-0 z-30 border-b border-onyx/60 bg-onyx text-cream">
       <div className="container flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2.5">
           <span
             aria-hidden
-            className="inline-block h-2.5 w-2.5 rounded-full bg-accent"
+            className="inline-block h-2.5 w-2.5 rounded-full bg-gold"
           />
-          <span className="font-display text-lg font-semibold tracking-tight">
+          <span className="font-display text-lg font-bold tracking-tight text-cream">
             {hotelName}
           </span>
         </Link>
@@ -53,7 +53,7 @@ export async function SiteHeader() {
             <Link
               href="/my-bookings"
               aria-label="My bookings"
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-2.5 py-2 text-sm font-medium hover:border-accent/40 hover:text-foreground md:px-3"
+              className="inline-flex items-center gap-2 rounded-[2px] border border-cream/30 px-2.5 py-2 text-sm font-medium text-cream/85 transition-colors hover:border-cream/60 hover:text-cream md:px-3"
             >
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">My bookings</span>
@@ -61,7 +61,7 @@ export async function SiteHeader() {
           )}
           <Link
             href="/#rooms"
-            className="inline-flex rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-soft hover:bg-primary/90 sm:px-4"
+            className="inline-flex rounded-[2px] bg-gold px-3 py-2 text-sm font-semibold text-onyx transition-colors hover:bg-gold-light sm:px-4"
           >
             Book a room
           </Link>

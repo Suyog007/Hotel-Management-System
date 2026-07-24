@@ -22,8 +22,9 @@ export const siteSettingsSchema = z.object({
   currency: z.string().trim().length(3).toUpperCase(),
   currency_symbol: z.string().trim().min(1).max(8),
   timezone: z.string().trim().min(1).max(64),
-  tax_rate: z.coerce.number().min(0).max(0.9999),
-  service_charge_rate: z.coerce.number().min(0).max(0.9999),
+  // Tax + service charge intentionally omitted: the hotel charges the room
+  // rate only (pricing uses the fixed TAX_RATE/SERVICE_CHARGE_RATE constants
+  // in lib/pricing, not these columns).
   google_place_id: optionalText,
 });
 

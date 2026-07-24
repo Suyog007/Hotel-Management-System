@@ -6,7 +6,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sign } from "@/lib/signed-cookie";
 import { findAvailableRoom } from "@/lib/availability";
-import { calculateBookingTotal, nightsBetween, AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, AC_ADDON_PRICE, isAcAddonEligible, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { bookingFormSchema, type BookingIntent } from "@/lib/validation/rooms";
 import {
   createBookingOtp,
@@ -61,11 +61,12 @@ export async function initiateBooking(formData: FormData) {
 
   const { data: settings } = await supabase
     .from("site_settings")
-    .select("tax_rate, service_charge_rate, hotel_name")
+    .select("hotel_name")
     .single();
-  const taxRate = Number((settings as { tax_rate?: number } | null)?.tax_rate ?? 0);
-  const serviceRate = Number((settings as { service_charge_rate?: number } | null)?.service_charge_rate ?? 0);
   const hotelName = (settings as { hotel_name?: string } | null)?.hotel_name ?? "the hotel";
+  // Room rate only — no tax or service charge (see lib/pricing constants).
+  const taxRate = TAX_RATE;
+  const serviceRate = SERVICE_CHARGE_RATE;
 
   const nights = nightsBetween(input.check_in, input.check_out);
   if (nights < 1) redirect(`${back}?error=${encodeURIComponent("Stay must be at least one night")}`);

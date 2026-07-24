@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { BookingForm } from "@/components/public/booking-form";
 import { RoomGallery } from "@/components/public/room-gallery";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
-import { AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
+import { AC_ADDON_PRICE, isAcAddonEligible, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { HotelRoomJsonLd } from "@/components/seo/json-ld";
 import { getSiteUrl } from "@/lib/site-url";
 import { initiateBooking } from "./actions";
@@ -99,8 +99,9 @@ export default async function RoomDetailPage(props: {
     google_place_uri?: string | null;
   };
   const symbol = s.currency_symbol ?? "Rs.";
-  const taxRate = Number(s.tax_rate ?? 0);
-  const serviceRate = Number(s.service_charge_rate ?? 0);
+  // Room rate only — no tax or service charge (see lib/pricing constants).
+  const taxRate = TAX_RATE;
+  const serviceRate = SERVICE_CHARGE_RATE;
   const google = {
     rating: s.google_place_rating ? Number(s.google_place_rating) : null,
     ratingCount: s.google_place_rating_count ?? null,

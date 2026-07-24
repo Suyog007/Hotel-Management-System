@@ -46,11 +46,11 @@ export async function SiteFooter() {
 
   return (
     <>
-      <footer className="mt-24 border-t border-border/60 bg-card/40">
-        <div className="container flex flex-col gap-4 py-10 md:flex-row md:items-center md:justify-between md:py-8">
+      <footer className="mt-24 bg-onyx text-cream/65">
+        <div className="container flex flex-col gap-4 py-12 md:flex-row md:items-center md:justify-between md:py-10">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
-            <span className="font-display text-base font-semibold">
+            <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-gold" />
+            <span className="font-display text-base font-bold text-cream">
               {s.hotel_name ?? "Hotel"}
             </span>
             {s.address && (
@@ -59,7 +59,7 @@ export async function SiteFooter() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={`Get directions to ${s.hotel_name ?? "the hotel"}`}
-                className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-accent"
+                className="inline-flex items-center gap-1 text-sm text-cream/65 transition-colors hover:text-gold"
               >
                 <MapPin className="h-3.5 w-3.5" />
                 <span>{s.address}</span>
@@ -67,13 +67,13 @@ export async function SiteFooter() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-cream/65">
             {PHONES.map((p) => (
               <a
                 key={p.tel}
                 href={`tel:${p.tel}`}
                 aria-label={`${p.label}: ${p.display}`}
-                className="inline-flex items-center gap-1 transition-colors hover:text-accent"
+                className="inline-flex items-center gap-1 transition-colors hover:text-gold"
               >
                 <Phone className="h-3.5 w-3.5" aria-hidden />
                 <span>{p.display}</span>
@@ -82,7 +82,7 @@ export async function SiteFooter() {
             {s.contact_email && (
               <a
                 href={`mailto:${s.contact_email}`}
-                className="transition-colors hover:text-accent"
+                className="transition-colors hover:text-gold"
               >
                 {s.contact_email}
               </a>
@@ -95,18 +95,18 @@ export async function SiteFooter() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`${s.hotel_name ?? "Hotel"} on ${name}`}
-                  className="grid h-8 w-8 place-items-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:border-accent/40 hover:text-foreground"
+                  className="grid h-8 w-8 place-items-center rounded-full border border-cream/20 text-cream/65 transition-colors hover:border-gold/60 hover:text-gold"
                 >
                   <Icon className="h-3.5 w-3.5" />
                 </a>
               ))}
             </div>
-            <span className="md:ml-2 text-xs">
+            <span className="font-label md:ml-2 text-[11px] text-cream/45">
               © {new Date().getFullYear()} {s.hotel_name ?? "Hotel"}
             </span>
             <Link
               href="/login"
-              className="text-[11px] uppercase tracking-wider text-muted-foreground/50 transition-colors hover:text-foreground"
+              className="font-label text-[11px] text-cream/35 transition-colors hover:text-cream/70"
             >
               Staff
             </Link>

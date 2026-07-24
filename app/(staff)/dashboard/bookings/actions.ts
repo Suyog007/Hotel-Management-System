@@ -6,7 +6,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { isStillAvailable } from "@/lib/availability";
-import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import type { TablesUpdate } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
@@ -200,17 +200,9 @@ export async function extendStay(formData: FormData) {
   );
   if (!basePrice) bail("Could not read the room's base price");
 
-  const { data: settings } = await admin
-    .from("site_settings")
-    .select("tax_rate, service_charge_rate")
-    .single();
-  const taxRate = Number(
-    (settings as { tax_rate?: number | string } | null)?.tax_rate ?? 0,
-  );
-  const serviceRate = Number(
-    (settings as { service_charge_rate?: number | string } | null)
-      ?.service_charge_rate ?? 0,
-  );
+  // Room rate only — no tax or service charge (see lib/pricing constants).
+  const taxRate = TAX_RATE;
+  const serviceRate = SERVICE_CHARGE_RATE;
 
   const extraNights = nightsBetween(b.check_out, newCheckOut);
   const extra = calculateBookingTotal({

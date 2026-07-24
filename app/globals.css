@@ -4,40 +4,48 @@
 
 @layer base {
   :root {
-    /* Surfaces */
-    --background: 35 35% 96%;          /* sand */
-    --foreground: 20 25% 16%;          /* espresso */
-    --card: 0 0% 100%;
-    --card-foreground: 20 25% 16%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 25% 16%;
+    /* Surfaces — cream base, onyx ink */
+    --background: 45 50% 92%;          /* cream */
+    --foreground: 0 0% 5%;             /* onyx */
+    --card: 44 46% 96%;                /* lifted cream */
+    --card-foreground: 0 0% 5%;
+    --popover: 44 46% 96%;
+    --popover-foreground: 0 0% 5%;
 
-    /* Brand */
-    --primary: 15 55% 38%;             /* terracotta */
-    --primary-foreground: 35 35% 96%;
-    --secondary: 30 25% 92%;
-    --secondary-foreground: 20 25% 16%;
-    --accent: 25 70% 55%;              /* copper */
-    --accent-foreground: 20 25% 12%;
+    /* Brand — onyx primary, sharp-gold accent */
+    --primary: 0 0% 5%;                /* onyx */
+    --primary-foreground: 45 50% 92%;  /* cream */
+    --secondary: 45 22% 87%;           /* warm silver-cream */
+    --secondary-foreground: 0 0% 5%;
+    --accent: 46 65% 52%;              /* sharp gold */
+    --accent-foreground: 0 0% 5%;      /* onyx on gold */
 
     /* Neutrals */
-    --muted: 30 20% 92%;
-    --muted-foreground: 25 12% 42%;
-    --border: 30 18% 86%;
-    --input: 30 18% 86%;
-    --ring: 25 70% 55%;
+    --muted: 45 24% 88%;
+    --muted-foreground: 30 5% 36%;     /* readable warm gray */
+    --border: 42 14% 80%;
+    --input: 42 14% 80%;
+    --ring: 46 65% 52%;                /* gold */
 
     /* Status */
-    --success: 85 35% 35%;             /* olive */
-    --success-foreground: 85 40% 96%;
-    --warning: 35 80% 50%;             /* amber */
-    --warning-foreground: 35 80% 14%;
-    --danger: 0 65% 45%;
-    --danger-foreground: 0 65% 96%;
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 0 65% 96%;
+    --success: 162 55% 20%;            /* emerald */
+    --success-foreground: 45 50% 92%;
+    --warning: 46 60% 44%;             /* deep gold */
+    --warning-foreground: 0 0% 5%;
+    --danger: 352 55% 34%;             /* oxblood */
+    --danger-foreground: 45 50% 92%;
+    --destructive: 352 55% 34%;
+    --destructive-foreground: 45 50% 92%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
+
+    /* Named palette (design-system tokens, raw hex) */
+    --onyx: #0d0d0d;
+    --gold: #d4af37;
+    --emerald: #0b3d2e;
+    --oxblood: #7a1f2b;
+    --cream: #f5f0e1;
+    --silver: #a8a9ad;
   }
 
   .dark {
@@ -94,31 +102,68 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   ::selection {
-    background-color: hsl(var(--accent) / 0.25);
+    background-color: hsl(var(--accent) / 0.22);
   }
 
+  /* Bricolage Grotesque — all display headlines, slightly hand-cut. */
   .font-display {
-    font-family: var(--font-display), Georgia, "Times New Roman", serif;
-    font-feature-settings: "ss01", "ss02", "kern";
-    letter-spacing: -0.01em;
+    font-family: var(--font-display), "Bricolage Grotesque", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+  }
+
+  /* Fraunces italic — one emphasized word in a headline, or full review quotes. */
+  .font-accent {
+    font-family: var(--font-accent), "Fraunces", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* Space Mono — eyebrows, tags, meta, price suffixes: a ledger/reception feel. */
+  .font-label {
+    font-family: var(--font-mono), "Space Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* Reusable eyebrow: small mono label above section headings. */
+  .eyebrow {
+    font-family: var(--font-mono), "Space Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    font-size: 0.6875rem;
+    line-height: 1;
   }
 }
 
 @layer utilities {
+  /* Cards sit flat at rest (rustic, ledger-like) — shadow is a hover signal. */
   .shadow-soft {
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 8px 24px -8px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 2px rgba(36, 31, 22, 0.05);
   }
   .shadow-soft-lg {
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 16px 40px -12px rgba(15, 23, 42, 0.14);
+    box-shadow: 0 24px 50px -30px rgba(36, 31, 22, 0.45);
   }
+  /* Cream page wash with the faintest gold/emerald warmth in the corners. */
   .bg-linen {
     background-image:
-      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.12) 0px, transparent 40%),
-      radial-gradient(at 0% 100%, hsl(var(--primary) / 0.12) 0px, transparent 40%);
+      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.08) 0px, transparent 42%),
+      radial-gradient(at 0% 100%, hsl(var(--success) / 0.06) 0px, transparent 42%);
     background-color: hsl(var(--background));
+  }
+  /* Ledger divider — a dashed hairline used only inside cards. */
+  .divide-dashed-ink {
+    border-top: 1px dashed hsl(var(--foreground) / 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -14,7 +14,7 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { countAvailableRooms } from "@/lib/availability";
-import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 
 type RoomTypeRow = {
   id: string;
@@ -74,8 +74,9 @@ export default async function RoomsListPage({
     service_charge_rate?: number | string;
   };
   const symbol = s.currency_symbol ?? "Rs.";
-  const taxRate = Number(s.tax_rate ?? 0);
-  const serviceRate = Number(s.service_charge_rate ?? 0);
+  // Room rate only — no tax or service charge (see lib/pricing constants).
+  const taxRate = TAX_RATE;
+  const serviceRate = SERVICE_CHARGE_RATE;
 
   // Stay context: only honor search params when both dates parse and form a
   // positive-night range. Anything malformed degrades to "no stay context"

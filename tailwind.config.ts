@@ -10,8 +10,8 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "1.25rem",
-      screens: { "2xl": "1320px" },
+      padding: { DEFAULT: "1.25rem", lg: "2rem" },
+      screens: { "2xl": "1180px" },
     },
     extend: {
       colors: {
@@ -60,6 +60,13 @@ const config: Config = {
           DEFAULT: "hsl(var(--danger))",
           foreground: "hsl(var(--danger-foreground))",
         },
+        /* Named design-system palette (raw hex) for direct use. */
+        onyx: { DEFAULT: "#0D0D0D", soft: "#1C1C1C" },
+        gold: { DEFAULT: "#D4AF37", light: "#E1C25A" },
+        emerald: { DEFAULT: "#0B3D2E", light: "#12563F" },
+        oxblood: { DEFAULT: "#7A1F2B", light: "#9A2C3A" },
+        cream: "#F5F0E1",
+        silver: "#A8A9AD",
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -68,12 +75,16 @@ const config: Config = {
         sm: "calc(var(--radius) - 6px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "Karla", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Bricolage Grotesque", "sans-serif"],
+        mono: ["var(--font-mono)", "Space Mono", "monospace"],
+        accent: ["var(--font-accent)", "Fraunces", "Georgia", "serif"],
       },
       fontSize: {
-        "display-xl": ["clamp(2.5rem, 5vw, 4rem)", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
-        "display-lg": ["clamp(2rem, 4vw, 3rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        // Bricolage display scale, per design system.
+        "display-xl": ["clamp(2.375rem, 6vw, 4.375rem)", { lineHeight: "1.02", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.75rem, 4vw, 2.625rem)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
+        "display-md": ["1.4375rem", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
       },
       keyframes: {
         "fade-in": {
