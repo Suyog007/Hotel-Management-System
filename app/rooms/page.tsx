@@ -46,6 +46,7 @@ export default async function RoomsListPage({
     check_in?: string;
     check_out?: string;
     guests?: string;
+    error?: string;
   }>;
 }) {
   const sp = await searchParams;
@@ -136,6 +137,15 @@ export default async function RoomsListPage({
               : "Pick a room to see availability and book. Prices include nightly base rate; tax and service are added at checkout."
           }
         />
+
+        {sp.error && (
+          <div
+            role="alert"
+            className="mb-8 rounded-xl border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger"
+          >
+            {sp.error}
+          </div>
+        )}
 
         {stay && (
           <div className="mb-8 flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">

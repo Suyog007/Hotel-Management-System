@@ -8,12 +8,14 @@ import { sendTemplatedEmail } from "@/lib/email-from-template";
 import { sign, verify } from "@/lib/signed-cookie";
 import { setGuestSession } from "@/lib/guest-session";
 import { isStillAvailable } from "@/lib/availability";
+import { getSiteUrl } from "@/lib/site-url";
 import { bookingIntentSchema, type BookingIntent } from "@/lib/validation/rooms";
 import type { TablesInsert, TablesUpdate } from "@/types/database";
 import {
   createBookingOtp,
   sendBookingOtpEmail,
   verifyBookingOtp,
+  isBookingOtpRateLimited,
 } from "@/lib/booking-otp";
 
 const INTENT_COOKIE = "booking_intent";
@@ -132,7 +134,15 @@ export async function verifyAndCreateBooking(formData: FormData) {
     .single();
   if (bErr || !booking) {
     cookieStore.delete(INTENT_COOKIE);
-    redirect(`/rooms?error=${encodeURIComponent(bErr?.message ?? "Booking create failed")}`);
+    // 23P01 = the bookings_no_overlap exclusion constraint fired: another guest
+    // won the race for this room in the moment between our availability recheck
+    // and this insert. Show a friendly, actionable message rather than the raw
+    // Postgres error (and never leak internal DB text to the guest).
+    const friendly =
+      bErr?.code === "23P01"
+        ? "That room was just taken. Please choose your dates again."
+        : "Sorry, we couldn't complete your booking. Please try again.";
+    redirect(`/rooms?error=${encodeURIComponent(friendly)}`);
   }
   const b = booking as { id: string; booking_code: string; access_token: string };
 
@@ -164,8 +174,7 @@ export async function verifyAndCreateBooking(formData: FormData) {
     currency_symbol?: string;
     google_place_uri?: string | null;
   };
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
-  const viewUrl = `${siteUrl}/booking/${b.id}?t=${b.access_token}`;
+  const viewUrl = `${getSiteUrl()}/booking/${b.id}?t=${b.access_token}`;
   await sendTemplatedEmail("booking_confirmation", intent.guest_email, {
     guest_name: intent.guest_name,
     booking_code: b.booking_code,
@@ -178,8 +187,7 @@ export async function verifyAndCreateBooking(formData: FormData) {
     google_review_url: settingsX.google_place_uri ?? "",
   });
 
-  const tail = intent.payment_method === "online" ? "&pay=pending" : "";
-  redirect(`/booking/${b.id}?t=${b.access_token}${tail}`);
+  redirect(`/booking/${b.id}?t=${b.access_token}`);
 }
 
 export async function resendBookingOtp() {
@@ -208,6 +216,12 @@ export async function resendBookingOtp() {
     .select("hotel_name")
     .single();
   const hotelName = (settings?.hotel_name as string) ?? "the hotel";
+
+  if (await isBookingOtpRateLimited(intent.guest_email)) {
+    redirect(
+      `/booking/verify?email=${encodeURIComponent(intent.guest_email)}&error=${encodeURIComponent("Too many code requests. Please wait a few minutes before trying again.")}`,
+    );
+  }
 
   const code = await createBookingOtp(intent.guest_email);
   try {

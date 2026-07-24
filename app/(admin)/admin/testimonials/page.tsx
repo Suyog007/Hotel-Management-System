@@ -25,17 +25,25 @@ type TestimonialRow = {
   is_visible: boolean;
 };
 
+const PAGE_SIZE = 50;
+
 export default async function AdminTestimonialsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; page?: string }>;
 }) {
   const sp = await props.searchParams;
+  const page = Math.max(1, Number(sp.page ?? 1));
+  const offset = (page - 1) * PAGE_SIZE;
+
   const supabase = await createServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("testimonials")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("sort_order")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1);
   const rows = (data as TestimonialRow[] | null) ?? [];
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -150,6 +158,34 @@ export default async function AdminTestimonialsPage(props: {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      {pages > 1 && <Pager page={page} pages={pages} sp={sp} />}
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  pages,
+  sp,
+}: {
+  page: number;
+  pages: number;
+  sp: Record<string, string | undefined>;
+}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (v && k !== "page") params.set(k, v);
+  }
+  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
+  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span>Page {page} of {pages}</span>
+      <div className="flex gap-2">
+        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
+        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
       </div>
     </div>
   );

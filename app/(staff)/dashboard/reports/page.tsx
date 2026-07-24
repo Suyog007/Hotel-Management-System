@@ -14,6 +14,19 @@ type AggBooking = {
   rooms: { room_types: { id: string; name: string } } | null;
 };
 
+// Statuses that count toward realised revenue.
+const REVENUE_STATUSES = ["confirmed", "checked_in", "checked_out"] as const;
+// All lifecycle stages we surface counts for.
+const ALL_STATUSES = [
+  "pending",
+  "confirmed",
+  "checked_in",
+  "checked_out",
+  "cancelled",
+] as const;
+// Safety cap for the revenue/room-type scan below. See TODO before the query.
+const AGG_SCAN_CAP = 5000;
+
 export default async function ReportsPage() {
   const supabase = await createServerClient();
   const { data: auth } = await supabase.auth.getUser();
@@ -39,24 +52,47 @@ export default async function ReportsPage() {
     );
   }
 
-  const { data, count: bookingsCount } = await supabase
+  // Per-status counts are computed DB-side (one head:true count per status) so
+  // they stay exact regardless of table size — no full-table fetch needed.
+  const statusCountResults = await Promise.all(
+    ALL_STATUSES.map((status) =>
+      supabase
+        .from("bookings")
+        .select("*", { count: "exact", head: true })
+        .eq("status", status)
+        .then(({ count }) => [status, count ?? 0] as const),
+    ),
+  );
+  const byStatus: Record<string, number> = {};
+  for (const [status, c] of statusCountResults) byStatus[status] = c;
+
+  // Total bookings across every status (including any not in ALL_STATUSES).
+  const { count: totalBookingsCount } = await supabase
+    .from("bookings")
+    .select("*", { count: "exact", head: true });
+
+  // TODO(perf): revenue (SUM of total_amount) and room-type grouping have no
+  // clean Supabase-JS aggregate, so they still require a row scan. This is
+  // capped at AGG_SCAN_CAP rows to bound worst-case memory; beyond that the
+  // revenue/top-room-type figures under-count. Replace with a Postgres RPC or
+  // materialized view (SUM + GROUP BY) to make these exact and unbounded-safe.
+  const { data } = await supabase
     .from("bookings")
     .select(
       "status, total_amount, room_id, rooms:room_id(room_types:type_id(id, name))",
-      { count: "exact" },
-    );
+    )
+    .limit(AGG_SCAN_CAP);
   const rows = (data as unknown as AggBooking[] | null) ?? [];
 
   const { count: totalRoomsCount } = await supabase
     .from("rooms")
     .select("*", { count: "exact", head: true });
 
-  const byStatus: Record<string, number> = {};
+  const revenueStatuses = new Set<string>(REVENUE_STATUSES);
   let revenue = 0;
   const byRoomType: Record<string, { name: string; count: number }> = {};
   for (const r of rows) {
-    byStatus[r.status] = (byStatus[r.status] ?? 0) + 1;
-    if (["confirmed", "checked_in", "checked_out"].includes(r.status)) {
+    if (revenueStatuses.has(r.status)) {
       revenue += Number(r.total_amount ?? 0);
     }
     const rtName = r.rooms?.room_types?.name ?? "Unknown";
@@ -65,7 +101,7 @@ export default async function ReportsPage() {
     byRoomType[rtId].count += 1;
   }
 
-  const total = bookingsCount ?? rows.length;
+  const total = totalBookingsCount ?? 0;
   const cancelled = byStatus["cancelled"] ?? 0;
   const cancellationRate = total > 0 ? Math.round((cancelled / total) * 1000) / 10 : 0;
   const active =

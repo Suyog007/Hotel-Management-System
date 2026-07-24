@@ -16,16 +16,33 @@ type ConvRow = {
   profiles: { id: string; full_name: string; email: string | null; phone: string | null } | null;
 };
 
-export default async function StaffChatIndex() {
+const PAGE_SIZE = 50;
+
+export default async function StaffChatIndex(props: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await props.searchParams;
+  const page = Math.max(1, Number(sp.page ?? 1));
+  const offset = (page - 1) * PAGE_SIZE;
+
   const supabase = await createServerClient();
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("conversations")
     .select(
       "id, status, last_message_at, staff_unread_count, guest_unread_count, profiles:guest_id(id, full_name, email, phone)",
+      { count: "exact" },
     )
-    .order("last_message_at", { ascending: false, nullsFirst: false });
+    .order("last_message_at", { ascending: false, nullsFirst: false })
+    .range(offset, offset + PAGE_SIZE - 1);
   const rows = (data as unknown as ConvRow[] | null) ?? [];
-  const unreadCount = rows.filter((r) => r.staff_unread_count > 0).length;
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Table-wide unread count for the header badge (independent of pagination).
+  const { count: unreadCount } = await supabase
+    .from("conversations")
+    .select("*", { count: "exact", head: true })
+    .gt("staff_unread_count", 0);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -34,7 +51,7 @@ export default async function StaffChatIndex() {
         title="Chat"
         description="One conversation per guest. Highlighted rows have new messages for you."
         actions={
-          unreadCount > 0 && <Badge variant="solid">{unreadCount} unread</Badge>
+          (unreadCount ?? 0) > 0 && <Badge variant="solid">{unreadCount} unread</Badge>
         }
       />
 
@@ -81,6 +98,34 @@ export default async function StaffChatIndex() {
           ))}
         </div>
       )}
+
+      {pages > 1 && <Pager page={page} pages={pages} sp={sp} />}
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  pages,
+  sp,
+}: {
+  page: number;
+  pages: number;
+  sp: Record<string, string | undefined>;
+}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (v && k !== "page") params.set(k, v);
+  }
+  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
+  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span>Page {page} of {pages}</span>
+      <div className="flex gap-2">
+        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
+        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
+      </div>
     </div>
   );
 }

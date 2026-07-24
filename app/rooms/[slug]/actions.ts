@@ -8,7 +8,11 @@ import { sign } from "@/lib/signed-cookie";
 import { findAvailableRoom } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween, AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
 import { bookingFormSchema, type BookingIntent } from "@/lib/validation/rooms";
-import { createBookingOtp, sendBookingOtpEmail } from "@/lib/booking-otp";
+import {
+  createBookingOtp,
+  sendBookingOtpEmail,
+  isBookingOtpRateLimited,
+} from "@/lib/booking-otp";
 
 const INTENT_COOKIE = "booking_intent";
 const INTENT_TTL_SECONDS = 15 * 60; // 15 minutes — aligns with OTP expiry
@@ -111,6 +115,15 @@ export async function initiateBooking(formData: FormData) {
     path: "/",
     maxAge: INTENT_TTL_SECONDS,
   });
+
+  // Throttle issuance so this endpoint can't be used to email-bomb an address
+  // or burn the daily Gmail quota.
+  if (await isBookingOtpRateLimited(input.guest_email)) {
+    cookieStore.delete(INTENT_COOKIE);
+    redirect(
+      `${back}?error=${encodeURIComponent("Too many verification requests. Please wait a few minutes and try again.")}`,
+    );
+  }
 
   // Issue our own OTP (no Supabase Auth account is created). Send via Resend.
   const code = await createBookingOtp(input.guest_email);

@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { createServerClient } from "@/lib/supabase/server";
 import { HotelJsonLd } from "@/components/seo/json-ld";
+import { getSiteUrl } from "@/lib/site-url";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,7 +17,7 @@ const playfair = Playfair_Display({
   variable: "--font-display",
 });
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:4000";
+const SITE_URL = getSiteUrl();
 
 export async function generateMetadata(): Promise<Metadata> {
   const supabase = await createServerClient();

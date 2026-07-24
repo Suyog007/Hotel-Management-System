@@ -5,6 +5,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { safeNextPath } from "@/lib/validation/auth";
 import { requestOtp } from "./actions";
 
 export default async function LoginPage(props: {
@@ -21,7 +22,8 @@ export default async function LoginPage(props: {
       .eq("auth_user_id", auth.user.id)
       .single();
     const role = (profile?.role as string | undefined) ?? "guest";
-    if (sp.next) redirect(sp.next);
+    const dest = safeNextPath(sp.next);
+    if (dest) redirect(dest);
     if (role === "super_admin") redirect("/admin");
     if (role === "manager" || role === "receptionist") redirect("/dashboard");
     redirect("/");

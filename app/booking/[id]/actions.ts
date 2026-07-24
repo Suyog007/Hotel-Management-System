@@ -68,10 +68,18 @@ export async function cancelBooking(formData: FormData) {
     redirect(`/booking/${id}${tail}&error=${encodeURIComponent("This booking can't be cancelled.")}`.replace("?t=", tail ? "?t=" : "?"));
   }
 
-  const { data: tiers } = await admin
+  const { data: tiers, error: tiersError } = await admin
     .from("cancellation_policy")
     .select("id, hours_before_checkin, refund_percentage, label")
     .order("hours_before_checkin", { ascending: false });
+
+  // Never silently proceed with an empty policy: computeRefund would return 0,
+  // recording a wrong "no refund" for a guest who actually paid. Fail loudly so
+  // the cancellation can be retried once the policy read succeeds.
+  if (tiersError) {
+    const tail = isTokenHolder ? `?t=${token}&` : "?";
+    redirect(`/booking/${id}${tail}error=${encodeURIComponent("Couldn't load the refund policy. Please try again.")}`);
+  }
 
   const refund = computeRefund({
     paidAmount: Number(b.paid_amount ?? 0),
