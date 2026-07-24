@@ -241,7 +241,10 @@ export default async function HomePage() {
           )}
           <div className="absolute inset-0 -z-10 bg-gradient-to-t from-foreground/85 via-foreground/40 to-foreground/30" />
 
-          <div className="container relative pb-16 pt-32 md:pb-24 md:pt-44">
+          {/* Vertical rhythm scales with viewport height (clamp) so the
+              availability card stays above the fold on short laptop screens
+              (1366×768) while keeping the cinematic spacing on tall ones. */}
+          <div className="container relative pb-[clamp(3rem,8svh,6rem)] pt-[clamp(6rem,16svh,11rem)]">
             <div className="max-w-3xl text-primary-foreground">
               <div className="mb-5 flex flex-wrap items-center gap-2">
                 <p className="font-label inline-flex items-center gap-2 rounded-[2px] border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1.5 text-[11px] backdrop-blur">
@@ -258,7 +261,7 @@ export default async function HomePage() {
                 both a continental breakfast and a Newari thali.
                 {s.address ? <> · {s.address}</> : null}
               </p>
-              <div className="mt-10 flex flex-wrap gap-3">
+              <div className="mt-[clamp(1.5rem,4svh,2.5rem)] flex flex-wrap gap-3">
                 <Link href="/#rooms">
                   <Button size="lg" variant="accent" className="gap-2">
                     Browse rooms
@@ -277,7 +280,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="mt-12 max-w-4xl md:mt-16">
+            <div className="mt-[clamp(2rem,6svh,4rem)] max-w-4xl">
               <HeroSearch />
             </div>
           </div>
@@ -733,14 +736,14 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
             {room.description}
           </p>
         )}
-        <div className="divide-dashed-ink mt-5 flex items-center justify-between pt-4">
-          <p className="leading-none">
+        <div className="divide-dashed-ink mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-4">
+          <p className="whitespace-nowrap leading-none">
             <span className="font-display text-2xl font-bold text-oxblood">
               {currency} {room.base_price.toLocaleString()}
             </span>
             <span className="ml-1 text-sm text-muted-foreground"> / night</span>
           </p>
-          <span className="inline-flex items-center gap-1 text-sm font-semibold text-onyx transition-colors group-hover:text-oxblood">
+          <span className="inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-onyx transition-colors group-hover:text-oxblood">
             View room
             <ArrowRight className="h-3.5 w-3.5" />
           </span>
