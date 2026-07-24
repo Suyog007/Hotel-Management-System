@@ -20,7 +20,7 @@ export default async function AdminSettingsPage(props: {
       <PageHeader
         eyebrow="Identity"
         title="Site settings"
-        description="Hotel identity, contact details, and money knobs (currency, tax, service)."
+        description="Hotel identity, contact details, and currency."
       />
 
       {sp.saved && (
@@ -50,14 +50,12 @@ export default async function AdminSettingsPage(props: {
 
         <Card>
           <CardHeader>
-            <CardTitle>Money &amp; locale</CardTitle>
+            <CardTitle>Currency &amp; locale</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Currency (ISO 4217)" name="currency" defaultValue={(s.currency as string) ?? "NPR"} required />
             <Field label="Currency symbol" name="currency_symbol" defaultValue={(s.currency_symbol as string) ?? "Rs."} required />
             <Field label="Timezone" name="timezone" defaultValue={(s.timezone as string) ?? "Asia/Kathmandu"} required />
-            <Field label="Tax rate (0–0.9999)" name="tax_rate" type="number" step="0.0001" min="0" max="0.9999" defaultValue={String(s.tax_rate ?? 0.13)} required />
-            <Field label="Service charge rate (0–0.9999)" name="service_charge_rate" type="number" step="0.0001" min="0" max="0.9999" defaultValue={String(s.service_charge_rate ?? 0.10)} required />
           </CardContent>
         </Card>
 
