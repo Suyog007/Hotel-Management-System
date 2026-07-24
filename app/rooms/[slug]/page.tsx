@@ -11,9 +11,10 @@ import { RoomGallery } from "@/components/public/room-gallery";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
 import { AC_ADDON_PRICE, isAcAddonEligible } from "@/lib/pricing";
 import { HotelRoomJsonLd } from "@/components/seo/json-ld";
+import { getSiteUrl } from "@/lib/site-url";
 import { initiateBooking } from "./actions";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:4000";
+const SITE_URL = getSiteUrl();
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;

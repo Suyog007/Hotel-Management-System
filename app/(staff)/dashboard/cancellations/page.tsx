@@ -28,10 +28,14 @@ type CancelledRow = {
   refunded_at: string | null;
 };
 
+const PAGE_SIZE = 50;
+
 export default async function CancellationsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; page?: string }>;
 }) {
   const sp = await props.searchParams;
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createServerClient();
 
   const { data: auth } = await supabase.auth.getUser();
@@ -41,14 +45,32 @@ export default async function CancellationsPage(props: {
   const role = (actor as { role: string } | null)?.role ?? "guest";
   const isManagerPlus = role === "manager" || role === "super_admin";
 
-  const { data } = await supabase
+  const { data, count } = await supabase
     .from("bookings")
     .select(
       "id, booking_code, guest_name, guest_email, check_in, check_out, paid_amount, total_amount, payment_method, cancellation_reason, cancelled_at, refund_amount_due, refunded_amount, refund_reference, refunded_at",
+      { count: "exact" },
     )
     .eq("status", "cancelled")
-    .order("cancelled_at", { ascending: false });
+    .order("cancelled_at", { ascending: false })
+    .range(offset, offset + PAGE_SIZE - 1);
   const rows = (data as CancelledRow[] | null) ?? [];
+  const total = count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  // Exact, table-wide badge counts (independent of the current page).
+  const [{ count: pendingTotal }, { count: refundedTotal }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "cancelled")
+      .is("refunded_at", null),
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "cancelled")
+      .not("refunded_at", "is", null),
+  ]);
 
   const { data: settings } = await supabase
     .from("site_settings")
@@ -67,8 +89,8 @@ export default async function CancellationsPage(props: {
         description="Refunds are settled out-of-band (Khalti/eSewa dashboards or cash). Record the actual amount and reference once you've issued it."
         actions={
           <div className="flex items-center gap-3 text-sm">
-            <Badge variant="warning">{`${pending.length} pending`}</Badge>
-            <Badge variant="outline">{`${done.length} refunded`}</Badge>
+            <Badge variant="warning">{`${pendingTotal ?? 0} pending`}</Badge>
+            <Badge variant="outline">{`${refundedTotal ?? 0} refunded`}</Badge>
           </div>
         }
       />
@@ -180,6 +202,34 @@ export default async function CancellationsPage(props: {
           </div>
         </section>
       )}
+
+      {pages > 1 && <Pager page={page} pages={pages} sp={sp} />}
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  pages,
+  sp,
+}: {
+  page: number;
+  pages: number;
+  sp: Record<string, string | undefined>;
+}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (v && k !== "page") params.set(k, v);
+  }
+  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
+  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span>Page {page} of {pages}</span>
+      <div className="flex gap-2">
+        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
+        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
+      </div>
     </div>
   );
 }

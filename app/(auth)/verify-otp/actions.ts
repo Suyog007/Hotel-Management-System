@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
-import { verifyOtpSchema } from "@/lib/validation/auth";
+import { verifyOtpSchema, safeNextPath } from "@/lib/validation/auth";
 
 export async function verifyOtp(formData: FormData) {
   const parsed = verifyOtpSchema.safeParse({
@@ -48,7 +48,8 @@ export async function verifyOtp(formData: FormData) {
     newValues: { role },
   });
 
-  if (parsed.data.next) redirect(parsed.data.next);
+  const dest = safeNextPath(parsed.data.next);
+  if (dest) redirect(dest);
   if (role === "super_admin") redirect("/admin");
   if (role === "manager" || role === "receptionist") redirect("/dashboard");
   redirect("/");

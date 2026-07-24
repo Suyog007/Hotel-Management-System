@@ -68,6 +68,7 @@ if (loaded.length) {
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 const gmailUser = process.env.GMAIL_USER;
 const gmailPass = process.env.GMAIL_APP_PASSWORD;
 const session = process.env.SESSION_COOKIE_SECRET;
@@ -83,6 +84,13 @@ row(
   session ? c.dim(`(${session.length} chars)`) : c.dim("(not set)"),
   session && session.length >= 16 ? "ok" : "bad",
 );
+// Required in production: absolute links for emails, OG tags, sitemap, robots.
+// A localhost fallback here silently ships broken booking-confirmation links.
+row(
+  "NEXT_PUBLIC_SITE_URL",
+  siteUrl || c.dim("(not set — required in production)"),
+  siteUrl ? "ok" : "bad",
+);
 
 console.log(`\n${c.bold("=== Optional (features unlock when set) ===")}`);
 row("GMAIL_USER", gmailUser || c.dim("(not set)"), gmailUser ? "ok" : "warn");
@@ -91,7 +99,7 @@ row("CRON_SECRET", mask(cronSecret), cronSecret ? "ok" : " ");
 row("GOOGLE_PLACES_API_KEY", mask(googleKey), googleKey ? "ok" : " ");
 
 const missingRequired =
-  !url || !anon || !service || !session || session.length < 16;
+  !url || !anon || !service || !session || session.length < 16 || !siteUrl;
 
 if (missingRequired) {
   console.log(

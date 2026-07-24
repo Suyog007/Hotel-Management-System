@@ -16,10 +16,14 @@ type CachedReview = {
   fetched_at: string;
 };
 
+const PAGE_SIZE = 50;
+
 export default async function AdminReviewsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string; inserted?: string; updated?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; inserted?: string; updated?: string; page?: string }>;
 }) {
   const sp = await props.searchParams;
+  const page = Math.max(1, Number.parseInt(sp.page ?? "1", 10) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
   const supabase = await createServerClient();
 
   const [{ data: settings }, { data: reviews, count }] = await Promise.all([
@@ -32,8 +36,10 @@ export default async function AdminReviewsPage(props: {
     supabase
       .from("google_reviews_cache")
       .select("id, author_name, author_photo_url, rating, comment, published_at, fetched_at", { count: "exact" })
-      .order("published_at", { ascending: false }),
+      .order("published_at", { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1),
   ]);
+  const pages = Math.max(1, Math.ceil((count ?? 0) / PAGE_SIZE));
   const sx = (settings ?? {}) as {
     google_place_id?: string | null;
     google_place_name?: string | null;
@@ -147,14 +153,14 @@ export default async function AdminReviewsPage(props: {
       </Card>
 
       <section>
-        <h2 className="mb-3 text-xl font-semibold">Cache preview</h2>
+        <h2 className="mb-3 text-xl font-semibold">Cached reviews</h2>
         {rows.length === 0 && (
           <p className="text-sm text-muted-foreground">
             No cached reviews yet. Click <strong>Refresh now</strong> after configuring the Place ID.
           </p>
         )}
         <div className="space-y-3">
-          {rows.slice(0, 5).map((r) => (
+          {rows.map((r) => (
             <Card key={r.id}>
               <CardContent className="space-y-2 pt-6">
                 <div className="flex items-center gap-3">
@@ -175,7 +181,39 @@ export default async function AdminReviewsPage(props: {
             </Card>
           ))}
         </div>
+
+        {pages > 1 && (
+          <div className="mt-4">
+            <Pager page={page} pages={pages} sp={sp} />
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function Pager({
+  page,
+  pages,
+  sp,
+}: {
+  page: number;
+  pages: number;
+  sp: Record<string, string | undefined>;
+}) {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (v && k !== "page") params.set(k, v);
+  }
+  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
+  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
+  return (
+    <div className="flex items-center justify-between text-sm">
+      <span>Page {page} of {pages}</span>
+      <div className="flex gap-2">
+        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
+        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
+      </div>
     </div>
   );
 }

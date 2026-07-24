@@ -6,6 +6,31 @@ import { sendEmail } from "@/lib/email";
 const TTL_SECONDS = 15 * 60; // matches the booking_intent cookie TTL
 const MAX_ATTEMPTS = 5;
 
+// Issuance throttle: at most MAX_SENDS_PER_WINDOW booking codes may be minted
+// for a given email within RATE_WINDOW_SECONDS. Prevents email-bombing an
+// arbitrary address and exhausting the Gmail daily send quota (a booking-flow
+// DoS). Verification is separately capped by MAX_ATTEMPTS.
+const RATE_WINDOW_SECONDS = 10 * 60;
+const MAX_SENDS_PER_WINDOW = 3;
+
+/**
+ * Returns true if `email` has already been issued MAX_SENDS_PER_WINDOW booking
+ * codes within the last RATE_WINDOW_SECONDS. Callers should refuse to issue
+ * (and show a friendly "try again later") when this is true.
+ */
+export async function isBookingOtpRateLimited(email: string): Promise<boolean> {
+  const admin = createAdminClient();
+  const lowered = email.trim().toLowerCase();
+  const since = new Date(Date.now() - RATE_WINDOW_SECONDS * 1000).toISOString();
+  const { count } = await admin
+    .from("otp_verifications")
+    .select("id", { count: "exact", head: true })
+    .eq("purpose", "booking")
+    .ilike("email", lowered)
+    .gt("created_at", since);
+  return (count ?? 0) >= MAX_SENDS_PER_WINDOW;
+}
+
 function hashCode(code: string): string {
   const secret = process.env.SESSION_COOKIE_SECRET;
   if (!secret || secret.length < 16) {

@@ -4,7 +4,7 @@ import {
   roomSchema,
   bookingFormSchema,
 } from "@/lib/validation/rooms";
-import { emailSchema, verifyOtpSchema } from "@/lib/validation/auth";
+import { emailSchema, verifyOtpSchema, safeNextPath } from "@/lib/validation/auth";
 import {
   parseSectionContent,
   defaultSectionContent,
@@ -67,6 +67,29 @@ describe("bookingFormSchema", () => {
   it("rejects an unknown payment method", () => {
     const r = bookingFormSchema.safeParse({ ...base, payment_method: "bitcoin" });
     expect(r.success).toBe(false);
+  });
+
+  it("rejects 'online' payment (v1 is pay-at-hotel only; guards the pending-booking hole)", () => {
+    // A crafted request must not be able to set payment_method=online, which
+    // would create an unpayable `pending` booking that blocks a room forever.
+    const r = bookingFormSchema.safeParse({ ...base, payment_method: "online" });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("safeNextPath (open-redirect guard)", () => {
+  it("allows same-origin absolute paths", () => {
+    expect(safeNextPath("/dashboard")).toBe("/dashboard");
+    expect(safeNextPath("/admin/staff")).toBe("/admin/staff");
+  });
+
+  it("rejects external and protocol-relative URLs", () => {
+    expect(safeNextPath("https://evil.com")).toBeNull();
+    expect(safeNextPath("//evil.com")).toBeNull();
+    expect(safeNextPath("/\\evil.com")).toBeNull();
+    expect(safeNextPath("javascript:alert(1)")).toBeNull();
+    expect(safeNextPath("")).toBeNull();
+    expect(safeNextPath(undefined)).toBeNull();
   });
 });
 

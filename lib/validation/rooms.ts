@@ -73,7 +73,10 @@ export const bookingFormSchema = z
       .min(7)
       .max(32)
       .regex(/^[+\d][\d\s\-()]+$/, "Enter a valid phone number"),
-    payment_method: z.enum(["online", "pay_at_hotel"]),
+    // v1 is pay-at-hotel only; the "Pay online" UI control is disabled and the
+    // form submits a fixed value. Locked to a literal so a crafted request can't
+    // create an unpayable `pending` booking. Restore the enum when online pay ships.
+    payment_method: z.literal("pay_at_hotel"),
     special_requests: optionalText,
     // Optional AC upgrade (Standard rooms only; re-validated server-side).
     ac_addon: z.boolean().default(false),
@@ -92,7 +95,7 @@ export const bookingIntentSchema = z.object({
   guest_name: z.string(),
   guest_email: z.string(),
   guest_phone: z.string(),
-  payment_method: z.enum(["online", "pay_at_hotel"]),
+  payment_method: z.literal("pay_at_hotel"),
   subtotal: z.number(),
   tax_amount: z.number(),
   service_amount: z.number(),
