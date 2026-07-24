@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Menu",
   description:
     "Continental and Newari menu at Hotel Vardani's in-house restaurant in Gaushala, Kathmandu — 5 minutes from Pashupatinath.",
+  alternates: { canonical: "/menu" },
 };
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";

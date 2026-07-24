@@ -9,6 +9,7 @@ import { sign, verify } from "@/lib/signed-cookie";
 import { setGuestSession } from "@/lib/guest-session";
 import { isStillAvailable } from "@/lib/availability";
 import { getSiteUrl } from "@/lib/site-url";
+import { escapeLike } from "@/lib/sql-like";
 import { bookingIntentSchema, type BookingIntent } from "@/lib/validation/rooms";
 import type { TablesInsert, TablesUpdate } from "@/types/database";
 import {
@@ -76,7 +77,7 @@ export async function verifyAndCreateBooking(formData: FormData) {
   const { data: existing } = await admin
     .from("profiles")
     .select("id, phone, full_name")
-    .ilike("email", intent.guest_email)
+    .ilike("email", escapeLike(intent.guest_email))
     .maybeSingle();
   if (existing) {
     guestId = (existing as { id: string }).id;

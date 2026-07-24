@@ -10,7 +10,7 @@ import { sendTemplatedEmail } from "@/lib/email-from-template";
 import type { TablesUpdate } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
-const CANCELLABLE_STATUSES = new Set(["pending", "confirmed"]);
+const CANCELLABLE_STATUSES = ["pending", "confirmed"] as const;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -63,9 +63,11 @@ export async function cancelBooking(formData: FormData) {
   if (!isOwner && !isStaff && !isTokenHolder) {
     redirect(`/?error=${encodeURIComponent("Not authorized to cancel that booking.")}`);
   }
-  if (!CANCELLABLE_STATUSES.has(b.status as string)) {
-    const tail = isTokenHolder ? `?t=${token}` : "";
-    redirect(`/booking/${id}${tail}&error=${encodeURIComponent("This booking can't be cancelled.")}`.replace("?t=", tail ? "?t=" : "?"));
+  if (!(CANCELLABLE_STATUSES as readonly string[]).includes(b.status as string)) {
+    const tail = isTokenHolder ? `?t=${token}&` : "?";
+    redirect(
+      `/booking/${id}${tail}error=${encodeURIComponent("This booking can't be cancelled.")}`,
+    );
   }
 
   const { data: tiers, error: tiersError } = await admin
@@ -94,13 +96,24 @@ export async function cancelBooking(formData: FormData) {
     cancellation_reason: reason,
     refund_amount_due: refund.refundAmount,
   };
-  const { error } = await admin
+  // Re-assert the status in the UPDATE predicate so a booking that was
+  // checked-in (or cancelled) between the read above and this write can't be
+  // flipped to cancelled. A zero-row result means the state changed under us.
+  const { data: cancelled, error } = await admin
     .from("bookings")
     .update(updatePayload)
-    .eq("id", id);
+    .eq("id", id)
+    .in("status", [...CANCELLABLE_STATUSES])
+    .select("id");
   if (error) {
     const tail = isTokenHolder ? `?t=${token}&` : "?";
     redirect(`/booking/${id}${tail}error=${encodeURIComponent(error.message)}`);
+  }
+  if (!cancelled || cancelled.length === 0) {
+    const tail = isTokenHolder ? `?t=${token}&` : "?";
+    redirect(
+      `/booking/${id}${tail}error=${encodeURIComponent("This booking can no longer be cancelled.")}`,
+    );
   }
 
   await writeAudit({

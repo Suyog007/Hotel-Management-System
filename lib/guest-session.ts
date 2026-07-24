@@ -36,6 +36,14 @@ export async function readGuestSession(): Promise<GuestSession | null> {
   const raw = store.get(GUEST_SESSION_COOKIE)?.value;
   const data = verify<GuestSession>(raw);
   if (!data || !data.profile_id || !data.email) return null;
+  // Enforce the TTL server-side too: the signed payload is valid until the
+  // secret rotates, so a captured cookie would otherwise outlive its maxAge.
+  if (
+    typeof data.set_at !== "number" ||
+    Date.now() - data.set_at > TTL_SECONDS * 1000
+  ) {
+    return null;
+  }
   return data;
 }
 

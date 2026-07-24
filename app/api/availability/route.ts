@@ -41,19 +41,30 @@ export async function GET(req: Request) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) {
     return NextResponse.json({ error: "invalid date format" }, { status: 400 });
   }
+  // Clamp the window: reject an inverted range and cap the span at HORIZON_DAYS
+  // so a crafted `to` (e.g. 9999-12-31) can't drive a multi-million-iteration
+  // loop on this unauthenticated endpoint.
+  if (to < from) {
+    return NextResponse.json({ error: "`to` must be on or after `from`" }, { status: 400 });
+  }
+  const maxTo = addDays(from, HORIZON_DAYS);
+  const clampedTo = to > maxTo ? maxTo : to;
 
   const admin = createAdminClient();
 
-  // 1. Room inventory for this type.
+  // 1. Sellable room inventory for this type — maintenance rooms are never
+  //    assignable, so they must not inflate the "total rooms" count (else a
+  //    day looks free in the calendar but booking then rejects it).
   const { count: totalRooms } = await admin
     .from("rooms")
     .select("id", { count: "exact", head: true })
-    .eq("type_id", roomTypeId);
+    .eq("type_id", roomTypeId)
+    .neq("status", "maintenance");
 
   if (!totalRooms) {
-    // No rooms exist for this type → every day blocked.
+    // No sellable rooms for this type → every day blocked.
     const blocked: string[] = [];
-    for (let d = from; d <= to; d = addDays(d, 1)) blocked.push(d);
+    for (let d = from; d <= clampedTo; d = addDays(d, 1)) blocked.push(d);
     return NextResponse.json(
       { blockedDates: blocked, totalRooms: 0 },
       { headers: { "Cache-Control": "private, max-age=60" } },
@@ -67,7 +78,7 @@ export async function GET(req: Request) {
     .from("bookings")
     .select("check_in, check_out, room_id, rooms:room_id(type_id)")
     .in("status", ACTIVE_STATUSES)
-    .lte("check_in", to)
+    .lte("check_in", clampedTo)
     .gt("check_out", from);
 
   const rows =
@@ -79,9 +90,9 @@ export async function GET(req: Request) {
 
   const matching = rows.filter((r) => r.rooms?.type_id === roomTypeId);
 
-  // 3. For each day in [from, to], count overlapping bookings.
+  // 3. For each day in [from, clampedTo], count overlapping bookings.
   const blocked: string[] = [];
-  for (let d = from; d <= to; d = addDays(d, 1)) {
+  for (let d = from; d <= clampedTo; d = addDays(d, 1)) {
     let count = 0;
     for (const b of matching) {
       if (b.check_in <= d && b.check_out > d) count++;
@@ -90,7 +101,7 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json(
-    { blockedDates: blocked, totalRooms, from, to },
+    { blockedDates: blocked, totalRooms, from, to: clampedTo },
     { headers: { "Cache-Control": "private, max-age=60" } },
   );
 }

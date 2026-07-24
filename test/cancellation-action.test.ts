@@ -77,8 +77,8 @@ describe("recordRefund", () => {
     expect(url).toMatch(/already%20recorded/);
   });
 
-  it("marks payment_status 'refunded' when the refund covers the full total", async () => {
-    const server = seed({ booking: { status: "cancelled", total_amount: 1000, refunded_at: null, guest_email: "g@x.com", guest_name: "G", booking_code: "BK1" } });
+  it("marks payment_status 'refunded' when the refund covers everything paid", async () => {
+    const server = seed({ booking: { status: "cancelled", total_amount: 1000, paid_amount: 1000, refunded_at: null, guest_email: "g@x.com", guest_name: "G", booking_code: "BK1" } });
     await expectRedirectTo(() =>
       recordRefund(form({ id: BOOKING_ID, refunded_amount: "1000", refund_reference: "REF1" })),
     );
@@ -86,11 +86,31 @@ describe("recordRefund", () => {
   });
 
   it("marks payment_status 'partially_refunded' for a partial refund", async () => {
-    const server = seed({ booking: { status: "cancelled", total_amount: 1000, refunded_at: null, guest_email: "g@x.com" } });
+    const server = seed({ booking: { status: "cancelled", total_amount: 1000, paid_amount: 1000, refunded_at: null, guest_email: "g@x.com" } });
     await expectRedirectTo(() =>
       recordRefund(form({ id: BOOKING_ID, refunded_amount: "400", refund_reference: "REF1" })),
     );
     expect(server.__tables.bookings[0]).toMatchObject({ payment_status: "partially_refunded" });
+  });
+
+  it("rejects a refund that exceeds the amount paid (pay-at-hotel booking)", async () => {
+    const server = seed({ booking: { status: "cancelled", total_amount: 1000, paid_amount: 0, refunded_at: null, guest_email: "g@x.com" } });
+    const url = await expectRedirectTo(() =>
+      recordRefund(form({ id: BOOKING_ID, refunded_amount: "1000", refund_reference: "REF1" })),
+    );
+    expect(url).toMatch(/error=/);
+    expect(url).toMatch(/exceed/);
+    // Nothing written: no refund recorded on an unpaid booking.
+    expect(server.__tables.bookings[0]).toMatchObject({ refunded_at: null });
+    expect(h.writeAudit).not.toHaveBeenCalled();
+  });
+
+  it("counts a full refund of a partially-paid booking as 'refunded'", async () => {
+    const server = seed({ booking: { status: "cancelled", total_amount: 1000, paid_amount: 500, refunded_at: null, guest_email: "g@x.com" } });
+    await expectRedirectTo(() =>
+      recordRefund(form({ id: BOOKING_ID, refunded_amount: "500", refund_reference: "REF1" })),
+    );
+    expect(server.__tables.bookings[0]).toMatchObject({ payment_status: "refunded", refunded_amount: 500 });
   });
 
   it("leaves payment_status untouched for a zero-amount refund (denied case)", async () => {
@@ -102,7 +122,7 @@ describe("recordRefund", () => {
   });
 
   it("writes an audit log and sends the refund email, then redirects with saved=1", async () => {
-    seed({ booking: { status: "cancelled", total_amount: 1000, refunded_at: null, guest_email: "g@x.com", guest_name: "G", booking_code: "BK1" } });
+    seed({ booking: { status: "cancelled", total_amount: 1000, paid_amount: 1000, refunded_at: null, guest_email: "g@x.com", guest_name: "G", booking_code: "BK1" } });
     const url = await expectRedirectTo(() =>
       recordRefund(form({ id: BOOKING_ID, refunded_amount: "1000", refund_reference: "REF1" })),
     );

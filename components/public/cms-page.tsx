@@ -68,9 +68,11 @@ export async function generateCmsMetadata(slug: string) {
     .eq("slug", slug)
     .single();
   const p = data as { title: string; meta_title: string | null; meta_description: string | null } | null;
-  if (!p) return {};
+  const canonical = `/${slug}`;
+  if (!p) return { alternates: { canonical } };
   return {
     title: p.meta_title || p.title,
     description: p.meta_description ?? undefined,
+    alternates: { canonical },
   };
 }

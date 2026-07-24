@@ -2,6 +2,7 @@ import "server-only";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email";
+import { escapeLike } from "@/lib/sql-like";
 
 const TTL_SECONDS = 15 * 60; // matches the booking_intent cookie TTL
 const MAX_ATTEMPTS = 5;
@@ -26,7 +27,7 @@ export async function isBookingOtpRateLimited(email: string): Promise<boolean> {
     .from("otp_verifications")
     .select("id", { count: "exact", head: true })
     .eq("purpose", "booking")
-    .ilike("email", lowered)
+    .ilike("email", escapeLike(lowered))
     .gt("created_at", since);
   return (count ?? 0) >= MAX_SENDS_PER_WINDOW;
 }
@@ -63,7 +64,7 @@ export async function createBookingOtp(email: string): Promise<string> {
     .update({ consumed_at: new Date().toISOString() })
     .eq("purpose", "booking")
     .is("consumed_at", null)
-    .ilike("email", lowered);
+    .ilike("email", escapeLike(lowered));
 
   const { error } = await admin.from("otp_verifications").insert({
     email: lowered,
@@ -96,7 +97,7 @@ export async function verifyBookingOtp(
     .select("id, code_hash, expires_at, attempts")
     .eq("purpose", "booking")
     .is("consumed_at", null)
-    .ilike("email", lowered)
+    .ilike("email", escapeLike(lowered))
     .order("created_at", { ascending: false })
     .limit(1);
 

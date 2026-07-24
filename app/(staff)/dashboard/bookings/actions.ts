@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { isStillAvailable } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
+import type { TablesUpdate } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
 const MANAGER_ROLES = new Set(["manager", "super_admin"]);
@@ -18,11 +19,11 @@ async function staffActor() {
   if (!auth.user) redirect("/login?next=/dashboard/bookings");
   const { data: actor } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, is_active")
     .eq("auth_user_id", auth.user.id)
     .single();
-  const a = actor as { id: string; role: string } | null;
-  if (!a || !STAFF_ROLES.has(a.role)) {
+  const a = actor as { id: string; role: string; is_active: boolean | null } | null;
+  if (!a || !STAFF_ROLES.has(a.role) || a.is_active === false) {
     redirect(`/?error=${encodeURIComponent("Staff access required")}`);
   }
   return a;
@@ -150,7 +151,7 @@ export async function extendStay(formData: FormData) {
   const { data: booking } = await admin
     .from("bookings")
     .select(
-      "status, room_id, check_in, check_out, subtotal, tax_amount, service_amount, total_amount, guest_email, guest_name, booking_code",
+      "status, room_id, check_in, check_out, subtotal, tax_amount, service_amount, total_amount, paid_amount, payment_status, guest_email, guest_name, booking_code",
     )
     .eq("id", id)
     .single();
@@ -163,6 +164,8 @@ export async function extendStay(formData: FormData) {
     tax_amount: number | string;
     service_amount: number | string;
     total_amount: number | string;
+    paid_amount: number | string | null;
+    payment_status: string;
     guest_email: string;
     guest_name: string;
     booking_code: string;
@@ -222,16 +225,24 @@ export async function extendStay(formData: FormData) {
   const newService = Number(b.service_amount) + extra.serviceAmount;
   const newTotal = Number(b.total_amount) + extra.total;
 
-  const { error } = await admin
-    .from("bookings")
-    .update({
-      check_out: newCheckOut,
-      subtotal: newSubtotal,
-      tax_amount: newTax,
-      service_amount: newService,
-      total_amount: newTotal,
-    })
-    .eq("id", id);
+  // Extending raises the total, so a booking that was fully paid now has a
+  // balance due. The payment_status enum has no "partially paid" state, so the
+  // truthful representation within the model is "unpaid" (balance outstanding);
+  // paid_amount still records what was collected. Only flip the settled "paid"
+  // case — leave unpaid/failed/refunded states as they are.
+  const paid = Number(b.paid_amount ?? 0);
+  const payload: TablesUpdate<"bookings"> = {
+    check_out: newCheckOut,
+    subtotal: newSubtotal,
+    tax_amount: newTax,
+    service_amount: newService,
+    total_amount: newTotal,
+  };
+  if (b.payment_status === "paid" && paid < newTotal) {
+    payload.payment_status = "unpaid";
+  }
+
+  const { error } = await admin.from("bookings").update(payload).eq("id", id);
   if (error) bail(error.message);
 
   await writeAudit({
