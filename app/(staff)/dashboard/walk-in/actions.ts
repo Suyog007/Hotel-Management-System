@@ -6,7 +6,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { findAvailableRoom } from "@/lib/availability";
-import { calculateBookingTotal, nightsBetween } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { walkInBookingSchema } from "@/lib/validation/staff";
 import type { TablesInsert } from "@/types/database";
 
@@ -62,13 +62,9 @@ export async function createWalkInBooking(formData: FormData) {
     bail(`Max ${roomType.max_guests} guests for this room type`);
   }
 
-  // Compute totals
-  const { data: settings } = await admin
-    .from("site_settings")
-    .select("tax_rate, service_charge_rate")
-    .single();
-  const taxRate = Number((settings as { tax_rate?: number } | null)?.tax_rate ?? 0);
-  const serviceRate = Number((settings as { service_charge_rate?: number } | null)?.service_charge_rate ?? 0);
+  // Compute totals — room rate only, no tax/service (see lib/pricing constants).
+  const taxRate = TAX_RATE;
+  const serviceRate = SERVICE_CHARGE_RATE;
   const nights = nightsBetween(input.check_in, input.check_out);
   if (nights < 1) bail("Stay must be at least one night");
   const totals = calculateBookingTotal({

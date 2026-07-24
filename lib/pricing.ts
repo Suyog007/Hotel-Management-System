@@ -13,9 +13,17 @@ export type BookingTotals = {
 };
 
 /**
+ * Hotel Vardani charges the room rate only — no tax, no service charge. These
+ * are the single source of truth for every booking path (guest, walk-in,
+ * extend-stay); the `site_settings` tax/service columns are not used for
+ * pricing. Set to a non-zero fraction (e.g. 0.13) here to reinstate them.
+ */
+export const TAX_RATE = 0;
+export const SERVICE_CHARGE_RATE = 0;
+
+/**
  * Optional air-conditioning add-on. Offered on Standard rooms only (Deluxe and
- * Suite already include AC). A flat amount added to the subtotal, so tax and
- * service charge apply on top like any other room charge.
+ * Suite already include AC). A flat amount added to the subtotal.
  */
 export const AC_ADDON_PRICE = 500;
 

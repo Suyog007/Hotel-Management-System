@@ -268,14 +268,18 @@ export default async function BookingDetailPage(props: {
                   <dt className="text-muted-foreground">Subtotal</dt>
                   <dd>{symbol} {Number(b.subtotal).toLocaleString()}</dd>
                 </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <dt>Tax</dt>
-                  <dd>{symbol} {Number(b.tax_amount).toLocaleString()}</dd>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <dt>Service</dt>
-                  <dd>{symbol} {Number(b.service_amount).toLocaleString()}</dd>
-                </div>
+                {Number(b.tax_amount) > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <dt>Tax</dt>
+                    <dd>{symbol} {Number(b.tax_amount).toLocaleString()}</dd>
+                  </div>
+                )}
+                {Number(b.service_amount) > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <dt>Service</dt>
+                    <dd>{symbol} {Number(b.service_amount).toLocaleString()}</dd>
+                  </div>
+                )}
                 <div className="mt-2 flex justify-between border-t border-border pt-2 font-display text-base font-semibold">
                   <dt>Total</dt>
                   <dd>{symbol} {Number(b.total_amount).toLocaleString()}</dd>
