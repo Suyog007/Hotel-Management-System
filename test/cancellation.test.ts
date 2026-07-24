@@ -44,12 +44,16 @@ describe("computeRefund", () => {
   });
 
   it("treats the threshold as inclusive (exactly 72h -> full)", () => {
+    // Check-in is measured to hotel-local (UTC+5:45) midnight: local midnight
+    // of 2026-06-04 is 2026-06-03T18:15Z, so exactly 72h before that is
+    // 2026-05-31T18:15Z.
     const r = computeRefund({
       paidAmount: 1000,
-      checkIn: "2026-06-04", // exactly 72h out
-      now: NOW,
+      checkIn: "2026-06-04",
+      now: new Date("2026-05-31T18:15:00Z"),
       tiers: TIERS,
     });
+    expect(r.hoursUntilCheckIn).toBe(72);
     expect(r.tier?.refund_percentage).toBe(100);
   });
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hotelToday } from "@/lib/hotel-time";
 
 const optionalText = z
   .string()
@@ -52,7 +53,7 @@ export const roomSchema = z.object({
   notes: optionalText,
 });
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => hotelToday();
 
 export const bookingFormSchema = z
   .object({

@@ -37,11 +37,12 @@ export async function recordRefund(formData: FormData) {
 
   const { data: actor } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_active")
     .eq("auth_user_id", auth.user.id)
     .single();
-  const role = (actor as { role: string } | null)?.role ?? "guest";
-  if (!MANAGER_PLUS.has(role)) {
+  const act = actor as { role: string; is_active: boolean | null } | null;
+  const role = act?.role ?? "guest";
+  if (!MANAGER_PLUS.has(role) || act?.is_active === false) {
     redirect(`/dashboard/cancellations?error=${encodeURIComponent("Manager access required")}`);
   }
 
@@ -59,11 +60,23 @@ export async function recordRefund(formData: FormData) {
     redirect(`/dashboard/cancellations?error=${encodeURIComponent("Refund already recorded")}`);
   }
 
-  const total = Number(b.total_amount ?? 0);
+  // Never record more than the guest actually paid — a pay-at-hotel booking
+  // (paid_amount = 0) must not be refundable at all.
+  const paid = Number(b.paid_amount ?? 0);
+  if (refunded_amount > paid) {
+    redirect(
+      `/dashboard/cancellations?error=${encodeURIComponent(
+        `Refund (${refunded_amount}) can't exceed the amount paid (${paid}).`,
+      )}`,
+    );
+  }
+
+  // Compare against what was paid, not the gross total, so a full refund of a
+  // partially-paid booking reads as "refunded", not "partially_refunded".
   const newPaymentStatus =
     refunded_amount === 0
       ? (b.payment_status as string)
-      : refunded_amount >= total
+      : refunded_amount >= paid
         ? "refunded"
         : "partially_refunded";
 
@@ -73,9 +86,20 @@ export async function recordRefund(formData: FormData) {
     refunded_at: new Date().toISOString(),
     payment_status: newPaymentStatus as Enums<"payment_status">,
   };
-  const { error } = await supabase.from("bookings").update(update).eq("id", id);
+  // `.is("refunded_at", null)` makes the write itself the idempotency guard:
+  // a concurrent double-submit that passed the read check above lands second
+  // and updates zero rows instead of recording a duplicate refund.
+  const { data: updated, error } = await supabase
+    .from("bookings")
+    .update(update)
+    .eq("id", id)
+    .is("refunded_at", null)
+    .select("id");
   if (error) {
     redirect(`/dashboard/cancellations?error=${encodeURIComponent(error.message)}`);
+  }
+  if (!updated || updated.length === 0) {
+    redirect(`/dashboard/cancellations?error=${encodeURIComponent("Refund already recorded")}`);
   }
 
   await writeAudit({

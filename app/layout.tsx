@@ -58,7 +58,9 @@ export async function generateMetadata(): Promise<Metadata> {
       "boutique hotel Kathmandu",
       "Tribhuvan airport hotel",
     ],
-    alternates: { canonical: "/" },
+    // No canonical here: `alternates` is inherited wholesale by every page
+    // that doesn't set its own, which would point all of them at "/" and
+    // deindex them. Each page (including the homepage) declares its own.
     openGraph: {
       title: `${name} — Hotel near Pashupatinath in Gaushala`,
       description: tagline,

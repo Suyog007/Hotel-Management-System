@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,6 +28,8 @@ const LINKS: { href: string; label: string; icon: LucideIcon }[] = [
 export function MobileNav({ hotelName }: { hotelName: string }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setOpen(false);
@@ -40,12 +42,51 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
     };
   }, [open]);
 
+  // Accessibility: while open, trap Tab within the drawer, close on Escape,
+  // move focus into the panel, and restore focus to the trigger on close.
+  useEffect(() => {
+    if (!open) return;
+    const trigger = triggerRef.current;
+    const panel = panelRef.current;
+    panel?.querySelector<HTMLElement>("a, button")?.focus();
+
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !panel) return;
+      const focusable = panel.querySelectorAll<HTMLElement>(
+        "a[href], button:not([disabled])",
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      trigger?.focus();
+    };
+  }, [open]);
+
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Open menu"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className="grid h-9 w-9 place-items-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
       >
         <Menu className="h-5 w-5" />
@@ -69,6 +110,10 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
           )}
         />
         <aside
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${hotelName} menu`}
           className={cn(
             "absolute right-0 top-0 z-10 flex h-full w-[85vw] max-w-sm flex-col bg-white shadow-2xl transition-transform duration-200 ease-out",
             open ? "translate-x-0" : "translate-x-full",
@@ -99,6 +144,11 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
                 <Link
                   key={l.href}
                   href={l.href}
+                  // Close on tap: 4 of 5 links are hash links (/#rooms …) that
+                  // don't change usePathname(), so the pathname effect above
+                  // never fires for them — without this the drawer would stay
+                  // open (and body scroll locked) on the homepage.
+                  onClick={() => setOpen(false)}
                   className={cn(
                     "flex items-center gap-3 rounded-lg border px-4 py-3.5 text-base font-medium shadow-sm transition-all active:scale-[0.98]",
                     active

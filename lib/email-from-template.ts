@@ -2,6 +2,19 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { renderTemplate, sendEmail } from "@/lib/email";
 
+/** Escape the five HTML-significant characters so guest-supplied values
+ * (e.g. guest_name from the public booking form) can't inject markup into the
+ * HTML body. Applied only to the HTML render — subject/text stay literal. */
+function escapeHtml(value: string | number | undefined): string | number | undefined {
+  if (typeof value !== "string") return value;
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 /**
  * Send an email using a row from email_templates by key.
  * Reads via the admin client because email_templates RLS restricts SELECT
@@ -32,10 +45,13 @@ export async function sendTemplatedEmail(
       return;
     }
 
+    const htmlVars: Record<string, string | number | undefined> = {};
+    for (const [k, v] of Object.entries(vars)) htmlVars[k] = escapeHtml(v);
+
     await sendEmail({
       to,
       subject: renderTemplate(t.subject, vars),
-      html: renderTemplate(t.body_html, vars),
+      html: renderTemplate(t.body_html, htmlVars),
       text: t.body_text ? renderTemplate(t.body_text, vars) : undefined,
     });
   } catch (err) {

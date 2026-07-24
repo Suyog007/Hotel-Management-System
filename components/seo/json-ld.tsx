@@ -133,8 +133,11 @@ export async function HotelJsonLd() {
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger -- JSON-LD is static, server-rendered, safe.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+      // Escape `<` so a `</script>` inside admin-editable content (hotel name,
+      // tagline, amenity/room text) can't break out of the script tag.
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }
@@ -182,8 +185,11 @@ export function HotelRoomJsonLd(props: {
   return (
     <script
       type="application/ld+json"
-      // eslint-disable-next-line react/no-danger -- JSON-LD is static, server-rendered, safe.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+      // Escape `<` so a `</script>` inside admin-editable content (hotel name,
+      // tagline, amenity/room text) can't break out of the script tag.
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
+      }}
     />
   );
 }

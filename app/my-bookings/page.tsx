@@ -229,7 +229,10 @@ export default async function MyBookingsPage() {
             initialMessages={chatMessages}
             currentProfileId={guest.profileId}
             sendAction={sendBookingChatMessage}
-            hiddenFields={{ booking_id: rows[0].id }}
+            hiddenFields={{
+              booking_id: rows[0].id,
+              access_token: rows[0].access_token,
+            }}
           />
         )}
       </main>

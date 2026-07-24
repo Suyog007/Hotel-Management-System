@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Rooms",
   description:
     "Rooms at Hotel Vardani in Gaushala, Kathmandu — 5 minutes from Pashupatinath, 10 minutes from Tribhuvan International Airport. Standard, premium, and suite options.",
+  alternates: { canonical: "/rooms" },
 };
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";

@@ -12,10 +12,22 @@
  */
 export function getSiteUrl(): string {
   const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (raw) return raw.replace(/\/+$/, "");
+  if (raw) {
+    const normalized = raw.replace(/\/+$/, "");
+    // A schemeless value (e.g. "hotelvardani.com") makes `new URL(...)` throw
+    // at metadataBase and every absolute link malformed — fail loudly instead.
+    if (!/^https?:\/\//i.test(normalized)) {
+      throw new Error(
+        `[site-url] NEXT_PUBLIC_SITE_URL must include a scheme (https://…); got "${raw}".`,
+      );
+    }
+    return normalized;
+  }
+  // In production a missing value silently shipped localhost URLs into emails,
+  // OG tags, sitemap and JSON-LD. Fail the boot/build instead of poisoning them.
   if (process.env.NODE_ENV === "production") {
-    console.error(
-      "[site-url] NEXT_PUBLIC_SITE_URL is not set in production — absolute links (emails, OG tags, sitemap) will be wrong. Set it in the deployment environment.",
+    throw new Error(
+      "[site-url] NEXT_PUBLIC_SITE_URL is not set in production. Set it in the deployment environment (absolute links in emails, OG tags and the sitemap depend on it).",
     );
   }
   return "http://localhost:4000";

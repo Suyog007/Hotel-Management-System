@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hotelToday } from "@/lib/hotel-time";
 
 const optionalText = z
   .string()
@@ -16,7 +17,7 @@ const optionalEmail = z
   .optional()
   .transform((v) => (v === "" ? undefined : v));
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => hotelToday();
 
 export const walkInBookingSchema = z
   .object({

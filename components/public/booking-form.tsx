@@ -8,12 +8,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 import { calculateBookingTotal, nightsBetween, round2 } from "@/lib/pricing";
+import { hotelDateFromToday } from "@/lib/hotel-time";
 import { DateRangePicker } from "./date-range-picker";
 
 function isoDate(offsetDays: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  return d.toISOString().slice(0, 10);
+  // Hotel-local (UTC+5:45), so the default check-in isn't yesterday for a
+  // Nepali guest loading the page between local midnight and 05:45.
+  return hotelDateFromToday(offsetDays);
 }
 
 export function BookingForm(props: {

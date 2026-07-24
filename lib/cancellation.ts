@@ -1,3 +1,5 @@
+import { hotelMidnight } from "@/lib/hotel-time";
+
 /**
  * Computes the refund tier and amount for a booking being cancelled.
  *
@@ -33,7 +35,7 @@ export function computeRefund(args: {
   tiers: CancellationTier[];
 }): RefundComputation {
   const now = args.now ?? new Date();
-  const checkInDate = new Date(args.checkIn + "T00:00:00Z");
+  const checkInDate = hotelMidnight(args.checkIn);
   const hoursUntil = Math.max(
     0,
     (checkInDate.getTime() - now.getTime()) / 3_600_000,

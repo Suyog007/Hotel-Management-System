@@ -17,11 +17,11 @@ async function requireSuperAdmin() {
   if (!auth.user) redirect("/login?next=/admin/staff");
   const { data: actor } = await supabase
     .from("profiles")
-    .select("id, role")
+    .select("id, role, is_active")
     .eq("auth_user_id", auth.user.id)
     .single();
-  const a = actor as { id: string; role: string } | null;
-  if (!a || a.role !== "super_admin") {
+  const a = actor as { id: string; role: string; is_active: boolean | null } | null;
+  if (!a || a.role !== "super_admin" || a.is_active === false) {
     redirect(`/admin?error=${encodeURIComponent("Super admin only")}`);
   }
   return a;

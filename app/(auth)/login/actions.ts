@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { emailSchema } from "@/lib/validation/auth";
 import { sendStaffOtpEmail } from "@/lib/booking-otp";
+import { escapeLike } from "@/lib/sql-like";
 
 export async function requestOtp(formData: FormData) {
   const parsed = emailSchema.safeParse({ email: formData.get("email") });
@@ -26,7 +27,7 @@ export async function requestOtp(formData: FormData) {
   const { data: profile } = await admin
     .from("profiles")
     .select("role, is_active")
-    .ilike("email", email)
+    .ilike("email", escapeLike(email))
     .maybeSingle();
   const p = profile as { role?: string; is_active?: boolean } | null;
   const staffRoles = ["receptionist", "manager", "super_admin"];
