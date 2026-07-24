@@ -1,20 +1,41 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Bricolage_Grotesque, Karla, Space_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { createServerClient } from "@/lib/supabase/server";
 import { HotelJsonLd } from "@/components/seo/json-ld";
 import { getSiteUrl } from "@/lib/site-url";
 
-const inter = Inter({
+// Body — warm humanist sans.
+const karla = Karla({
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
 });
 
-const playfair = Playfair_Display({
+// Display headlines — slightly hand-cut, the brand's personality.
+const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-display",
+});
+
+// Labels / data — ledger/reception-desk feel.
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "700"],
+  variable: "--font-mono",
+});
+
+// Accent italic — used sparingly for one emphasized word or review quotes.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400", "500"],
+  style: ["italic"],
+  variable: "--font-accent",
 });
 
 const SITE_URL = getSiteUrl();
@@ -93,7 +114,7 @@ export default async function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${inter.variable} ${playfair.variable}`}
+      className={`${karla.variable} ${bricolage.variable} ${spaceMono.variable} ${fraunces.variable}`}
     >
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <HotelJsonLd />

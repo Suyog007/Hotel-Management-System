@@ -24,20 +24,19 @@ export function NavLink({
     : pathname === href || (href !== "/" && pathname?.startsWith(href + "/"));
 
   if (variant === "public") {
+    // Header sits on a forest bar → white-wash text, rosewood active marker.
     return (
       <Link
         href={href}
         className={cn(
-          "rounded-md px-3 py-2 text-sm font-medium transition-colors",
-          active
-            ? "text-foreground"
-            : "text-muted-foreground hover:text-foreground",
+          "rounded-[2px] px-3 py-2 text-sm font-medium text-white-wash/70 transition-colors hover:text-white-wash",
+          active && "text-white-wash",
           className,
         )}
       >
         {children}
         {active && (
-          <span aria-hidden className="ml-2 inline-block h-1 w-1 rounded-full bg-accent align-middle" />
+          <span aria-hidden className="ml-2 inline-block h-1 w-1 rounded-full bg-rosewood-light align-middle" />
         )}
       </Link>
     );

@@ -228,6 +228,8 @@ export default async function HomePage() {
               fill
               priority
               sizes="100vw"
+              // Light unify treatment — takes the edge off phone-camera color.
+              style={{ filter: "saturate(0.9) contrast(1.03) sepia(0.06)" }}
               className="absolute inset-0 -z-10 object-cover"
             />
           ) : (
@@ -238,13 +240,13 @@ export default async function HomePage() {
           <div className="container relative pb-16 pt-32 md:pb-24 md:pt-44">
             <div className="max-w-3xl text-primary-foreground">
               <div className="mb-5 flex flex-wrap items-center gap-2">
-                <p className="inline-flex items-center gap-2 rounded-full border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1 text-xs font-medium uppercase tracking-wider backdrop-blur">
-                  <Sparkle className="h-3 w-3" />
+                <p className="font-label inline-flex items-center gap-2 rounded-[2px] border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-1.5 text-[11px] backdrop-blur">
+                  <Sparkle className="h-3 w-3 text-rosewood-light" />
                   Boutique hospitality
                 </p>
                 <GoogleRatingChip summary={google} variant="dark" />
               </div>
-              <h1 className="font-display text-4xl font-semibold leading-[1.05] md:text-6xl lg:text-7xl">
+              <h1 className="font-display text-display-xl font-bold text-white-wash">
                 {tagline}
               </h1>
               <p className="mt-6 max-w-xl text-base text-primary-foreground/85 md:text-lg">
@@ -254,7 +256,7 @@ export default async function HomePage() {
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link href="/#rooms">
-                  <Button size="lg" className="gap-2 bg-primary-foreground text-foreground hover:bg-primary-foreground/90">
+                  <Button size="lg" variant="accent" className="gap-2">
                     Browse rooms
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -263,7 +265,7 @@ export default async function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-primary-foreground/40 bg-transparent text-primary-foreground hover:bg-primary-foreground/10"
+                    className="border-white-wash/50 bg-transparent text-white-wash hover:bg-white-wash hover:text-forest"
                   >
                     See the menu
                   </Button>
@@ -311,7 +313,7 @@ export default async function HomePage() {
             className="container py-20 scroll-mt-20 md:py-28"
           >
             <div className="mb-10 max-w-2xl md:mb-14">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+              <p className="eyebrow mb-3 text-rosewood">
                 Stay
               </p>
               <h2 className="font-display text-3xl font-semibold md:text-5xl">
@@ -333,7 +335,7 @@ export default async function HomePage() {
               <div className="mt-10 text-center md:mt-14">
                 <Link
                   href="/rooms"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                  className="inline-flex items-center gap-2 rounded-[2px] border border-forest/70 px-6 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white-wash"
                 >
                   View all {rooms.length} rooms
                   <ArrowRight className="h-4 w-4" />
@@ -343,33 +345,38 @@ export default async function HomePage() {
           </section>
         )}
 
-        {/* ── Amenities band ───────────────────────────────────────────── */}
+        {/* ── Amenities band (forest) ──────────────────────────────────── */}
         {amenities.length > 0 && (
-          <section className="container py-20 md:py-24">
-            <div className="mb-10 max-w-2xl">
-              <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
-                In every stay
-              </p>
-              <h2 className="font-display text-3xl font-semibold md:text-4xl">
-                Quiet luxuries, on the house
-              </h2>
+          <section className="bg-forest text-white-wash">
+            <div className="container py-20 md:py-24">
+              <div className="mb-10 max-w-2xl">
+                <p className="eyebrow mb-3 text-rosewood-light">
+                  In every stay
+                </p>
+                <h2 className="font-display text-display-lg font-bold text-white-wash">
+                  Quiet luxuries, on the house
+                </h2>
+              </div>
+              {/* Hairline grid: low-opacity white dividers between cells. */}
+              <ul className="grid grid-cols-2 gap-px overflow-hidden rounded-[4px] border border-white-wash/15 bg-white-wash/15 md:grid-cols-3">
+                {amenities.map((a) => {
+                  const Icon = (a.icon && AMENITY_ICONS[a.icon]) || Sparkles;
+                  return (
+                    <li
+                      key={a.name}
+                      className="flex items-center gap-3 bg-forest p-5"
+                    >
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[2px] bg-white-wash/5 text-rosewood-light">
+                        <Icon className="h-5 w-5" strokeWidth={1.75} />
+                      </span>
+                      <span className="text-sm font-medium text-white-wash/90">
+                        {a.name}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
-            <ul className="grid grid-cols-2 gap-4 md:grid-cols-3">
-              {amenities.map((a) => {
-                const Icon = (a.icon && AMENITY_ICONS[a.icon]) || Sparkles;
-                return (
-                  <li
-                    key={a.name}
-                    className="group flex items-center gap-3 rounded-xl border border-border/60 bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-soft"
-                  >
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent/10 text-accent">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <span className="text-sm font-medium">{a.name}</span>
-                  </li>
-                );
-              })}
-            </ul>
           </section>
         )}
 
@@ -382,7 +389,7 @@ export default async function HomePage() {
           >
             <div className="container py-20 md:py-28">
               <div className="mb-12 max-w-2xl">
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+                <p className="eyebrow mb-3 text-rosewood">
                   From our kitchen
                 </p>
                 <h2 className="font-display text-3xl font-semibold md:text-5xl">
@@ -398,29 +405,29 @@ export default async function HomePage() {
                 {menuItems.map((item) => (
                   <article
                     key={item.id}
-                    className="flex gap-4 rounded-xl border border-border/60 bg-card p-4 shadow-soft transition-shadow hover:shadow-soft-lg"
+                    className="flex gap-4 rounded-[4px] border border-foreground/10 bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-soft-lg motion-reduce:hover:translate-y-0"
                   >
                     {item.image_url ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
                         src={item.image_url}
                         alt={item.name}
-                        className="h-24 w-24 shrink-0 rounded-md object-cover"
+                        className="h-24 w-24 shrink-0 rounded-[2px] object-cover"
                       />
                     ) : (
-                      <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary/15 to-accent/10">
+                      <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-[2px] bg-gradient-to-br from-forest/15 to-rosewood/10">
                         <Utensils className="h-6 w-6 text-foreground/30" />
                       </div>
                     )}
                     <div className="flex-1">
-                      <p className="text-xs font-medium uppercase tracking-wider text-accent">
+                      <p className="font-label text-[11px] text-rosewood">
                         {item.category}
                       </p>
-                      <div className="mt-1 flex items-baseline justify-between gap-3">
-                        <h3 className="font-display text-base font-semibold">
+                      <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                        <h3 className="font-display text-base font-bold">
                           {item.name}
                         </h3>
-                        <p className="whitespace-nowrap text-sm font-medium">
+                        <p className="font-display whitespace-nowrap text-base font-bold text-rosewood">
                           {currency} {Number(item.price).toLocaleString()}
                         </p>
                       </div>
@@ -437,7 +444,7 @@ export default async function HomePage() {
               <div className="mt-10 text-center md:mt-12">
                 <Link
                   href="/menu"
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                  className="inline-flex items-center gap-2 rounded-[2px] border border-forest/70 px-6 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white-wash"
                 >
                   See the full menu
                   <ArrowRight className="h-4 w-4" />
@@ -457,7 +464,7 @@ export default async function HomePage() {
             <div className="container py-20 md:py-24">
               <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+                  <p className="eyebrow mb-3 text-rosewood">
                     The property
                   </p>
                   <h2 className="font-display text-3xl font-semibold md:text-4xl">
@@ -471,7 +478,7 @@ export default async function HomePage() {
                 <div className="mt-10 text-center md:mt-12">
                   <Link
                     href="/gallery"
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-6 py-3 text-sm font-medium transition-colors hover:border-accent/40 hover:bg-accent/5"
+                    className="inline-flex items-center gap-2 rounded-[2px] border border-forest/70 px-6 py-3 text-sm font-semibold text-forest transition-colors hover:bg-forest hover:text-white-wash"
                   >
                     See all {gallery.length} photos
                     <ArrowRight className="h-4 w-4" />
@@ -491,14 +498,14 @@ export default async function HomePage() {
           >
             <div className="mb-14 flex flex-wrap items-center justify-between gap-4 border-b border-border pb-6">
               {google.rating !== null ? (
-                <p className="inline-flex items-center gap-2 text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  <Star className="h-3.5 w-3.5 fill-accent text-accent" />
+                <p className="font-label inline-flex items-center gap-2 text-[11px] text-stone">
+                  <Star className="h-3.5 w-3.5 fill-rosewood text-rosewood" />
                   <span className="text-foreground">
                     {google.rating.toFixed(1)} on Google
                   </span>
                   {google.ratingCount !== null && (
                     <>
-                      <span aria-hidden className="text-muted-foreground/40">·</span>
+                      <span aria-hidden className="text-stone/40">·</span>
                       <span>
                         {google.ratingCount.toLocaleString()}{" "}
                         {google.ratingCount === 1 ? "guest" : "guests"}
@@ -507,7 +514,7 @@ export default async function HomePage() {
                   )}
                 </p>
               ) : (
-                <p className="text-sm font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                <p className="font-label text-[11px] text-stone">
                   From our guests
                 </p>
               )}
@@ -516,7 +523,7 @@ export default async function HomePage() {
                   href={google.reviewsUri}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity hover:opacity-80"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-rosewood transition-opacity hover:opacity-80"
                 >
                   Read all on Google
                   <ExternalLink className="h-4 w-4" />
@@ -530,17 +537,17 @@ export default async function HomePage() {
                   <figure key={q.id} className="flex flex-col">
                     <span
                       aria-hidden
-                      className="font-display text-6xl leading-none text-accent"
+                      className="font-accent text-6xl leading-none text-brass"
                     >
                       &ldquo;
                     </span>
-                    <blockquote className="mt-3 flex-1 text-lg leading-relaxed text-foreground">
+                    <blockquote className="font-accent mt-3 flex-1 text-lg leading-relaxed text-foreground md:text-xl">
                       {q.body}
                     </blockquote>
-                    <figcaption className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    <figcaption className="font-label mt-6 text-[11px] text-stone">
                       — {q.author_name}
                       {q.author_role && (
-                        <span className="ml-2 normal-case tracking-normal text-muted-foreground/70">
+                        <span className="ml-2 lowercase text-stone/70">
                           · {q.author_role.toLowerCase()}
                         </span>
                       )}
@@ -557,7 +564,7 @@ export default async function HomePage() {
           <section className="container py-20 md:py-28">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
               <div className="lg:col-span-4">
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-accent">
+                <p className="eyebrow mb-3 text-rosewood">
                   Before you book
                 </p>
                 <h2 className="font-display text-3xl font-semibold md:text-4xl">
@@ -572,17 +579,15 @@ export default async function HomePage() {
                   {faqs.map((f) => (
                     <details
                       key={f.id}
-                      className="group rounded-xl border border-border/60 bg-card p-5 transition-shadow open:shadow-soft"
+                      className="group border-b border-foreground/12 pb-3"
                     >
-                      <summary className="cursor-pointer select-none text-base font-medium marker:hidden [&::-webkit-details-marker]:hidden">
-                        <span className="flex items-center justify-between gap-3">
-                          {f.question}
-                          <span
-                            aria-hidden
-                            className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-border bg-card text-sm text-muted-foreground transition-transform group-open:rotate-45"
-                          >
-                            +
-                          </span>
+                      <summary className="flex cursor-pointer select-none items-center justify-between gap-3 py-3 text-base font-medium marker:hidden [&::-webkit-details-marker]:hidden">
+                        {f.question}
+                        <span
+                          aria-hidden
+                          className="font-display shrink-0 text-2xl leading-none text-rosewood transition-transform group-open:rotate-45"
+                        >
+                          +
                         </span>
                       </summary>
                       <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
@@ -598,25 +603,27 @@ export default async function HomePage() {
 
         {/* ── Final CTA ────────────────────────────────────────────────── */}
         <section className="container pb-24 md:pb-32">
-          <div className="relative overflow-hidden rounded-3xl bg-primary px-8 py-16 text-primary-foreground shadow-soft-lg md:px-16 md:py-24">
-            <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-accent/30 blur-3xl" />
-            <div className="absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-accent/20 blur-3xl" />
-            <div className="relative grid items-center gap-8 md:grid-cols-12">
+          <div className="overflow-hidden rounded-[6px] bg-rosewood px-8 py-16 text-white-wash md:px-16 md:py-24">
+            <div className="grid items-center gap-8 md:grid-cols-12">
               <div className="md:col-span-8">
-                <p className="mb-3 text-xs font-medium uppercase tracking-wider text-primary-foreground/70">
+                <p className="font-label mb-3 text-[11px] text-white-wash/75">
                   Ready when you are
                 </p>
-                <h2 className="font-display text-3xl font-semibold leading-tight md:text-5xl">
+                <h2 className="font-display text-display-lg font-bold leading-tight text-white-wash">
                   Pick a room. Get a code. You&apos;re booked.
                 </h2>
-                <p className="mt-4 max-w-xl text-primary-foreground/80">
+                <p className="mt-4 max-w-xl text-white-wash/85">
                   Book direct for the best available rate and complimentary
                   airport pickup. No account, no password — just an email code.
                 </p>
               </div>
               <div className="md:col-span-4 md:text-right">
                 <Link href="/#rooms">
-                  <Button size="lg" variant="accent" className="gap-2">
+                  {/* Ink button — inverted from the rest of the site. */}
+                  <Button
+                    size="lg"
+                    className="gap-2 bg-ink text-white-wash hover:bg-ink/85"
+                  >
                     Book a room
                     <ArrowRight className="h-4 w-4" />
                   </Button>
@@ -634,11 +641,9 @@ export default async function HomePage() {
 function Stat({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-2xl font-semibold md:text-3xl">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      <p className="font-label text-[11px] text-stone">{label}</p>
+      <p className="mt-1.5 font-display text-2xl font-bold md:text-3xl">{value}</p>
+      {sub && <p className="font-label mt-0.5 text-[11px] text-stone">{sub}</p>}
     </div>
   );
 }
@@ -648,7 +653,7 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
   return (
     <Link
       href={`/rooms/${room.slug}`}
-      className="group block overflow-hidden rounded-2xl border border-border/60 bg-card transition-all hover:-translate-y-1 hover:shadow-soft-lg"
+      className="group block overflow-hidden rounded-[4px] border border-foreground/10 bg-card transition-all hover:-translate-y-1 hover:shadow-soft-lg motion-reduce:hover:translate-y-0"
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-linen">
         {hero ? (
@@ -657,34 +662,36 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
             alt={`${room.name} room at Hotel Vardani, Gaushala`}
             fill
             sizes="(min-width: 768px) 33vw, 100vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
+            className="object-cover transition-transform duration-700 group-hover:scale-105 motion-reduce:group-hover:scale-100"
           />
         ) : (
-          <div className="grid h-full place-items-center text-muted-foreground">
+          <div className="grid h-full place-items-center text-stone">
             {room.name}
           </div>
         )}
-        <div className="absolute left-4 top-4 rounded-full bg-card/95 px-3 py-1 text-xs font-medium text-foreground backdrop-blur">
+        <div className="font-label absolute left-4 top-4 rounded-[2px] bg-forest px-2.5 py-1 text-[11px] text-white-wash">
           Sleeps {room.max_guests}
-        </div>
-        <div className="absolute right-4 top-4 rounded-full bg-foreground/85 px-3 py-1 text-xs font-medium text-primary-foreground backdrop-blur">
-          {currency} {room.base_price.toLocaleString()}
-          <span className="font-normal text-primary-foreground/80"> / night</span>
         </div>
       </div>
       <div className="p-6">
-        <h3 className="font-display text-xl font-semibold tracking-tight">
-          {room.name}
-        </h3>
+        <h3 className="font-display text-display-md font-bold">{room.name}</h3>
         {room.description && (
           <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
             {room.description}
           </p>
         )}
-        <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-foreground transition-colors group-hover:text-accent">
-          View room
-          <ArrowRight className="h-3.5 w-3.5" />
-        </span>
+        <div className="divide-dashed-ink mt-5 flex items-center justify-between pt-4">
+          <p className="leading-none">
+            <span className="font-display text-2xl font-bold text-rosewood">
+              {currency} {room.base_price.toLocaleString()}
+            </span>
+            <span className="ml-1 text-sm text-stone"> / night</span>
+          </p>
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-forest transition-colors group-hover:text-rosewood">
+            View room
+            <ArrowRight className="h-3.5 w-3.5" />
+          </span>
+        </div>
       </div>
     </Link>
   );

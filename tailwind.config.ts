@@ -10,8 +10,8 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "1.25rem",
-      screens: { "2xl": "1320px" },
+      padding: { DEFAULT: "1.25rem", lg: "2rem" },
+      screens: { "2xl": "1180px" },
     },
     extend: {
       colors: {
@@ -60,6 +60,15 @@ const config: Config = {
           DEFAULT: "hsl(var(--danger))",
           foreground: "hsl(var(--danger-foreground))",
         },
+        /* Named design-system palette (raw hex) for direct use. */
+        forest: { DEFAULT: "#3E4A32", dark: "#2C3524" },
+        rosewood: { DEFAULT: "#B85C4E", light: "#D98A76" },
+        sage: "#8A9574",
+        stone: "#867E6D",
+        brass: "#B8925A",
+        ink: "#241F16",
+        linen: { DEFAULT: "#F1EAD9", deep: "#E7DCC5" },
+        "white-wash": "#F8F4E9",
       },
       borderRadius: {
         xl: "calc(var(--radius) + 4px)",
@@ -68,12 +77,16 @@ const config: Config = {
         sm: "calc(var(--radius) - 6px)",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
-        display: ["var(--font-display)", "Georgia", "serif"],
+        sans: ["var(--font-sans)", "Karla", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Bricolage Grotesque", "sans-serif"],
+        mono: ["var(--font-mono)", "Space Mono", "monospace"],
+        accent: ["var(--font-accent)", "Fraunces", "Georgia", "serif"],
       },
       fontSize: {
-        "display-xl": ["clamp(2.5rem, 5vw, 4rem)", { lineHeight: "1.05", letterSpacing: "-0.02em" }],
-        "display-lg": ["clamp(2rem, 4vw, 3rem)", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        // Bricolage display scale, per design system.
+        "display-xl": ["clamp(2.375rem, 6vw, 4.375rem)", { lineHeight: "1.02", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.75rem, 4vw, 2.625rem)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
+        "display-md": ["1.4375rem", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
       },
       keyframes: {
         "fade-in": {
