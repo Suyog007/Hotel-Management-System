@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Bricolage_Grotesque, Karla, Space_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { createServerClient } from "@/lib/supabase/server";
@@ -115,6 +116,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
   return (
     <html
       lang="en"
@@ -131,6 +133,7 @@ export default async function RootLayout({
         </a>
         {children}
       </body>
+      {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </html>
   );
 }
