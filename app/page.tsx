@@ -19,11 +19,11 @@ import {
   Sparkle,
   Star,
   ExternalLink,
-  Footprints,
   Plane,
-  Landmark,
+  Store,
   type LucideIcon,
 } from "lucide-react";
+import { TempleIcon, StupaIcon } from "@/components/public/landmark-icons";
 import { FaqJsonLd } from "@/components/seo/json-ld";
 import { createServerClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/public/site-header";
@@ -412,10 +412,10 @@ export default async function HomePage() {
             <div className="lg:col-span-7">
               <ul className="divide-y divide-foreground/10 rounded-[4px] border border-foreground/10 bg-card">
                 {[
-                  { icon: Footprints, name: "Pashupatinath Temple", distance: "5 min walk" },
+                  { icon: TempleIcon, name: "Pashupatinath Temple", distance: "5 min walk" },
                   { icon: Plane, name: "Tribhuvan International Airport", distance: "10 min drive" },
-                  { icon: Landmark, name: "Boudhanath Stupa", distance: "10 min drive" },
-                  { icon: Landmark, name: "Thamel & Durbar Square", distance: "20–25 min drive" },
+                  { icon: StupaIcon, name: "Boudhanath Stupa", distance: "10 min drive" },
+                  { icon: Store, name: "Thamel & Durbar Square", distance: "20–25 min drive" },
                 ].map((l) => (
                   <li key={l.name} className="flex items-center gap-4 p-5">
                     <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[2px] bg-linen text-oxblood">
