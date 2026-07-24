@@ -101,6 +101,14 @@ export async function SiteFooter() {
                 </a>
               ))}
             </div>
+            {/* Site-wide internal link with exact-match anchor text — feeds
+                the /hotel-near-pashupatinath landing page's search ranking. */}
+            <Link
+              href="/hotel-near-pashupatinath"
+              className="font-label text-[11px] text-cream/45 transition-colors hover:text-gold"
+            >
+              Hotel near Pashupatinath
+            </Link>
             <span className="font-label md:ml-2 text-[11px] text-cream/45">
               © {new Date().getFullYear()} {s.hotel_name ?? "Hotel"}
             </span>

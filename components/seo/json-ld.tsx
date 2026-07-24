@@ -4,10 +4,17 @@ import { getSiteUrl } from "@/lib/site-url";
 
 const SITE_URL = getSiteUrl();
 
+// Same handles as components/public/site-footer.tsx — keep the two in sync.
+const SOCIAL_PROFILE_URLS = [
+  "https://www.facebook.com/p/Hotel-vardani-61575513890791/",
+  "https://www.tiktok.com/@hotelvardanipvt.ltd",
+];
+
 type HotelLdParams = {
   hotelName: string;
   description: string;
   address: string;
+  placeId: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
   rating: number | null;
@@ -20,23 +27,29 @@ type HotelLdParams = {
 };
 
 function buildHotelLd(p: HotelLdParams) {
-  // Build a Hotel schema close to schema.org/Hotel. Missing geo coordinates +
-  // street address — Google still uses the listing if Place ID matches via
-  // the Google Business Profile under the same name + city.
+  // Build a Hotel schema close to schema.org/Hotel. No geo coordinates on
+  // purpose — `hasMap` carries the Google Place ID, which anchors the entity
+  // to the Google Business Profile more reliably than hand-typed lat/lng.
   const base: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Hotel",
     name: p.hotelName,
     description: p.description,
     url: SITE_URL,
+    sameAs: SOCIAL_PROFILE_URLS,
     address: {
       "@type": "PostalAddress",
-      addressLocality: "Gaushala",
+      streetAddress: p.address,
+      addressLocality: "Gaushala, Kathmandu",
       addressRegion: "Bagmati",
       postalCode: "44600",
       addressCountry: "NP",
     },
   };
+
+  if (p.placeId) {
+    base.hasMap = `https://www.google.com/maps/place/?q=place_id:${p.placeId}`;
+  }
 
   if (p.contactPhone) base.telephone = p.contactPhone;
   if (p.contactEmail) base.email = p.contactEmail;
@@ -82,7 +95,7 @@ export async function HotelJsonLd() {
     supabase
       .from("site_settings")
       .select(
-        "hotel_name, tagline, address, contact_phone, contact_email, currency_symbol, google_place_rating, google_place_rating_count",
+        "hotel_name, tagline, address, contact_phone, contact_email, currency_symbol, google_place_id, google_place_rating, google_place_rating_count",
       )
       .single(),
     supabase.from("room_types").select("base_price").eq("is_active", true),
@@ -114,6 +127,7 @@ export async function HotelJsonLd() {
     address:
       (s.address as string) ??
       "Gaushala, Kathmandu — 5 min walk to Pashupatinath",
+    placeId: (s.google_place_id as string) ?? null,
     contactPhone: (s.contact_phone as string) ?? null,
     contactEmail: (s.contact_email as string) ?? null,
     rating: (s.google_place_rating as number) ?? null,
@@ -135,6 +149,36 @@ export async function HotelJsonLd() {
       type="application/ld+json"
       // Escape `<` so a `</script>` inside admin-editable content (hotel name,
       // tagline, amenity/room text) can't break out of the script tag.
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
+      }}
+    />
+  );
+}
+
+/**
+ * FAQPage JSON-LD. Mount next to any visible FAQ list (homepage, location
+ * page) so the questions are eligible for rich results. Only pass questions
+ * that are actually rendered on the same page — Google penalizes mismatch.
+ */
+export function FaqJsonLd(props: {
+  faqs: Array<{ question: string; answer: string }>;
+}) {
+  if (props.faqs.length === 0) return null;
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: props.faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      // Escape `<` so a `</script>` inside admin-editable content can't
+      // break out of the script tag.
       dangerouslySetInnerHTML={{
         __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
       }}

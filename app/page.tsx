@@ -19,8 +19,12 @@ import {
   Sparkle,
   Star,
   ExternalLink,
+  Footprints,
+  Plane,
+  Landmark,
   type LucideIcon,
 } from "lucide-react";
+import { FaqJsonLd } from "@/components/seo/json-ld";
 import { createServerClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
@@ -380,6 +384,55 @@ export default async function HomePage() {
           </section>
         )}
 
+        {/* ── Location: Pashupatinath ──────────────────────────────────── */}
+        <section
+          id="location"
+          aria-label="Location"
+          className="container scroll-mt-20 py-20 md:py-28"
+        >
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
+            <div className="lg:col-span-5">
+              <p className="eyebrow mb-3 text-oxblood">Where you are</p>
+              <h2 className="font-display text-3xl font-semibold md:text-5xl">
+                Five minutes from Pashupatinath
+              </h2>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                {hotelName} sits in Gaushala, a short walk from the western
+                gates of the Pashupatinath Temple complex — close enough for
+                morning darshan before breakfast and the evening Bagmati aarti
+                without a taxi. The airport is ten minutes away.
+              </p>
+              <Link
+                href="/hotel-near-pashupatinath"
+                className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-oxblood transition-opacity hover:opacity-80"
+              >
+                Staying near Pashupatinath — the full guide
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="lg:col-span-7">
+              <ul className="divide-y divide-foreground/10 rounded-[4px] border border-foreground/10 bg-card">
+                {[
+                  { icon: Footprints, name: "Pashupatinath Temple", distance: "5 min walk" },
+                  { icon: Plane, name: "Tribhuvan International Airport", distance: "10 min drive" },
+                  { icon: Landmark, name: "Boudhanath Stupa", distance: "10 min drive" },
+                  { icon: Landmark, name: "Thamel & Durbar Square", distance: "20–25 min drive" },
+                ].map((l) => (
+                  <li key={l.name} className="flex items-center gap-4 p-5">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[2px] bg-linen text-oxblood">
+                      <l.icon className="h-5 w-5" strokeWidth={1.75} />
+                    </span>
+                    <span className="flex-1 text-sm font-medium">{l.name}</span>
+                    <span className="font-label text-[11px] text-muted-foreground">
+                      {l.distance}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
         {/* ── Menu teaser ──────────────────────────────────────────────── */}
         {menuItems.length > 0 && (
           <section
@@ -560,6 +613,7 @@ export default async function HomePage() {
         )}
 
         {/* ── FAQs ─────────────────────────────────────────────────────── */}
+        {faqs.length > 0 && <FaqJsonLd faqs={faqs} />}
         {faqs.length > 0 && (
           <section className="container py-20 md:py-28">
             <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-16">
