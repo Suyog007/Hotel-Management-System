@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
-  Footprints,
-  Landmark,
   MapPin,
   Plane,
   Sunrise,
 } from "lucide-react";
+import { TempleIcon, StupaIcon } from "@/components/public/landmark-icons";
 import { createServerClient } from "@/lib/supabase/server";
 import { SiteHeader } from "@/components/public/site-header";
 import { SiteFooter } from "@/components/public/site-footer";
@@ -35,7 +34,7 @@ const DIRECTIONS_URL =
 // "hotel near pashupati(nath)" searches, so the wording is deliberate.
 const LANDMARKS = [
   {
-    icon: Footprints,
+    icon: TempleIcon,
     name: "Pashupatinath Temple",
     distance: "5 min walk",
     detail:
@@ -56,7 +55,7 @@ const LANDMARKS = [
       "The Shakti Peetha on the far side of the Pashupatinath complex, an easy riverside walk along the Bagmati.",
   },
   {
-    icon: Landmark,
+    icon: StupaIcon,
     name: "Boudhanath Stupa",
     distance: "10 min drive",
     detail:
