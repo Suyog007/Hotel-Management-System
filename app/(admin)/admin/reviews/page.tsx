@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Avatar } from "@/components/ui/avatar";
@@ -147,7 +147,7 @@ export default async function AdminReviewsPage(props: {
           </p>
 
           <form action={refreshReviewsNow}>
-            <Button type="submit">Refresh now</Button>
+            <SubmitButton pendingLabel="Refreshing…">Refresh now</SubmitButton>
           </form>
         </CardContent>
       </Card>

@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -152,7 +152,7 @@ export default async function WalkInPage(props: {
               <Textarea name="special_requests" rows={2} />
             </div>
 
-            <Button type="submit">Create booking</Button>
+            <SubmitButton pendingLabel="Creating booking…">Create booking</SubmitButton>
           </form>
         </CardContent>
       </Card>

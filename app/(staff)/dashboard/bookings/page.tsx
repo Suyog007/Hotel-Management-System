@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ClipboardList, CalendarPlus, CalendarMinus, Sparkles, Calendar, BedDouble } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -175,9 +174,9 @@ export default async function DashboardBookingsPage(props: {
             {cleaning.map((r) => (
               <form key={r.id} action={markRoomReady} className="inline">
                 <input type="hidden" name="room_id" value={r.id} />
-                <Button type="submit" variant="outline" size="sm">
+                <SubmitButton variant="outline" size="sm">
                   Mark #{r.room_number} ready
-                </Button>
+                </SubmitButton>
               </form>
             ))}
           </div>

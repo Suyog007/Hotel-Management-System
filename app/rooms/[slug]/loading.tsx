@@ -10,10 +10,10 @@ export default function RoomDetailLoading() {
         <Skeleton className="mb-6 h-4 w-40" />
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <div className="grid grid-cols-2 gap-2">
-              <Skeleton className="col-span-2 aspect-[16/9] w-full rounded-2xl" />
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="aspect-square w-full rounded-xl" />
+            <Skeleton className="aspect-[16/10] w-full rounded-2xl" />
+            <div className="mt-2 flex gap-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-24 shrink-0 rounded-lg" />
               ))}
             </div>
             <div className="mt-8 space-y-3">

@@ -1,7 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -80,7 +80,7 @@ export default async function AuditLogPage(props: {
               <Input id="since" name="since" type="date" defaultValue={sp.since ?? ""} />
             </div>
             <div className="flex items-end gap-2">
-              <Button type="submit" size="sm">Filter</Button>
+              <SubmitButton size="sm">Filter</SubmitButton>
             </div>
           </form>
         </CardContent>

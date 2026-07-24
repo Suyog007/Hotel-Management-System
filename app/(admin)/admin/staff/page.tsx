@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +73,7 @@ export default async function AdminStaffPage(props: {
                 </select>
               </div>
             </div>
-            <Button type="submit">Send invite</Button>
+            <SubmitButton>Send invite</SubmitButton>
             <p className="text-xs text-muted-foreground">
               Creates a stub profile with the chosen role, then sends a Supabase invite
               email. When the invitee accepts, the trigger links their auth user to the
@@ -119,14 +119,14 @@ export default async function AdminStaffPage(props: {
                     <option value="manager">Manager</option>
                     <option value="super_admin">Super admin</option>
                   </select>
-                  <Button type="submit" size="sm" variant="outline">Set role</Button>
+                  <SubmitButton size="sm" variant="outline">Set role</SubmitButton>
                 </form>
                 <form action={toggleActive}>
                   <input type="hidden" name="profile_id" value={s.id} />
                   <input type="hidden" name="is_active" value={s.is_active ? "false" : "true"} />
-                  <Button type="submit" size="sm" variant={s.is_active ? "destructive" : "default"}>
+                  <SubmitButton size="sm" variant={s.is_active ? "destructive" : "default"}>
                     {s.is_active ? "Disable" : "Re-enable"}
-                  </Button>
+                  </SubmitButton>
                 </form>
               </div>
             </CardContent>

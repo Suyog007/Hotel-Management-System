@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -85,7 +85,7 @@ export default async function AdminTemplatesPage(props: {
                     <Switch name="is_active" defaultChecked={t.is_active} />
                     <Label>Active</Label>
                   </div>
-                  <Button type="submit">Save</Button>
+                  <SubmitButton>Save</SubmitButton>
                 </form>
               </CardContent>
             </Card>
@@ -121,7 +121,7 @@ export default async function AdminTemplatesPage(props: {
                     <Switch name="is_active" defaultChecked={t.is_active} />
                     <Label>Active</Label>
                   </div>
-                  <Button type="submit">Save</Button>
+                  <SubmitButton>Save</SubmitButton>
                 </form>
               </CardContent>
             </Card>

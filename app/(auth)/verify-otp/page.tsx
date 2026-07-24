@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { safeNextPath } from "@/lib/validation/auth";
@@ -118,9 +118,9 @@ export default async function VerifyOtpPage(props: {
                 A fresh code is on its way. Check your inbox.
               </p>
             )}
-            <Button type="submit" size="lg" className="w-full">
+            <SubmitButton size="lg" className="w-full" pendingLabel="Verifying…">
               Verify
-            </Button>
+            </SubmitButton>
           </form>
 
           {sp.email && (

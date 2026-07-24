@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -84,7 +84,7 @@ export default async function AdminGalleryPage(props: {
                 <Label htmlFor="upload_is_visible">Visible</Label>
               </div>
             </div>
-            <Button type="submit">Upload</Button>
+            <SubmitButton pendingLabel="Uploading…">Upload</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -127,12 +127,12 @@ export default async function AdminGalleryPage(props: {
                   <Switch name="is_visible" defaultChecked={g.is_visible} />
                   <Label>Visible</Label>
                 </div>
-                <Button type="submit" size="sm">Save</Button>
+                <SubmitButton size="sm">Save</SubmitButton>
               </form>
 
               <form action={deleteGalleryImage}>
                 <input type="hidden" name="id" value={g.id} />
-                <Button type="submit" variant="destructive" size="sm">Delete</Button>
+                <SubmitButton variant="destructive" size="sm">Delete</SubmitButton>
               </form>
             </CardContent>
           </Card>

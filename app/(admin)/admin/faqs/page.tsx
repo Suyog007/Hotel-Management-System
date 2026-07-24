@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,7 +78,7 @@ export default async function AdminFaqsPage(props: {
                 <Switch id="new_is_visible" name="is_visible" defaultChecked />
               </div>
             </div>
-            <Button type="submit">Add FAQ</Button>
+            <SubmitButton>Add FAQ</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -119,15 +119,15 @@ export default async function AdminFaqsPage(props: {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit">Save</Button>
+                  <SubmitButton>Save</SubmitButton>
                 </div>
               </form>
 
               <form action={deleteFaq} className="mt-2">
                 <input type="hidden" name="id" value={f.id} />
-                <Button type="submit" variant="destructive" size="sm">
+                <SubmitButton variant="destructive" size="sm">
                   Delete
-                </Button>
+                </SubmitButton>
               </form>
             </CardContent>
           </Card>
