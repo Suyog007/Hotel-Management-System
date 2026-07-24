@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Loader2, Search } from "lucide-react";
 
 function toIsoDate(d: Date): string {
   const y = d.getFullYear();
@@ -24,6 +24,7 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
   const [checkOut, setCheckOut] = useState<string>(tomorrow);
   const [guests, setGuests] = useState<number>(defaultGuests);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   // Keep check-out at least one day after check-in.
   const minCheckOut = useMemo(() => {
@@ -53,7 +54,9 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
       check_out: checkOut,
       guests: String(guests),
     });
-    router.push(`/rooms?${params.toString()}#rooms`);
+    startTransition(() => {
+      router.push(`/rooms?${params.toString()}#rooms`);
+    });
   }
 
   return (
@@ -114,10 +117,20 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
         </Field>
         <button
           type="submit"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90 sm:h-[60px]"
+          disabled={isPending}
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground shadow-soft transition-colors hover:bg-primary/90 disabled:opacity-80 sm:h-[60px]"
         >
-          <Search className="h-4 w-4" />
-          Check availability
+          {isPending ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Checking…
+            </>
+          ) : (
+            <>
+              <Search className="h-4 w-4" />
+              Check availability
+            </>
+          )}
         </button>
       </div>
       {error && (

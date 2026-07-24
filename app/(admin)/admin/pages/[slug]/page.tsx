@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -135,7 +135,7 @@ export default async function AdminPageEditor(props: {
               <Switch id="is_published" name="is_published" defaultChecked={p.is_published} />
               <Label htmlFor="is_published">Published</Label>
             </div>
-            <Button type="submit">Save page</Button>
+            <SubmitButton>Save page</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -173,7 +173,7 @@ export default async function AdminPageEditor(props: {
                   ))}
                 </select>
               </div>
-              <Button type="submit">Add</Button>
+              <SubmitButton>Add</SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -229,15 +229,15 @@ function SectionEditor({
             </div>
           </div>
 
-          <Button type="submit">Save section</Button>
+          <SubmitButton>Save section</SubmitButton>
         </form>
 
         <form action={deleteSection} className="mt-2">
           <input type="hidden" name="slug" value={slug} />
           <input type="hidden" name="id" value={section.id} />
-          <Button type="submit" variant="destructive" size="sm">
+          <SubmitButton variant="destructive" size="sm">
             Delete section
-          </Button>
+          </SubmitButton>
         </form>
       </CardContent>
     </Card>

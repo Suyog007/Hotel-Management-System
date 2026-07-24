@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -137,7 +137,7 @@ export default async function DashboardRoomsPage(props: {
                   <Label>Active</Label>
                 </div>
               </div>
-              <Button type="submit">Add room type</Button>
+              <SubmitButton>Add room type</SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -190,12 +190,12 @@ export default async function DashboardRoomsPage(props: {
                       <Label>Active</Label>
                     </div>
                   </div>
-                  <Button type="submit">Save</Button>
+                  <SubmitButton>Save</SubmitButton>
                 </form>
 
                 <form action={deleteRoomType} className="mt-2">
                   <input type="hidden" name="id" value={t.id} />
-                  <Button type="submit" variant="destructive" size="sm">Delete room type</Button>
+                  <SubmitButton variant="destructive" size="sm">Delete room type</SubmitButton>
                 </form>
               </CardContent>
             </Card>
@@ -252,7 +252,7 @@ export default async function DashboardRoomsPage(props: {
                 <Label>Notes</Label>
                 <Textarea name="notes" />
               </div>
-              <Button type="submit">Add room</Button>
+              <SubmitButton>Add room</SubmitButton>
             </form>
           </CardContent>
         </Card>
@@ -305,12 +305,12 @@ export default async function DashboardRoomsPage(props: {
                     <Label>Notes</Label>
                     <Textarea name="notes" defaultValue={r.notes ?? ""} rows={2} />
                   </div>
-                  <Button type="submit" size="sm">Save</Button>
+                  <SubmitButton size="sm">Save</SubmitButton>
                 </form>
 
                 <form action={deleteRoom} className="mt-2">
                   <input type="hidden" name="id" value={r.id} />
-                  <Button type="submit" variant="destructive" size="sm">Delete</Button>
+                  <SubmitButton variant="destructive" size="sm">Delete</SubmitButton>
                 </form>
               </CardContent>
             </Card>

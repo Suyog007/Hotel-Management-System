@@ -125,11 +125,11 @@ export default async function RoomDetailPage(props: {
       <SiteHeader />
       <main id="main" className="container py-8 md:py-12">
         <Link
-          href="/rooms"
+          href="/#rooms"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="h-4 w-4" />
-          All rooms
+          Back to rooms
         </Link>
 
         <div className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-3">

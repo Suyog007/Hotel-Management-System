@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -160,7 +160,7 @@ export default async function CancellationsPage(props: {
                       <Label htmlFor={`note-${r.id}`}>Internal notes (optional)</Label>
                       <Textarea id={`note-${r.id}`} name="notes" rows={2} />
                     </div>
-                    <Button type="submit" size="sm">Mark refunded</Button>
+                    <SubmitButton size="sm">Mark refunded</SubmitButton>
                   </form>
                 ) : (
                   <p className="text-xs text-muted-foreground">

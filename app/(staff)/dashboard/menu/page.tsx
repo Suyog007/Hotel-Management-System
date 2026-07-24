@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -100,7 +100,7 @@ export default async function DashboardMenuPage(props: {
               <Switch name="is_available" defaultChecked />
               <Label>Available</Label>
             </div>
-            <Button type="submit">Add item</Button>
+            <SubmitButton>Add item</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -141,11 +141,11 @@ export default async function DashboardMenuPage(props: {
                   <Switch name="is_available" defaultChecked={f.is_available} />
                   <Label>Available</Label>
                 </div>
-                <Button type="submit" size="sm">Save</Button>
+                <SubmitButton size="sm">Save</SubmitButton>
               </form>
               <form action={deleteFoodItem} className="mt-2">
                 <input type="hidden" name="id" value={f.id} />
-                <Button type="submit" variant="destructive" size="sm">Delete</Button>
+                <SubmitButton variant="destructive" size="sm">Delete</SubmitButton>
               </form>
             </CardContent>
           </Card>

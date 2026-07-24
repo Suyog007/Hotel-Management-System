@@ -1,5 +1,5 @@
 import { createServerClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -98,7 +98,7 @@ export default async function AdminTestimonialsPage(props: {
               <Switch id="new_is_visible" name="is_visible" defaultChecked />
               <Label htmlFor="new_is_visible">Visible</Label>
             </div>
-            <Button type="submit">Add testimonial</Button>
+            <SubmitButton>Add testimonial</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -148,12 +148,12 @@ export default async function AdminTestimonialsPage(props: {
                   <Switch name="is_visible" defaultChecked={t.is_visible} />
                   <Label>Visible</Label>
                 </div>
-                <Button type="submit">Save</Button>
+                <SubmitButton>Save</SubmitButton>
               </form>
 
               <form action={deleteTestimonial} className="mt-2">
                 <input type="hidden" name="id" value={t.id} />
-                <Button type="submit" variant="destructive" size="sm">Delete</Button>
+                <SubmitButton variant="destructive" size="sm">Delete</SubmitButton>
               </form>
             </CardContent>
           </Card>
