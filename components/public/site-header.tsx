@@ -25,14 +25,14 @@ export async function SiteHeader() {
   const showMyBookingsPill = Boolean(auth.user);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-forest-dark/60 bg-forest text-white-wash">
+    <header className="sticky top-0 z-30 border-b border-onyx/60 bg-onyx text-cream">
       <div className="container flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-2.5">
           <span
             aria-hidden
-            className="inline-block h-2.5 w-2.5 rounded-full bg-rosewood-light"
+            className="inline-block h-2.5 w-2.5 rounded-full bg-gold"
           />
-          <span className="font-display text-lg font-bold tracking-tight text-white-wash">
+          <span className="font-display text-lg font-bold tracking-tight text-cream">
             {hotelName}
           </span>
         </Link>
@@ -53,7 +53,7 @@ export async function SiteHeader() {
             <Link
               href="/my-bookings"
               aria-label="My bookings"
-              className="inline-flex items-center gap-2 rounded-[2px] border border-white-wash/30 px-2.5 py-2 text-sm font-medium text-white-wash/85 transition-colors hover:border-white-wash/60 hover:text-white-wash md:px-3"
+              className="inline-flex items-center gap-2 rounded-[2px] border border-cream/30 px-2.5 py-2 text-sm font-medium text-cream/85 transition-colors hover:border-cream/60 hover:text-cream md:px-3"
             >
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">My bookings</span>
@@ -61,7 +61,7 @@ export async function SiteHeader() {
           )}
           <Link
             href="/#rooms"
-            className="inline-flex rounded-[2px] bg-rosewood px-3 py-2 text-sm font-semibold text-white-wash transition-colors hover:bg-rosewood-light sm:px-4"
+            className="inline-flex rounded-[2px] bg-gold px-3 py-2 text-sm font-semibold text-onyx transition-colors hover:bg-gold-light sm:px-4"
           >
             Book a room
           </Link>

@@ -8,15 +8,15 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Forest primary → forest-dark on hover.
+        // Onyx primary → lifts to a slightly softer black on hover.
         default:
-          "bg-primary text-primary-foreground hover:bg-forest-dark",
-        // Rosewood accent — for standing out inside a green/linen layout.
+          "bg-primary text-primary-foreground hover:bg-onyx-soft",
+        // Sharp-gold accent — the metallic highlight, onyx text for contrast.
         accent:
-          "bg-accent text-accent-foreground hover:bg-rosewood-light",
+          "bg-accent text-accent-foreground hover:bg-gold-light",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        // 1px ink outline → inverts to solid ink on hover.
+        // 1px onyx outline → inverts to solid onyx on hover.
         outline:
           "border border-foreground/70 bg-transparent text-foreground hover:bg-foreground hover:text-background",
         secondary:

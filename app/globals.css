@@ -4,53 +4,48 @@
 
 @layer base {
   :root {
-    /* Surfaces — warm rustic base */
-    --background: 43 46% 90%;          /* linen */
-    --foreground: 39 24% 11%;          /* ink */
-    --card: 44 52% 94%;                /* white-wash */
-    --card-foreground: 39 24% 11%;
-    --popover: 44 52% 94%;
-    --popover-foreground: 39 24% 11%;
+    /* Surfaces — cream base, onyx ink */
+    --background: 45 50% 92%;          /* cream */
+    --foreground: 0 0% 5%;             /* onyx */
+    --card: 44 46% 96%;                /* lifted cream */
+    --card-foreground: 0 0% 5%;
+    --popover: 44 46% 96%;
+    --popover-foreground: 0 0% 5%;
 
-    /* Brand — forest primary, rosewood accent */
-    --primary: 90 19% 24%;             /* forest */
-    --primary-foreground: 44 52% 94%;  /* white-wash */
-    --secondary: 41 41% 84%;           /* linen-deep */
-    --secondary-foreground: 39 24% 11%;
-    --accent: 8 43% 51%;               /* rosewood */
-    --accent-foreground: 44 52% 94%;
+    /* Brand — onyx primary, sharp-gold accent */
+    --primary: 0 0% 5%;                /* onyx */
+    --primary-foreground: 45 50% 92%;  /* cream */
+    --secondary: 45 22% 87%;           /* warm silver-cream */
+    --secondary-foreground: 0 0% 5%;
+    --accent: 46 65% 52%;              /* sharp gold */
+    --accent-foreground: 0 0% 5%;      /* onyx on gold */
 
     /* Neutrals */
-    --muted: 41 41% 84%;               /* linen-deep */
-    --muted-foreground: 40 11% 40%;    /* stone (darkened for AA) */
-    --border: 40 20% 80%;
-    --input: 40 20% 80%;
-    --ring: 8 43% 51%;                 /* rosewood */
+    --muted: 45 24% 88%;
+    --muted-foreground: 30 5% 36%;     /* readable warm gray */
+    --border: 42 14% 80%;
+    --input: 42 14% 80%;
+    --ring: 46 65% 52%;                /* gold */
 
     /* Status */
-    --success: 90 22% 30%;             /* deep forest */
-    --success-foreground: 44 52% 94%;
-    --warning: 35 40% 48%;             /* brass */
-    --warning-foreground: 44 52% 94%;
-    --danger: 8 50% 44%;               /* deep rosewood-red */
-    --danger-foreground: 44 52% 94%;
-    --destructive: 8 50% 44%;
-    --destructive-foreground: 44 52% 94%;
+    --success: 162 55% 20%;            /* emerald */
+    --success-foreground: 45 50% 92%;
+    --warning: 46 60% 44%;             /* deep gold */
+    --warning-foreground: 0 0% 5%;
+    --danger: 352 55% 34%;             /* oxblood */
+    --danger-foreground: 45 50% 92%;
+    --destructive: 352 55% 34%;
+    --destructive-foreground: 45 50% 92%;
 
     --radius: 0.5rem;
 
     /* Named palette (design-system tokens, raw hex) */
-    --linen: #f1ead9;
-    --linen-deep: #e7dcc5;
-    --white-wash: #f8f4e9;
-    --ink: #241f16;
-    --forest: #3e4a32;
-    --forest-dark: #2c3524;
-    --sage: #8a9574;
-    --rosewood: #b85c4e;
-    --rosewood-light: #d98a76;
-    --stone: #867e6d;
-    --brass: #b8925a;
+    --onyx: #0d0d0d;
+    --gold: #d4af37;
+    --emerald: #0b3d2e;
+    --oxblood: #7a1f2b;
+    --cream: #f5f0e1;
+    --silver: #a8a9ad;
   }
 
   .dark {
@@ -150,11 +145,11 @@
   .shadow-soft-lg {
     box-shadow: 0 24px 50px -30px rgba(36, 31, 22, 0.45);
   }
-  /* Linen page wash with the faintest forest/rosewood warmth in the corners. */
+  /* Cream page wash with the faintest gold/emerald warmth in the corners. */
   .bg-linen {
     background-image:
-      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.06) 0px, transparent 42%),
-      radial-gradient(at 0% 100%, hsl(var(--primary) / 0.07) 0px, transparent 42%);
+      radial-gradient(at 100% 0%, hsl(var(--accent) / 0.08) 0px, transparent 42%),
+      radial-gradient(at 0% 100%, hsl(var(--success) / 0.06) 0px, transparent 42%);
     background-color: hsl(var(--background));
   }
   /* Ledger divider — a dashed hairline used only inside cards. */

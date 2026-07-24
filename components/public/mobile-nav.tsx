@@ -87,7 +87,7 @@ export function MobileNav({ hotelName }: { hotelName: string }) {
         aria-label="Open menu"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="grid h-9 w-9 place-items-center rounded-[2px] text-white-wash transition-colors hover:bg-white-wash/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white-wash/60 md:hidden"
+        className="grid h-9 w-9 place-items-center rounded-[2px] text-cream transition-colors hover:bg-cream/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cream/60 md:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
