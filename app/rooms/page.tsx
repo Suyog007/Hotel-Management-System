@@ -10,6 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/rooms" },
 };
 import { SiteHeader } from "@/components/public/site-header";
+import { CardImageSlider } from "@/components/public/card-image-slider";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -204,7 +205,7 @@ function RoomCard({
   symbol: string;
   stay: StayContext;
 }) {
-  const cover = (rt.images ?? [])[0];
+  const images = rt.images ?? [];
   const soldOut = stay && rt.availableCount === 0;
   const overCapacity = stay && rt.exceedsCapacity;
   const unbookable = soldOut || overCapacity;
@@ -229,12 +230,10 @@ function RoomCard({
     <Wrapper>
       <article className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-          {cover ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
-              src={cover}
+          {images.length > 0 ? (
+            <CardImageSlider
+              images={images}
               alt={`${rt.name} at Hotel Vardani, Gaushala`}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/15 via-accent/10 to-transparent">
@@ -243,12 +242,12 @@ function RoomCard({
               </span>
             </div>
           )}
-          <div className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-soft backdrop-blur">
+          <div className="pointer-events-none absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-background/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-soft backdrop-blur">
             <Users className="h-3 w-3" />
             Sleeps {rt.max_guests}
           </div>
           {stay && (
-            <div className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium shadow-soft backdrop-blur"
+            <div className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium shadow-soft backdrop-blur"
               style={{
                 background: soldOut
                   ? "rgb(220 38 38 / 0.95)"
@@ -261,7 +260,7 @@ function RoomCard({
                 : `${rt.availableCount} room${rt.availableCount === 1 ? "" : "s"} left`}
             </div>
           )}
-          <div className="absolute bottom-3 right-3 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background backdrop-blur">
+          <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background backdrop-blur">
             {stay && rt.totalForStay !== null ? (
               <>
                 {symbol} {rt.totalForStay.toLocaleString()}{" "}
