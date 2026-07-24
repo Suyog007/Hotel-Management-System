@@ -285,7 +285,7 @@ export default async function HomePage() {
 
         {/* ── Stats strip ───────────────────────────────────────────────── */}
         <section className="border-b border-border/60 bg-card">
-          <div className="container grid grid-cols-2 gap-6 py-10 md:grid-cols-4 md:py-14">
+          <div className="container grid grid-cols-2 gap-6 py-10 md:grid-cols-3 md:py-14">
             <Stat label="Room types" value={String(rooms.length)} />
             <Stat
               label="Starting from"
@@ -305,7 +305,6 @@ export default async function HomePage() {
             ) : (
               <Stat label="Amenities" value={String(amenities.length)} />
             )}
-            <Stat label="Verification" value="Email OTP" sub="no account needed" />
           </div>
         </section>
 
