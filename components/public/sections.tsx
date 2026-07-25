@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { ImageWithLoader } from "@/components/public/image-with-loader";
 
 export type PageSection = {
   id: string;
@@ -133,13 +134,14 @@ async function GallerySection({ c }: { c: Record<string, string | string[] | und
         {images.map((img) => (
           <figure
             key={img.id}
-            className="group relative overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft"
+            className="group relative aspect-square overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <ImageWithLoader
               src={img.image_url}
               alt={img.caption ?? ""}
-              className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             {img.caption && (
               <figcaption className="absolute inset-x-0 bottom-0 translate-y-full bg-gradient-to-t from-foreground/80 to-transparent px-3 py-3 text-xs text-primary-foreground transition-transform duration-300 group-hover:translate-y-0">

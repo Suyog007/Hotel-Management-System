@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { ImageLightbox } from "./image-lightbox";
+import { ImageWithLoader } from "./image-with-loader";
 
 type Item = { id: string; image_url: string; caption: string | null };
 
@@ -24,7 +24,7 @@ export function GalleryTeaser({ items }: { items: Item[] }) {
                 i === 0 ? "md:col-span-2 md:row-span-2" : ""
               }`}
             >
-              <Image
+              <ImageWithLoader
                 src={g.image_url}
                 alt={g.caption ?? ""}
                 fill
