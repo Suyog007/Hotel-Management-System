@@ -108,6 +108,12 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
       googleBot: { index: true, follow: true, "max-image-preview": "large" },
     },
+    // Google Search Console ownership proof (HTML-tag method). Set
+    // NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION in the deploy environment to the
+    // content value GSC shows; harmless to leave unset elsewhere.
+    verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+      : undefined,
   };
 }
 
