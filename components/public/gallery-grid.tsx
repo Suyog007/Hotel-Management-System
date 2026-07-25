@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { ImageLightbox } from "./image-lightbox";
+import { ImageWithLoader } from "./image-with-loader";
 
 type Item = {
   id: string;
@@ -51,7 +51,7 @@ export function GalleryGrid({ items }: { items: Item[] }) {
                     aria-label={g.caption ?? "Photo"}
                     className="group relative aspect-square overflow-hidden rounded-xl"
                   >
-                    <Image
+                    <ImageWithLoader
                       src={g.image_url}
                       alt={g.caption ?? ""}
                       fill
