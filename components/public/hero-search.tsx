@@ -15,11 +15,20 @@ export function HeroSearch({
   defaultGuests = 1,
   priceOptions = [],
   symbol = "Rs.",
+  initialCheckIn,
+  initialCheckOut,
+  initialGuests,
+  initialMaxPrice,
 }: {
   defaultGuests?: number;
   /** Sorted unique nightly rates — renders the "Max price" filter when non-empty. */
   priceOptions?: number[];
   symbol?: string;
+  /** Pre-fill values (e.g. on /rooms, from the current search params). */
+  initialCheckIn?: string;
+  initialCheckOut?: string;
+  initialGuests?: number;
+  initialMaxPrice?: string;
 }) {
   const router = useRouter();
   const today = useMemo(() => toIsoDate(new Date()), []);
@@ -29,10 +38,10 @@ export function HeroSearch({
     return toIsoDate(t);
   }, []);
 
-  const [checkIn, setCheckIn] = useState<string>(today);
-  const [checkOut, setCheckOut] = useState<string>(tomorrow);
-  const [guests, setGuests] = useState<number>(defaultGuests);
-  const [maxPrice, setMaxPrice] = useState<string>("");
+  const [checkIn, setCheckIn] = useState<string>(initialCheckIn ?? today);
+  const [checkOut, setCheckOut] = useState<string>(initialCheckOut ?? tomorrow);
+  const [guests, setGuests] = useState<number>(initialGuests ?? defaultGuests);
+  const [maxPrice, setMaxPrice] = useState<string>(initialMaxPrice ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 

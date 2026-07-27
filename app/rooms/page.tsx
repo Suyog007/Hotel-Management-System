@@ -11,6 +11,7 @@ export const metadata: Metadata = {
 };
 import { SiteHeader } from "@/components/public/site-header";
 import { CardImageSlider } from "@/components/public/card-image-slider";
+import { HeroSearch } from "@/components/public/hero-search";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -171,38 +172,21 @@ export default async function RoomsListPage({
           </div>
         )}
 
-        {stay && (
-          <div className="mb-8 flex flex-wrap items-center gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
-            <CalendarDays className="h-4 w-4 text-accent" />
-            <span className="font-medium">
-              {formatDate(stay.checkIn)} → {formatDate(stay.checkOut)}
-            </span>
-            <span className="text-muted-foreground">
-              · {stay.nights} night{stay.nights === 1 ? "" : "s"} · {stay.guests}{" "}
-              guest{stay.guests === 1 ? "" : "s"}
-              {maxPrice !== null && (
-                <>
-                  {" "}
-                  · up to {symbol} {maxPrice.toLocaleString()} / night
-                </>
-              )}
-            </span>
-            {maxPrice !== null && (
-              <Link
-                href={clearPriceHref}
-                className="text-xs font-medium text-accent hover:underline"
-              >
-                Clear price filter
-              </Link>
+        <div
+          id="rooms-filter"
+          className="mb-8 rounded-2xl border border-border/60 shadow-soft"
+        >
+          <HeroSearch
+            priceOptions={[...new Set(rows.map((r) => r.base_price))].sort(
+              (a, b) => a - b,
             )}
-            <Link
-              href="/#hero-search"
-              className="ml-auto text-xs font-medium text-accent hover:underline"
-            >
-              Change dates
-            </Link>
-          </div>
-        )}
+            symbol={symbol}
+            initialCheckIn={stay?.checkIn}
+            initialCheckOut={stay?.checkOut}
+            initialGuests={stay?.guests}
+            initialMaxPrice={maxPrice !== null ? String(maxPrice) : undefined}
+          />
+        </div>
 
         {visible.length === 0 ? (
           rows.length === 0 ? (
@@ -231,9 +215,9 @@ export default async function RoomsListPage({
                       Clear price filter
                     </Link>
                   )}
-                  <Link href="/#hero-search" className="hover:underline">
+                  <a href="#rooms-filter" className="hover:underline">
                     Change dates
-                  </Link>
+                  </a>
                 </div>
               }
             />
@@ -263,14 +247,6 @@ export default async function RoomsListPage({
       <SiteFooter />
     </>
   );
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
 }
 
 function RoomCard({
