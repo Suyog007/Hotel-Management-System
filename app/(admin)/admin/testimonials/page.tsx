@@ -53,6 +53,14 @@ export default async function AdminTestimonialsPage(props: {
         description="Curated quotes from past guests. These render on your site separately from Google Reviews."
       />
 
+      <div className="rounded-md border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
+        <strong>Heads up:</strong> the homepage reviews slider shows these
+        quotes only while fewer than 3 Google reviews are cached. Once the
+        Google cache has 3 or more, the slider switches to Google reviews and
+        testimonials no longer appear on the homepage. When shown, up to 8
+        visible testimonials render, sorted by Order.
+      </div>
+
       {sp.saved && (
         <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">Saved.</div>
       )}

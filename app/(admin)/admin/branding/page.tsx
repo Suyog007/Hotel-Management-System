@@ -29,9 +29,9 @@ export default async function AdminBrandingPage(props: {
 
       <div className="rounded-md border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-warning-foreground">
         <strong>Heads up:</strong> the public site currently ships a hand-tuned
-        boutique palette (terracotta + sand + copper). Edits here are saved
-        for future use but don&apos;t override the rendered theme. The fonts
-        (Playfair Display + Inter) are likewise fixed at the design level.
+        luxe palette (onyx + gold + cream). Edits here are saved for future
+        use but don&apos;t override the rendered theme. The fonts (Bricolage
+        Grotesque + Karla) are likewise fixed at the design level.
       </div>
 
       {sp.saved && (

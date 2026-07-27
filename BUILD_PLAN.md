@@ -570,6 +570,50 @@ Files are in place but the gate is not yet **verified** — requires running `np
 
 ---
 
+## QA findings — 2026-07-27 admin + front-end test pass
+
+Two-session manual/browser test pass: admin-side function/UI testing plus a
+front-end propagation pass (every admin change verified to render on the
+public site, then reverted and re-verified clean).
+
+**Front-end propagation — all PASS** (admin change → live site → reverted):
+Settings tagline, FAQs, Amenities, Menu, Testimonials, Gallery (14→15→14),
+About page sections. Final cache-bypassed audit across `/`, `/menu`,
+`/gallery`, `/about`: 8/8 clean, no leftover test data.
+
+**Findings triage (code-reviewed 2026-07-27):**
+
+- [ ] **Testimonial form "fails silently" on invalid Rating/Order.**
+  Reviewed `app/(admin)/admin/testimonials/`: the server action *does* redirect
+  with `?error=` and the page renders a red banner; the Zod schema treats blank
+  rating as optional and blank order as 0. The silent behavior is the browser's
+  native constraint validation (`min="1" max="5"` on rating, `min="0"` on
+  order) blocking submission with a transient bubble that automated testing
+  doesn't capture. Server-side backstop exists. Optional UX improvement:
+  persistent inline field errors instead of native bubbles — decide if worth it.
+- [x] **"Homepage only shows top-3 testimonials" — not quite.** `app/page.tsx`
+  pulls up to **8** visible testimonials by `sort_order`, but the reviews
+  slider prefers **Google reviews entirely when ≥3 are cached** — testimonials
+  are only the fallback source. A new testimonial not appearing on the homepage
+  is because Google is the active source, not an Order cutoff. Behavior kept;
+  an explanatory note now renders on `/admin/testimonials` (2026-07-27). If the
+  owner wants curated quotes visible alongside Google reviews, the slider-mix
+  change is still on the table.
+- [x] **Public page caching delay.** Expected: server-rendered pages sit behind
+  CDN/full-route caching briefly; changes appear on next cache refresh. Not a
+  bug; no action.
+
+**Deliberately untested (touch real records — need owner go-ahead):**
+
+- [ ] Booking check-out / extend / cancel on real bookings
+- [ ] Walk-in booking submission
+- [ ] Staff invites / role changes / disabling accounts
+- [ ] Sending chat messages to real guests
+- [ ] Front-end cross-check of Branding accent color + a room price change
+  (both were changed and restored admin-side only; note Branding colors are
+  documentation-only — the palette is hardcoded in `globals.css`, so no
+  front-end effect is *expected*)
+
 ## Open questions / deferred decisions
 
 - Generated Supabase types: run `supabase gen types typescript --linked > types/supabase.ts` once project is linked. Until then, `types/database.ts` is a stub.
@@ -642,4 +686,6 @@ Files are in place but the gate is not yet **verified** — requires running `np
 - 2026-07-24 — **Google Analytics 4 wired (G-8Q2V1WXG7F).** Added `@next/third-parties` and mounted `<GoogleAnalytics gaId={…} />` in `app/layout.tsx` as a sibling of `<body>` (Google's official Next.js integration — replaces pasting the raw gtag.js snippet, loads after hydration, covers SPA route changes). Gated behind `NEXT_PUBLIC_GA_MEASUREMENT_ID`: blank locally (dev traffic untracked), documented in `.env.example` + `.env`. **Owner action to activate:** add `NEXT_PUBLIC_GA_MEASUREMENT_ID=G-8Q2V1WXG7F` in Vercel → Project → Settings → Environment Variables (Production) and redeploy, then confirm in GA Reports → Realtime. type-check clean, production build succeeds.
 - 2026-07-25 — **"Not on Google" diagnosis + GSC verification support.** Owner reported hotelvardani.com absent from Google for "hotel vardani". Verified the live site (Netlify + Cloudflare) is fully crawlable: HTTP 200, `robots.txt` correct, `sitemap.xml` emits the right absolute URLs, homepage has `index, follow` + canonical — the domain is simply **not in Google's index** (no Search Console property, and zero inbound links: the Google Business Profile has no website set and the Facebook/TikTok pages don't link the site). Code: root layout now emits the `google-site-verification` meta when `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` is set (documented in `.env.example`) so GSC HTML-tag verification is just an env var in the Netlify deploy. **Owner actions (the actual fix):** (1) verify hotelvardani.com in Google Search Console, submit `sitemap.xml`, Request Indexing on `/` and `/hotel-near-pashupatinath`; (2) claim/edit the Google Business Profile and set Website = https://hotelvardani.com (also fixes the missing Website button in the knowledge panel); (3) add the URL to the Facebook page's website field and TikTok bio. Expect days→weeks for the brand query to show the site once indexed.
 - 2026-07-25 — **Gallery image loaders.** New `components/public/image-with-loader.tsx`: a `next/image` wrapper that covers each tile with a pulsing muted placeholder + gold spinner until the bitmap loads, then fades the overlay out (the overlay fades, not the image, so call-site `transition-transform` hover zooms survive tailwind-merge). Wired into all three gallery renderers: `/gallery` grid (`gallery-grid.tsx`), homepage gallery teaser (`gallery-teaser.tsx`), and the CMS gallery section (`sections.tsx` — which also migrated its last raw `<img>` to `next/image` with `fill` + responsive `sizes`). type-check clean, build succeeds.
+- 2026-07-27 — **Testimonials-visibility note + stale branding banner fix.** `/admin/testimonials` now shows an info note explaining the homepage slider's source rule (testimonials render only while fewer than 3 Google reviews are cached; up to 8 by Order when shown) — closes the QA confusion about a new testimonial not appearing on the homepage without changing slider behavior. Also updated the `/admin/branding` heads-up banner, which still described the retired terracotta/sand/copper palette and Playfair/Inter fonts — now correctly says onyx + gold + cream and Bricolage Grotesque + Karla. type-check clean.
+- 2026-07-27 — **QA test-pass results recorded + findings triaged.** Added the "QA findings — 2026-07-27" section above: front-end propagation all-pass (tagline/FAQs/amenities/menu/testimonials/gallery/about, all reverted clean), three reported findings code-reviewed. Testimonial "silent failure" traced to native HTML constraint-validation bubbles (server-side Zod + error banner already exist — no bug, optional UX polish only). "Top-3 testimonials" claim corrected: homepage takes up to 8 by `sort_order` but the slider prefers Google reviews entirely when ≥3 are cached, so testimonials are fallback-only. Caching delay is expected CDN behavior. Untested-by-design items (state-touching ops flows) listed pending owner go-ahead. No code changed.
 - 2026-07-24 — **Zeroed tax/service in DB + removed from admin.** Applied the room-rate-only decision to data + UI: added migration `0014_zero_tax_service.sql` (sets `site_settings.tax_rate`/`service_charge_rate` to 0 and defaults future rows to 0) and applied it to the live Supabase project via PostgREST (0.13/0.10 → 0/0, HTTP 200). Removed the Tax rate / Service charge rate fields from Admin → Settings and dropped them from `siteSettingsSchema` (they were inert after pricing moved to the lib/pricing constants). Whole booking stack now shows and charges the room amount only. type-check clean, 191 tests pass, build succeeds.
