@@ -24,12 +24,15 @@ type FoodRow = {
 
 export default async function PublicMenuPage() {
   const supabase = await createServerClient();
+  // Global sort_order drives both item order and category order (categories
+  // appear in the order of their lowest-numbered item, matching the printed
+  // menu instead of alphabetical).
   const { data } = await supabase
     .from("food_items")
     .select("id, name, description, price, category, image_url")
     .eq("is_available", true)
-    .order("category")
-    .order("sort_order");
+    .order("sort_order")
+    .order("name");
   const rows = (data as FoodRow[] | null) ?? [];
 
   const { data: settings } = await supabase
