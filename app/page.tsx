@@ -281,7 +281,12 @@ export default async function HomePage() {
             </div>
 
             <div className="mt-[clamp(2rem,6svh,4rem)] max-w-4xl">
-              <HeroSearch />
+              <HeroSearch
+                priceOptions={[...new Set(rooms.map((r) => r.base_price))].sort(
+                  (a, b) => a - b,
+                )}
+                symbol={currency}
+              />
             </div>
           </div>
         </section>

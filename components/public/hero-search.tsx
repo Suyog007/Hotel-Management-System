@@ -11,7 +11,16 @@ function toIsoDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
+export function HeroSearch({
+  defaultGuests = 1,
+  priceOptions = [],
+  symbol = "Rs.",
+}: {
+  defaultGuests?: number;
+  /** Sorted unique nightly rates — renders the "Max price" filter when non-empty. */
+  priceOptions?: number[];
+  symbol?: string;
+}) {
   const router = useRouter();
   const today = useMemo(() => toIsoDate(new Date()), []);
   const tomorrow = useMemo(() => {
@@ -23,6 +32,7 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
   const [checkIn, setCheckIn] = useState<string>(today);
   const [checkOut, setCheckOut] = useState<string>(tomorrow);
   const [guests, setGuests] = useState<number>(defaultGuests);
+  const [maxPrice, setMaxPrice] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -54,6 +64,7 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
       check_out: checkOut,
       guests: String(guests),
     });
+    if (maxPrice) params.set("max_price", maxPrice);
     startTransition(() => {
       router.push(`/rooms?${params.toString()}#rooms`);
     });
@@ -64,7 +75,13 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
       onSubmit={onSubmit}
       className="rounded-2xl bg-background/95 p-3 shadow-soft-lg backdrop-blur sm:p-4"
     >
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+      <div
+        className={`grid grid-cols-1 gap-2 sm:items-end ${
+          priceOptions.length > 0
+            ? "sm:grid-cols-[1fr_1fr_auto_auto_auto]"
+            : "sm:grid-cols-[1fr_1fr_auto_auto]"
+        }`}
+      >
         <Field label="Check-in">
           <input
             type="date"
@@ -115,6 +132,23 @@ export function HeroSearch({ defaultGuests = 1 }: { defaultGuests?: number }) {
             </button>
           </div>
         </Field>
+        {priceOptions.length > 0 && (
+          <Field label="Max price">
+            <select
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              className="w-full cursor-pointer bg-transparent text-base font-medium text-foreground outline-none"
+              aria-label="Maximum price per night"
+            >
+              <option value="">Any price</option>
+              {priceOptions.map((p) => (
+                <option key={p} value={p}>
+                  Up to {symbol} {p.toLocaleString()}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <button
           type="submit"
           disabled={isPending}

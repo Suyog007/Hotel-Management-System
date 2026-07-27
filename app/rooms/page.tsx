@@ -48,6 +48,7 @@ export default async function RoomsListPage({
     check_in?: string;
     check_out?: string;
     guests?: string;
+    max_price?: string;
     error?: string;
   }>;
 }) {
@@ -95,9 +96,17 @@ export default async function RoomsListPage({
     }
   }
 
+  // Optional nightly price cap; malformed values degrade to "no cap".
+  const parsedMaxPrice = Number.parseFloat(sp.max_price ?? "");
+  const maxPrice =
+    Number.isFinite(parsedMaxPrice) && parsedMaxPrice > 0 ? parsedMaxPrice : null;
+  const pricedRows = maxPrice
+    ? rows.filter((r) => r.base_price <= maxPrice)
+    : rows;
+
   // Enrich each room with availability count + total for the requested stay.
   const enriched: EnrichedRow[] = await Promise.all(
-    rows.map(async (rt) => {
+    pricedRows.map(async (rt) => {
       if (!stay) {
         return {
           ...rt,
@@ -127,6 +136,18 @@ export default async function RoomsListPage({
     }),
   );
 
+  // With a stay selected, show only what the guest can actually book —
+  // sold-out and too-small rooms are dropped, not dimmed.
+  const visible = stay
+    ? enriched.filter(
+        (rt) => (rt.availableCount ?? 0) > 0 && !rt.exceedsCapacity,
+      )
+    : enriched;
+
+  const clearPriceHref = stay
+    ? `/rooms?check_in=${stay.checkIn}&check_out=${stay.checkOut}&guests=${stay.guests}`
+    : "/rooms";
+
   return (
     <>
       <SiteHeader />
@@ -136,8 +157,8 @@ export default async function RoomsListPage({
           title="Rooms at Hotel Vardani, Gaushala"
           description={
             stay
-              ? `Showing availability for ${stay.nights} night${stay.nights === 1 ? "" : "s"} · ${stay.guests} guest${stay.guests === 1 ? "" : "s"}. Totals include tax and service.`
-              : "Pick a room to see availability and book. Prices include nightly base rate; tax and service are added at checkout."
+              ? `Showing rooms available for ${stay.nights} night${stay.nights === 1 ? "" : "s"} · ${stay.guests} guest${stay.guests === 1 ? "" : "s"}. You pay the room rate only — no tax or service charge.`
+              : "Pick a room to see availability and book. You pay the nightly room rate only."
           }
         />
 
@@ -159,7 +180,21 @@ export default async function RoomsListPage({
             <span className="text-muted-foreground">
               · {stay.nights} night{stay.nights === 1 ? "" : "s"} · {stay.guests}{" "}
               guest{stay.guests === 1 ? "" : "s"}
+              {maxPrice !== null && (
+                <>
+                  {" "}
+                  · up to {symbol} {maxPrice.toLocaleString()} / night
+                </>
+              )}
             </span>
+            {maxPrice !== null && (
+              <Link
+                href={clearPriceHref}
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                Clear price filter
+              </Link>
+            )}
             <Link
               href="/#hero-search"
               className="ml-auto text-xs font-medium text-accent hover:underline"
@@ -169,15 +204,57 @@ export default async function RoomsListPage({
           </div>
         )}
 
-        {enriched.length === 0 ? (
-          <EmptyState
-            icon={Sparkles}
-            title="No rooms available"
-            description="Rooms will appear here once they're added in the dashboard."
-          />
+        {visible.length === 0 ? (
+          rows.length === 0 ? (
+            <EmptyState
+              icon={Sparkles}
+              title="No rooms available"
+              description="Rooms will appear here once they're added in the dashboard."
+            />
+          ) : stay ? (
+            <EmptyState
+              icon={CalendarDays}
+              title={
+                maxPrice !== null
+                  ? "Nothing available in this price range"
+                  : "Sold out for these dates"
+              }
+              description={
+                maxPrice !== null
+                  ? `No rooms up to ${symbol} ${maxPrice.toLocaleString()} / night are free for your dates. Try raising the price cap or picking different dates.`
+                  : "Every room that fits your party is booked for these dates. Try different dates."
+              }
+              action={
+                <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-accent">
+                  {maxPrice !== null && (
+                    <Link href={clearPriceHref} className="hover:underline">
+                      Clear price filter
+                    </Link>
+                  )}
+                  <Link href="/#hero-search" className="hover:underline">
+                    Change dates
+                  </Link>
+                </div>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={Sparkles}
+              title="No rooms in this price range"
+              description={`Every room is above ${symbol} ${maxPrice?.toLocaleString()} / night.`}
+              action={
+                <Link
+                  href={clearPriceHref}
+                  className="text-sm font-medium text-accent hover:underline"
+                >
+                  Clear price filter
+                </Link>
+              }
+            />
+          )
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {enriched.map((rt) => (
+            {visible.map((rt) => (
               <RoomCard key={rt.id} rt={rt} symbol={symbol} stay={stay} />
             ))}
           </div>
@@ -206,28 +283,16 @@ function RoomCard({
   stay: StayContext;
 }) {
   const images = rt.images ?? [];
-  const soldOut = stay && rt.availableCount === 0;
-  const overCapacity = stay && rt.exceedsCapacity;
-  const unbookable = soldOut || overCapacity;
 
   // When a stay is selected, the card links carry the params through so the
   // booking form on /rooms/[slug] pre-fills. Otherwise it's a plain link.
+  // Unavailable rooms never reach this component — the page filters them out.
   const href = stay
     ? `/rooms/${rt.slug}?check_in=${stay.checkIn}&check_out=${stay.checkOut}&guests=${stay.guests}`
     : `/rooms/${rt.slug}`;
 
-  const Wrapper = unbookable
-    ? ({ children }: { children: React.ReactNode }) => (
-        <div className="block opacity-60">{children}</div>
-      )
-    : ({ children }: { children: React.ReactNode }) => (
-        <Link href={href} className="group block">
-          {children}
-        </Link>
-      );
-
   return (
-    <Wrapper>
+    <Link href={href} className="group block">
       <article className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
         <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
           {images.length > 0 ? (
@@ -247,17 +312,11 @@ function RoomCard({
             Sleeps {rt.max_guests}
           </div>
           {stay && (
-            <div className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium shadow-soft backdrop-blur"
-              style={{
-                background: soldOut
-                  ? "rgb(220 38 38 / 0.95)"
-                  : "rgb(22 163 74 / 0.95)",
-                color: "white",
-              }}
+            <div
+              className="pointer-events-none absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium shadow-soft backdrop-blur"
+              style={{ background: "rgb(22 163 74 / 0.95)", color: "white" }}
             >
-              {soldOut
-                ? "Sold out"
-                : `${rt.availableCount} room${rt.availableCount === 1 ? "" : "s"} left`}
+              {rt.availableCount} room{rt.availableCount === 1 ? "" : "s"} left
             </div>
           )}
           <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background backdrop-blur">
@@ -279,9 +338,7 @@ function RoomCard({
             <h2 className="font-display text-xl font-semibold leading-tight">
               {rt.name}
             </h2>
-            {!unbookable && (
-              <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-            )}
+            <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
           {rt.description && (
             <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
@@ -292,12 +349,6 @@ function RoomCard({
             <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent">
               <CalendarDays className="h-3.5 w-3.5" />
               Add dates above to see your total price
-            </p>
-          )}
-          {overCapacity && !soldOut && (
-            <p className="mt-3 text-xs text-danger">
-              Sleeps {rt.max_guests} only · pick a larger room for {stay?.guests}{" "}
-              guests
             </p>
           )}
           {(rt.amenities ?? []).length > 0 && (
@@ -319,6 +370,6 @@ function RoomCard({
           )}
         </div>
       </article>
-    </Wrapper>
+    </Link>
   );
 }
