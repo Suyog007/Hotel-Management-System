@@ -1,13 +1,15 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Sparkles } from "lucide-react";
+import { CreatePanel } from "@/components/ui/create-panel";
+import { FormActions } from "@/components/ui/form-actions";
+import { ManageList } from "@/components/ui/manage-list";
+import { StatusNote } from "@/components/ui/status-note";
 import { createAmenity, deleteAmenity, updateAmenity } from "./actions";
 
 type AmenityRow = {
@@ -39,104 +41,93 @@ export default async function AdminAmenitiesPage(props: {
         description="Hotel-level amenities (wifi, parking, pool) shown on the public site and home page."
       />
 
-      {sp.saved && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">
-          Saved.
-        </div>
-      )}
-      {sp.error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {sp.error}
-        </div>
-      )}
+      <StatusNote saved={sp.saved} error={sp.error} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>New amenity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createAmenity} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="new_name">Name</Label>
-                <Input id="new_name" name="name" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new_icon">
-                  Icon <span className="text-xs text-muted-foreground">(lucide name)</span>
-                </Label>
-                <Input id="new_icon" name="icon" placeholder="wifi" />
-              </div>
+      <CreatePanel title="New amenity" description="wifi, parking, pool…">
+        <form action={createAmenity} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="new_name">Name</Label>
+              <Input id="new_name" name="name" required />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="new_description">Description</Label>
-              <Textarea id="new_description" name="description" />
+              <Label htmlFor="new_icon">
+                Icon <span className="text-xs text-muted-foreground">(lucide name)</span>
+              </Label>
+              <Input id="new_icon" name="icon" placeholder="wifi" />
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="new_sort_order">Order</Label>
-                <Input id="new_sort_order" name="sort_order" type="number" min="0" defaultValue="0" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new_is_visible">Visible</Label>
-                <Switch id="new_is_visible" name="is_visible" defaultChecked />
-              </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new_description">Description</Label>
+            <Textarea id="new_description" name="description" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="new_sort_order">Order</Label>
+              <Input id="new_sort_order" name="sort_order" type="number" min="0" defaultValue="0" />
             </div>
-            <SubmitButton>Add amenity</SubmitButton>
-          </form>
-        </CardContent>
-      </Card>
+            <div className="flex items-end gap-3">
+              <Switch id="new_is_visible" name="is_visible" defaultChecked />
+              <Label htmlFor="new_is_visible">Visible</Label>
+            </div>
+          </div>
+          <FormActions>
+            <SubmitButton size="sm">Add amenity</SubmitButton>
+          </FormActions>
+        </form>
+      </CreatePanel>
 
-      <div className="space-y-4">
-        {rows.length === 0 && (
-          <EmptyState
-            icon={Sparkles}
-            title="No amenities yet"
-            description="Add Wi-Fi, parking, pool, and other hotel-level perks above."
-          />
-        )}
-        {rows.map((a) => (
-          <Card key={a.id}>
-            <CardContent className="pt-6">
-              <form action={updateAmenity} className="space-y-4">
-                <input type="hidden" name="id" value={a.id} />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor={`n-${a.id}`}>Name</Label>
-                    <Input id={`n-${a.id}`} name="name" defaultValue={a.name} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`i-${a.id}`}>Icon</Label>
-                    <Input id={`i-${a.id}`} name="icon" defaultValue={a.icon ?? ""} />
-                  </div>
+      <ManageList
+        storageKey="amenities"
+        noun="amenities"
+        searchPlaceholder="Search amenities…"
+        emptyLabel="No amenities yet — add Wi-Fi, parking, pool and other perks above."
+        items={rows.map((a) => ({
+          id: a.id,
+          title: a.name,
+          subtitle: a.description,
+          meta: `#${a.sort_order}`,
+          badge: a.is_visible ? null : { label: "Hidden", variant: "outline" as const },
+          search: a.icon ?? "",
+          children: (
+            <form action={updateAmenity} className="space-y-4">
+              <input type="hidden" name="id" value={a.id} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`n-${a.id}`}>Name</Label>
+                  <Input id={`n-${a.id}`} name="name" defaultValue={a.name} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor={`d-${a.id}`}>Description</Label>
-                  <Textarea id={`d-${a.id}`} name="description" defaultValue={a.description ?? ""} />
+                  <Label htmlFor={`i-${a.id}`}>Icon</Label>
+                  <Input id={`i-${a.id}`} name="icon" defaultValue={a.icon ?? ""} />
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor={`o-${a.id}`}>Order</Label>
-                    <Input id={`o-${a.id}`} name="sort_order" type="number" min="0" defaultValue={a.sort_order} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`v-${a.id}`}>Visible</Label>
-                    <Switch id={`v-${a.id}`} name="is_visible" defaultChecked={a.is_visible} />
-                  </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`d-${a.id}`}>Description</Label>
+                <Textarea id={`d-${a.id}`} name="description" defaultValue={a.description ?? ""} />
+              </div>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor={`o-${a.id}`}>Order</Label>
+                  <Input id={`o-${a.id}`} name="sort_order" type="number" min="0" defaultValue={a.sort_order} />
                 </div>
-                <SubmitButton>Save</SubmitButton>
-              </form>
-
-              <form action={deleteAmenity} className="mt-2">
-                <input type="hidden" name="id" value={a.id} />
-                <SubmitButton variant="destructive" size="sm">
-                  Delete
-                </SubmitButton>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <div className="flex items-end gap-3">
+                  <Switch id={`v-${a.id}`} name="is_visible" defaultChecked={a.is_visible} />
+                  <Label htmlFor={`v-${a.id}`}>Visible</Label>
+                </div>
+              </div>
+              <FormActions>
+                <SubmitButton size="sm">Save</SubmitButton>
+                <DeleteButton
+                  action={deleteAmenity}
+                  confirmMessage={`Delete the “${a.name}” amenity?`}
+                  className="ml-auto"
+                />
+              </FormActions>
+            </form>
+          ),
+        }))}
+      />
     </div>
   );
 }

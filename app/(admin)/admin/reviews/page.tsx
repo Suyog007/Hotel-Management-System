@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { StatusNote } from "@/components/ui/status-note";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Avatar } from "@/components/ui/avatar";
@@ -61,16 +62,11 @@ export default async function AdminReviewsPage(props: {
         description="Reviews live on Google. The system caches the most recent few via the Places API so the public site renders them quickly."
       />
 
-      {sp.saved && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">
-          Refresh complete · {sp.inserted ?? "0"} new, {sp.updated ?? "0"} updated.
-        </div>
-      )}
-      {sp.error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {sp.error}
-        </div>
-      )}
+      <StatusNote
+        saved={sp.saved}
+        error={sp.error}
+        savedLabel={`Refresh complete · ${sp.inserted ?? "0"} new, ${sp.updated ?? "0"} updated.`}
+      />
 
       {summaryRating !== null && (
         <Card>
@@ -147,7 +143,7 @@ export default async function AdminReviewsPage(props: {
           </p>
 
           <form action={refreshReviewsNow}>
-            <SubmitButton pendingLabel="Refreshing…">Refresh now</SubmitButton>
+            <SubmitButton size="sm" pendingLabel="Refreshing…">Refresh now</SubmitButton>
           </form>
         </CardContent>
       </Card>

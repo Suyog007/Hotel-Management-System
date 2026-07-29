@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { StatusNote } from "@/components/ui/status-note";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,8 +43,7 @@ export default async function AdminStaffPage(props: {
         description="Invite, promote, disable. Guests use a separate flow at booking time."
       />
 
-      {sp.saved && <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">Saved.</div>}
-      {sp.error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{sp.error}</div>}
+      <StatusNote saved={sp.saved} error={sp.error} />
 
       <Card>
         <CardHeader>
@@ -73,7 +73,7 @@ export default async function AdminStaffPage(props: {
                 </select>
               </div>
             </div>
-            <SubmitButton>Send invite</SubmitButton>
+            <SubmitButton size="sm">Send invite</SubmitButton>
             <p className="text-xs text-muted-foreground">
               Creates a stub profile with the chosen role, then sends a Supabase invite
               email. When the invitee accepts, the trigger links their auth user to the
