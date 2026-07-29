@@ -74,6 +74,7 @@ export type Database = {
           slug: string;
           description: string | null;
           base_price: number;
+          original_price: number | null;
           max_guests: number;
           amenities: string[];
           images: string[];
@@ -88,6 +89,7 @@ export type Database = {
           slug: string;
           description?: string | null;
           base_price: number;
+          original_price?: number | null;
           max_guests: number;
           amenities?: string[];
           images?: string[];
@@ -102,6 +104,7 @@ export type Database = {
           slug?: string;
           description?: string | null;
           base_price?: number;
+          original_price?: number | null;
           max_guests?: number;
           amenities?: string[];
           images?: string[];

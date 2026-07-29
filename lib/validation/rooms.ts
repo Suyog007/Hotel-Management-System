@@ -34,12 +34,23 @@ export const roomTypeSchema = z.object({
     .transform((v) => (v === "" ? undefined : v)),
   description: optionalText,
   base_price: z.coerce.number().min(0).max(1_000_000),
+  // Display-only "was" price. Blank means no offer running.
+  original_price: z.preprocess(
+    (v) => (v === "" || v === undefined || v === null ? undefined : v),
+    z.coerce.number().min(0).max(1_000_000).optional(),
+  ),
   max_guests: z.coerce.number().int().min(1).max(20),
   amenities: z.preprocess(multilineToArray, z.array(z.string().min(1)).default([])),
   images: z.preprocess(multilineToArray, z.array(z.string().min(1)).default([])),
   is_active: z.boolean().default(true),
   sort_order: z.coerce.number().int().min(0).default(0),
-});
+}).refine(
+  (d) => d.original_price === undefined || d.original_price > d.base_price,
+  {
+    path: ["original_price"],
+    message: "Original price must be higher than the base price",
+  },
+);
 
 export const roomSchema = z.object({
   id: z.string().uuid().optional(),

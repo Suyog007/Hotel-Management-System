@@ -40,6 +40,7 @@ type RoomType = {
   slug: string;
   description: string | null;
   base_price: number;
+  original_price: number | null;
   max_guests: number;
   images: string[] | null;
 };
@@ -72,7 +73,7 @@ export default async function HomePage() {
       .single(),
     supabase
       .from("room_types")
-      .select("id, name, slug, description, base_price, max_guests, images")
+      .select("id, name, slug, description, base_price, original_price, max_guests, images")
       .eq("is_active", true)
       .order("sort_order"),
     supabase
@@ -136,6 +137,7 @@ export default async function HomePage() {
   const rooms = ((roomsRes.data as RoomType[] | null) ?? []).map((r) => ({
     ...r,
     base_price: Number(r.base_price),
+    original_price: r.original_price === null ? null : Number(r.original_price),
   }));
   const amenities = (amenitiesRes.data as Amenity[] | null) ?? [];
   const gallery = (galleryRes.data as GalleryItem[] | null) ?? [];
@@ -331,8 +333,8 @@ export default async function HomePage() {
                 Rooms for the trip you&apos;re taking
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Pick a room to see availability and book. Prices are nightly
-                base rate; tax and service are added at checkout.
+                Pick a room to see availability and book. The nightly rate is
+                what you pay — no tax or service charge added at checkout.
               </p>
             </div>
 
@@ -743,6 +745,11 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
         )}
         <div className="divide-dashed-ink mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-4">
           <p className="whitespace-nowrap leading-none">
+            {room.original_price !== null && (
+              <span className="mr-1.5 text-base text-muted-foreground line-through">
+                {currency} {room.original_price.toLocaleString()}
+              </span>
+            )}
             <span className="font-display text-2xl font-bold text-oxblood">
               {currency} {room.base_price.toLocaleString()}
             </span>

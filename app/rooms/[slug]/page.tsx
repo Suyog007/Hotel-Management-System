@@ -57,6 +57,7 @@ type RoomTypeRow = {
   slug: string;
   description: string | null;
   base_price: number;
+  original_price: number | null;
   max_guests: number;
   amenities: string[] | null;
   images: string[] | null;
@@ -145,9 +146,20 @@ export default async function RoomDetailPage(props: {
               </div>
               <p className="mt-3 flex flex-wrap items-center gap-3 text-base">
                 <span className="font-semibold">
+                  {rt.original_price !== null && (
+                    <span className="mr-2 font-normal text-muted-foreground line-through">
+                      {symbol} {Number(rt.original_price).toLocaleString()}
+                    </span>
+                  )}
                   {symbol} {Number(rt.base_price).toLocaleString()}
                   <span className="font-normal text-muted-foreground"> / night</span>
                 </span>
+                {rt.original_price !== null && (
+                  <span className="rounded-full bg-oxblood/10 px-2.5 py-0.5 text-sm font-semibold text-oxblood">
+                    Save {symbol}{" "}
+                    {(Number(rt.original_price) - Number(rt.base_price)).toLocaleString()}
+                  </span>
+                )}
                 <span aria-hidden className="text-muted-foreground">·</span>
                 <span className="inline-flex items-center gap-1 text-muted-foreground">
                   <Users className="h-4 w-4" />

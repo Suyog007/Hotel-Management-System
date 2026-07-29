@@ -29,6 +29,7 @@ function parseRoomType(formData: FormData) {
     slug: formData.get("slug"),
     description: formData.get("description"),
     base_price: formData.get("base_price"),
+    original_price: formData.get("original_price"),
     max_guests: formData.get("max_guests"),
     amenities: formData.get("amenities"),
     images: formData.get("images"),
@@ -40,8 +41,9 @@ function parseRoomType(formData: FormData) {
 export async function createRoomType(formData: FormData) {
   const parsed = parseRoomType(formData);
   if (!parsed.success) bail(parsed.error.issues.map((i) => i.message).join("; "));
-  const { id: _ignore, slug, name, ...rest } = parsed.data;
-  const insert = { name, slug: slug || slugify(name), ...rest };
+  const { id: _ignore, slug, name, original_price, ...rest } = parsed.data;
+  // Blank field means "no offer" — write an explicit null, not undefined.
+  const insert = { name, slug: slug || slugify(name), original_price: original_price ?? null, ...rest };
 
   const supabase = await createServerClient();
   const { data, error } = await supabase
@@ -67,8 +69,9 @@ export async function updateRoomType(formData: FormData) {
   const parsed = parseRoomType(formData);
   if (!parsed.success || !parsed.data.id)
     bail(parsed.success ? "Missing id" : parsed.error.issues.map((i) => i.message).join("; "));
-  const { id, slug, name, ...rest } = parsed.data;
-  const update = { name, slug: slug || slugify(name), ...rest };
+  const { id, slug, name, original_price, ...rest } = parsed.data;
+  // Clearing the field must clear the offer, so send null rather than omitting it.
+  const update = { name, slug: slug || slugify(name), original_price: original_price ?? null, ...rest };
 
   const supabase = await createServerClient();
   const { data: oldRow } = await supabase

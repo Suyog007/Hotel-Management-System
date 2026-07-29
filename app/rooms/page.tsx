@@ -24,6 +24,7 @@ type RoomTypeRow = {
   slug: string;
   description: string | null;
   base_price: number;
+  original_price: number | null;
   max_guests: number;
   amenities: string[] | null;
   images: string[] | null;
@@ -59,7 +60,7 @@ export default async function RoomsListPage({
   const [{ data: types }, { data: settings }] = await Promise.all([
     supabase
       .from("room_types")
-      .select("id, name, slug, description, base_price, max_guests, amenities, images")
+      .select("id, name, slug, description, base_price, original_price, max_guests, amenities, images")
       .eq("is_active", true)
       .order("sort_order"),
     supabase
@@ -70,6 +71,7 @@ export default async function RoomsListPage({
   const rows = ((types as RoomTypeRow[] | null) ?? []).map((r) => ({
     ...r,
     base_price: Number(r.base_price),
+    original_price: r.original_price === null ? null : Number(r.original_price),
   }));
   const s = (settings ?? {}) as {
     currency_symbol?: string;
@@ -303,6 +305,11 @@ function RoomCard({
               </>
             ) : (
               <>
+                {rt.original_price !== null && (
+                  <span className="mr-1.5 line-through opacity-60">
+                    {symbol} {Number(rt.original_price).toLocaleString()}
+                  </span>
+                )}
                 {symbol} {Number(rt.base_price).toLocaleString()}{" "}
                 <span className="opacity-70">/ night</span>
               </>
