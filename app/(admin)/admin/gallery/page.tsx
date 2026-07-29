@@ -184,6 +184,19 @@ export default async function AdminGalleryPage(props: {
                   <input type="hidden" name="id" value={g.id} />
                   <input type="hidden" name="image_url" value={g.image_url} />
                   <div className="space-y-2">
+                    <Label htmlFor={`replace-${g.id}`}>Replace photo</Label>
+                    <input
+                      id={`replace-${g.id}`}
+                      type="file"
+                      name="image_file"
+                      accept="image/*"
+                      className="block w-full cursor-pointer rounded-md border border-input bg-card text-sm text-muted-foreground shadow-sm transition-colors hover:border-foreground/30 file:mr-3 file:cursor-pointer file:border-0 file:border-r file:border-input file:bg-muted file:px-3 file:py-2 file:text-sm file:font-medium file:text-foreground"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty to keep the current photo. The old file is deleted on replace.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label>Caption</Label>
                     <Input name="caption" defaultValue={g.caption ?? ""} />
                   </div>

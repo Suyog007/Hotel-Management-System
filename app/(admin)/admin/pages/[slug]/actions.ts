@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
+import { uploadFormImage } from "@/lib/storage";
 import { pageMetaSchema, SECTION_TYPES, defaultSectionContent, parseSectionContent, type SectionType } from "@/lib/validation/sections";
 import type { TablesInsert } from "@/types/database";
 
@@ -107,6 +108,16 @@ export async function updateSection(formData: FormData) {
     redirect(`/admin/pages/${slug ?? ""}?error=Invalid+section`);
   }
 
+  // A hero's background can be uploaded straight from the editor; a picked
+  // file wins over whatever URL the form carried.
+  let uploadedImage: string | null;
+  try {
+    uploadedImage = await uploadFormImage(formData, "image_file", "sections");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Upload failed";
+    redirect(`/admin/pages/${slug}?error=${encodeURIComponent(msg)}`);
+  }
+
   // Build content object from per-type fields
   let rawContent: Record<string, unknown>;
   switch (type) {
@@ -116,7 +127,7 @@ export async function updateSection(formData: FormData) {
         heading: formData.get("heading"),
         subheading: formData.get("subheading") ?? undefined,
         body: formData.get("body") ?? undefined,
-        image_url: formData.get("image_url") ?? undefined,
+        image_url: uploadedImage ?? formData.get("image_url") ?? undefined,
         cta_label: formData.get("cta_label"),
         cta_href: formData.get("cta_href"),
       };

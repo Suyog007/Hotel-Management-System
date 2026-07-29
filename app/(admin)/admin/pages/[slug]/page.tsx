@@ -14,6 +14,7 @@ import { CreatePanel } from "@/components/ui/create-panel";
 import { FormActions } from "@/components/ui/form-actions";
 import { ManageList } from "@/components/ui/manage-list";
 import { StatusNote } from "@/components/ui/status-note";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { ChevronLeft } from "lucide-react";
 import { SECTION_TYPES, type SectionType } from "@/lib/validation/sections";
 import {
@@ -263,7 +264,12 @@ function SectionFields({
         <>
           <FormField id={`h-${section.id}`} name="heading" label="Heading" value={v("heading")} />
           <FormField id={`sh-${section.id}`} name="subheading" label="Subheading" value={v("subheading")} />
-          <FormField id={`img-${section.id}`} name="image_url" label="Image URL" value={v("image_url")} placeholder="https://…" />
+          <ImageUploadField
+            name="image_url"
+            fileName="image_file"
+            label="Background photo"
+            value={v("image_url")}
+          />
           <FormField id={`cl-${section.id}`} name="cta_label" label="CTA label" value={v("cta_label")} placeholder="Book now" />
           <FormField id={`ch-${section.id}`} name="cta_href" label="CTA href" value={v("cta_href")} placeholder="/rooms" />
         </>

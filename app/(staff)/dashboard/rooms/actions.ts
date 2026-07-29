@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { roomTypeSchema, roomSchema } from "@/lib/validation/rooms";
+import { uploadFormImages } from "@/lib/storage";
 
 function slugify(s: string): string {
   return s
@@ -22,7 +23,22 @@ function bail(msg: string): never {
 
 // ── Room types ────────────────────────────────────────────────────────────────
 
-function parseRoomType(formData: FormData) {
+/**
+ * Uploads any newly picked room photos and appends them to the URL list the
+ * form already carried, so "add two more photos" doesn't wipe the existing set.
+ */
+async function withUploadedPhotos(formData: FormData): Promise<string> {
+  let uploaded: string[];
+  try {
+    uploaded = await uploadFormImages(formData, "image_files", "rooms");
+  } catch (err) {
+    bail(err instanceof Error ? err.message : "Photo upload failed");
+  }
+  const existing = (formData.get("images") as string | null) ?? "";
+  return [existing, ...uploaded].filter(Boolean).join("\n");
+}
+
+function parseRoomType(formData: FormData, images: string) {
   return roomTypeSchema.safeParse({
     id: (formData.get("id") as string) || undefined,
     name: formData.get("name"),
@@ -32,14 +48,14 @@ function parseRoomType(formData: FormData) {
     original_price: formData.get("original_price"),
     max_guests: formData.get("max_guests"),
     amenities: formData.get("amenities"),
-    images: formData.get("images"),
+    images,
     is_active: formData.get("is_active") === "on",
     sort_order: formData.get("sort_order"),
   });
 }
 
 export async function createRoomType(formData: FormData) {
-  const parsed = parseRoomType(formData);
+  const parsed = parseRoomType(formData, await withUploadedPhotos(formData));
   if (!parsed.success) bail(parsed.error.issues.map((i) => i.message).join("; "));
   const { id: _ignore, slug, name, original_price, ...rest } = parsed.data;
   // Blank field means "no offer" — write an explicit null, not undefined.
@@ -66,7 +82,7 @@ export async function createRoomType(formData: FormData) {
 }
 
 export async function updateRoomType(formData: FormData) {
-  const parsed = parseRoomType(formData);
+  const parsed = parseRoomType(formData, await withUploadedPhotos(formData));
   if (!parsed.success || !parsed.data.id)
     bail(parsed.success ? "Missing id" : parsed.error.issues.map((i) => i.message).join("; "));
   const { id, slug, name, original_price, ...rest } = parsed.data;

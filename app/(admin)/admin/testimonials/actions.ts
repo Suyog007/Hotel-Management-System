@@ -5,22 +5,34 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { testimonialSchema } from "@/lib/validation/cms";
+import { uploadFormImage } from "@/lib/storage";
 
-function parse(formData: FormData) {
+/** Uploads the picked avatar, turning a rejected file into a friendly redirect. */
+async function uploadAvatar(formData: FormData): Promise<string | null> {
+  try {
+    return await uploadFormImage(formData, "image_file", "testimonials");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Photo upload failed";
+    redirect(`/admin/testimonials?error=${encodeURIComponent(msg)}`);
+  }
+}
+
+function parse(formData: FormData, imageUrl: string | null) {
   return testimonialSchema.safeParse({
     id: (formData.get("id") as string) || undefined,
     author_name: formData.get("author_name"),
     author_role: formData.get("author_role"),
     body: formData.get("body"),
     rating: formData.get("rating"),
-    image_url: formData.get("image_url"),
+    // A freshly uploaded avatar wins; otherwise keep the URL the form carried.
+    image_url: imageUrl ?? formData.get("image_url"),
     sort_order: formData.get("sort_order"),
     is_visible: formData.get("is_visible") === "on",
   });
 }
 
 export async function createTestimonial(formData: FormData) {
-  const parsed = parse(formData);
+  const parsed = parse(formData, await uploadAvatar(formData));
   if (!parsed.success) {
     redirect(`/admin/testimonials?error=${encodeURIComponent(parsed.error.issues.map((i) => i.message).join("; "))}`);
   }
@@ -46,11 +58,14 @@ export async function createTestimonial(formData: FormData) {
 }
 
 export async function updateTestimonial(formData: FormData) {
-  const parsed = parse(formData);
+  const parsed = parse(formData, await uploadAvatar(formData));
   if (!parsed.success || !parsed.data.id) {
     redirect(`/admin/testimonials?error=${encodeURIComponent("Invalid input")}`);
   }
-  const { id, ...update } = parsed.data;
+  const { id, ...rest } = parsed.data;
+  // Clearing the avatar yields undefined, which PostgREST drops from the patch —
+  // the removal would silently not stick. Write an explicit null.
+  const update = { ...rest, image_url: rest.image_url ?? null };
 
   const supabase = await createServerClient();
   const { data: oldRow } = await supabase
