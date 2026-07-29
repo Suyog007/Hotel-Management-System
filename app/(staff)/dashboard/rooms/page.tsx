@@ -22,6 +22,7 @@ type RoomTypeRow = {
   slug: string;
   description: string | null;
   base_price: number;
+  original_price: number | null;
   max_guests: number;
   amenities: string[] | null;
   images: string[] | null;
@@ -107,6 +108,14 @@ export default async function DashboardRoomsPage(props: {
                 <div className="space-y-2">
                   <Label>Base price</Label>
                   <Input name="base_price" type="number" min="0" step="0.01" required />
+                  <p className="text-xs text-muted-foreground">What the guest is charged per night.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Original price (optional)</Label>
+                  <Input name="original_price" type="number" min="0" step="0.01" />
+                  <p className="text-xs text-muted-foreground">
+                    Shown struck through next to the base price. Leave blank if no offer is running.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Max guests</Label>
@@ -160,6 +169,17 @@ export default async function DashboardRoomsPage(props: {
                     <div className="space-y-2">
                       <Label>Base price</Label>
                       <Input name="base_price" type="number" min="0" step="0.01" defaultValue={String(t.base_price)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Original price (optional)</Label>
+                      <Input
+                        name="original_price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={t.original_price === null ? "" : String(t.original_price)}
+                      />
+                      <p className="text-xs text-muted-foreground">Struck through on the site. Blank = no offer.</p>
                     </div>
                     <div className="space-y-2">
                       <Label>Max guests</Label>
