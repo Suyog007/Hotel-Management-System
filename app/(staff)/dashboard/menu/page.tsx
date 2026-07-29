@@ -1,12 +1,17 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { CreatePanel } from "@/components/ui/create-panel";
+import { FormActions } from "@/components/ui/form-actions";
+import { ManageList } from "@/components/ui/manage-list";
+import { StatusNote } from "@/components/ui/status-note";
 import { createFoodItem, deleteFoodItem, updateFoodItem } from "./actions";
 
 type FoodRow = {
@@ -63,95 +68,106 @@ export default async function DashboardMenuPage(props: {
         description="Shown on the public menu page. Browse-only — no ordering."
       />
 
-      {sp.saved && <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">Saved.</div>}
-      {sp.error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{sp.error}</div>}
+      <StatusNote saved={sp.saved} error={sp.error} />
 
-      <Card>
-        <CardHeader><CardTitle>New item</CardTitle></CardHeader>
-        <CardContent>
-          <form action={createFoodItem} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input name="name" required />
-              </div>
-              <div className="space-y-2">
-                <Label>Category</Label>
-                <Input name="category" required placeholder="Breakfast, Lunch, Drinks…" />
-              </div>
-              <div className="space-y-2">
-                <Label>Price</Label>
-                <Input name="price" type="number" min="0" step="0.01" required />
-              </div>
-              <div className="space-y-2">
-                <Label>Sort order</Label>
-                <Input name="sort_order" type="number" min="0" defaultValue="0" />
-              </div>
+      <CreatePanel title="New item" description="add a dish or drink to the menu">
+        <form action={createFoodItem} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="new_name">Name</Label>
+              <Input id="new_name" name="name" required />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea name="description" />
+              <Label htmlFor="new_category">Category</Label>
+              <Input id="new_category" name="category" required placeholder="Breakfast, Lunch, Drinks…" />
             </div>
             <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input name="image_url" placeholder="https://…" />
+              <Label htmlFor="new_price">Price ({symbol})</Label>
+              <Input id="new_price" name="price" type="number" min="0" step="0.01" required />
             </div>
-            <div className="flex items-center gap-3">
-              <Switch name="is_available" defaultChecked />
-              <Label>Available</Label>
+            <div className="space-y-2">
+              <Label htmlFor="new_sort_order">Sort order</Label>
+              <Input id="new_sort_order" name="sort_order" type="number" min="0" defaultValue="0" />
             </div>
-            <SubmitButton>Add item</SubmitButton>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new_description">Description</Label>
+            <Textarea id="new_description" name="description" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new_image_url">Image URL</Label>
+            <Input id="new_image_url" name="image_url" placeholder="https://…" />
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch id="new_is_available" name="is_available" defaultChecked />
+            <Label htmlFor="new_is_available">Available</Label>
+          </div>
+          <FormActions>
+            <SubmitButton size="sm">Add item</SubmitButton>
+          </FormActions>
+        </form>
+      </CreatePanel>
 
-      <div className="space-y-3">
-        {rows.map((f) => (
-          <Card key={f.id}>
-            <CardContent className="pt-6">
-              <form action={updateFoodItem} className="space-y-4">
-                <input type="hidden" name="id" value={f.id} />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input name="name" defaultValue={f.name} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Input name="category" defaultValue={f.category} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Price ({symbol})</Label>
-                    <Input name="price" type="number" min="0" step="0.01" defaultValue={String(f.price)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Sort order</Label>
-                    <Input name="sort_order" type="number" min="0" defaultValue={f.sort_order} />
-                  </div>
+      <ManageList
+        storageKey="menu"
+        noun="items"
+        searchPlaceholder="Search dishes, drinks, categories…"
+        groupAllLabel="All categories"
+        emptyLabel="No food items yet."
+        items={rows.map((f) => ({
+          id: f.id,
+          title: f.name,
+          subtitle: f.description,
+          meta: `${symbol} ${f.price}`,
+          group: f.category,
+          badge: f.is_available ? null : { label: "Hidden", variant: "outline" as const },
+          thumbnail: f.image_url,
+          search: f.description ?? "",
+          children: (
+            <form action={updateFoodItem} className="space-y-4">
+              <input type="hidden" name="id" value={f.id} />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <Input name="name" defaultValue={f.name} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea name="description" defaultValue={f.description ?? ""} />
+                  <Label>Category</Label>
+                  <Input name="category" defaultValue={f.category} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>Image URL</Label>
-                  <Input name="image_url" defaultValue={f.image_url ?? ""} />
+                  <Label>Price ({symbol})</Label>
+                  <Input name="price" type="number" min="0" step="0.01" defaultValue={String(f.price)} required />
                 </div>
-                <div className="flex items-center gap-3">
-                  <Switch name="is_available" defaultChecked={f.is_available} />
-                  <Label>Available</Label>
+                <div className="space-y-2">
+                  <Label>Sort order</Label>
+                  <Input name="sort_order" type="number" min="0" defaultValue={f.sort_order} />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea name="description" defaultValue={f.description ?? ""} />
+              </div>
+              <div className="space-y-2">
+                <Label>Image URL</Label>
+                <Input name="image_url" defaultValue={f.image_url ?? ""} />
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch name="is_available" defaultChecked={f.is_available} />
+                <Label>Available</Label>
+              </div>
+              <FormActions>
                 <SubmitButton size="sm">Save</SubmitButton>
-              </form>
-              <form action={deleteFoodItem} className="mt-2">
-                <input type="hidden" name="id" value={f.id} />
-                <SubmitButton variant="destructive" size="sm">Delete</SubmitButton>
-              </form>
-            </CardContent>
-          </Card>
-        ))}
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">No food items yet.</p>}
-      </div>
+                <DeleteButton
+                  action={deleteFoodItem}
+                  confirmMessage={`Delete “${f.name}” from the menu? This can't be undone.`}
+                  className="ml-auto"
+                />
+              </FormActions>
+            </form>
+          ),
+        }))}
+      />
     </div>
   );
 }

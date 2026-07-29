@@ -2,12 +2,18 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { DeleteButton } from "@/components/ui/delete-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { CreatePanel } from "@/components/ui/create-panel";
+import { FormActions } from "@/components/ui/form-actions";
+import { ManageList } from "@/components/ui/manage-list";
+import { StatusNote } from "@/components/ui/status-note";
 import { ChevronLeft } from "lucide-react";
 import { SECTION_TYPES, type SectionType } from "@/lib/validation/sections";
 import {
@@ -97,20 +103,11 @@ export default async function AdminPageEditor(props: {
         </header>
       </div>
 
-      {sp.saved && (
-        <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">
-          Saved.
-        </div>
-      )}
-      {sp.error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {sp.error}
-        </div>
-      )}
+      <StatusNote saved={sp.saved} error={sp.error} />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Page meta</CardTitle>
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Page meta</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updatePageMeta} className="space-y-4">
@@ -135,51 +132,67 @@ export default async function AdminPageEditor(props: {
               <Switch id="is_published" name="is_published" defaultChecked={p.is_published} />
               <Label htmlFor="is_published">Published</Label>
             </div>
-            <SubmitButton>Save page</SubmitButton>
+            <FormActions>
+              <SubmitButton size="sm">Save page</SubmitButton>
+            </FormActions>
           </form>
         </CardContent>
       </Card>
 
-      <div>
-        <h2 className="mb-3 text-xl font-semibold">Sections</h2>
-        <div className="space-y-4">
-          {rows.length === 0 && (
-            <p className="text-sm text-muted-foreground">No sections yet — add one below.</p>
-          )}
-          {rows.map((s) => (
-            <SectionEditor key={s.id} section={s} slug={slug} gallery={gallery} />
-          ))}
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-xl font-semibold">Sections</h2>
+          <p className="text-sm text-muted-foreground">
+            Blocks rendered top-to-bottom on the page, in Order.
+          </p>
         </div>
 
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle>Add section</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form action={createSection} className="flex items-end gap-3">
-              <input type="hidden" name="slug" value={slug} />
-              <div className="space-y-2">
-                <Label htmlFor="section_type">Type</Label>
-                <select
-                  id="section_type"
-                  name="section_type"
-                  className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  defaultValue="text"
-                >
-                  {SECTION_TYPES.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <SubmitButton>Add</SubmitButton>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+        <CreatePanel title="Add section" description="hero, text, gallery, CTA, FAQ">
+          <form action={createSection} className="flex flex-wrap items-end gap-3">
+            <input type="hidden" name="slug" value={slug} />
+            <div className="space-y-2">
+              <Label htmlFor="section_type">Type</Label>
+              <Select id="section_type" name="section_type" defaultValue="text" className="w-48">
+                {SECTION_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <SubmitButton size="sm">Add</SubmitButton>
+          </form>
+        </CreatePanel>
+
+        <ManageList
+          storageKey={`page-sections:${slug}`}
+          noun="sections"
+          searchPlaceholder="Search sections…"
+          emptyLabel="No sections yet — add one above."
+          items={rows.map((s) => ({
+            id: s.id,
+            title: s.section_type,
+            subtitle: sectionSummary(s),
+            meta: `#${s.sort_order}`,
+            badge: s.is_visible ? null : { label: "Hidden", variant: "outline" as const },
+            children: <SectionEditor section={s} slug={slug} gallery={gallery} />,
+          }))}
+        />
+      </section>
     </div>
   );
+}
+
+/** One-line preview of a section's content for the collapsed row. */
+function sectionSummary(section: SectionRow) {
+  const c = section.content ?? {};
+  const first = ["heading", "subheading", "body", "cta_label", "category"]
+    .map((k) => c[k])
+    .find((v) => typeof v === "string" && v.trim().length > 0);
+  if (typeof first === "string") return first;
+  const ids = c.image_ids as string[] | undefined;
+  if (ids?.length) return `${ids.length} image${ids.length === 1 ? "" : "s"} selected`;
+  return "Empty — open to fill in";
 }
 
 function SectionEditor({
@@ -192,55 +205,45 @@ function SectionEditor({
   gallery: GalleryRow[];
 }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">
-          <span className="rounded-md border bg-muted px-2 py-0.5 font-mono text-xs uppercase">
-            {section.section_type}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form action={updateSection} className="space-y-4">
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="id" value={section.id} />
-          <input type="hidden" name="section_type" value={section.section_type} />
+    <form action={updateSection} className="space-y-4">
+      <input type="hidden" name="slug" value={slug} />
+      <input type="hidden" name="id" value={section.id} />
+      <input type="hidden" name="section_type" value={section.section_type} />
 
-          <SectionFields section={section} gallery={gallery} />
+      <SectionFields section={section} gallery={gallery} />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor={`order-${section.id}`}>Order</Label>
-              <Input
-                id={`order-${section.id}`}
-                name="sort_order"
-                type="number"
-                min="0"
-                defaultValue={section.sort_order}
-              />
-            </div>
-            <div className="flex items-end gap-3">
-              <Switch
-                id={`vis-${section.id}`}
-                name="is_visible"
-                defaultChecked={section.is_visible}
-              />
-              <Label htmlFor={`vis-${section.id}`}>Visible</Label>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor={`order-${section.id}`}>Order</Label>
+          <Input
+            id={`order-${section.id}`}
+            name="sort_order"
+            type="number"
+            min="0"
+            defaultValue={section.sort_order}
+          />
+        </div>
+        <div className="flex items-end gap-3">
+          <Switch
+            id={`vis-${section.id}`}
+            name="is_visible"
+            defaultChecked={section.is_visible}
+          />
+          <Label htmlFor={`vis-${section.id}`}>Visible</Label>
+        </div>
+      </div>
 
-          <SubmitButton>Save section</SubmitButton>
-        </form>
-
-        <form action={deleteSection} className="mt-2">
-          <input type="hidden" name="slug" value={slug} />
-          <input type="hidden" name="id" value={section.id} />
-          <SubmitButton variant="destructive" size="sm">
-            Delete section
-          </SubmitButton>
-        </form>
-      </CardContent>
-    </Card>
+      <FormActions>
+        <SubmitButton size="sm">Save section</SubmitButton>
+        <DeleteButton
+          action={deleteSection}
+          confirmMessage={`Delete this ${section.section_type} section?`}
+          className="ml-auto"
+        >
+          Delete section
+        </DeleteButton>
+      </FormActions>
+    </form>
   );
 }
 

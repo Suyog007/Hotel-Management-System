@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { StatusNote } from "@/components/ui/status-note";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,8 +96,7 @@ export default async function CancellationsPage(props: {
         }
       />
 
-      {sp.saved && <div className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm">Saved.</div>}
-      {sp.error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{sp.error}</div>}
+      <StatusNote saved={sp.saved} error={sp.error} />
 
       <section>
         <h2 className="mb-3 text-xl font-semibold">Pending refunds</h2>
