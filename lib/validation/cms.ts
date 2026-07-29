@@ -1,11 +1,18 @@
 import { z } from "zod";
 
-const optionalText = z
-  .string()
-  .trim()
-  .max(2000)
-  .optional()
-  .transform((v) => (v === "" ? undefined : v));
+// FormData.get() yields null for a field the form doesn't render, and zod's
+// .optional() accepts undefined but NOT null — so a form that simply omits an
+// optional input fails with "Expected string, received null". Treat an absent
+// field and a blank one the same way.
+const optionalText = z.preprocess(
+  (v) => (v === null ? undefined : v),
+  z
+    .string()
+    .trim()
+    .max(2000)
+    .optional()
+    .transform((v) => (v === "" ? undefined : v)),
+);
 
 export const siteSettingsSchema = z.object({
   hotel_name: z.string().trim().min(1).max(200),

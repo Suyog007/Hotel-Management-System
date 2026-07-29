@@ -1,12 +1,19 @@
 import { z } from "zod";
 import { hotelToday } from "@/lib/hotel-time";
 
-const optionalText = z
-  .string()
-  .trim()
-  .max(5000)
-  .optional()
-  .transform((v) => (v === "" ? undefined : v));
+// FormData.get() yields null for a field the form doesn't render, and zod's
+// .optional() accepts undefined but NOT null — so a form that simply omits an
+// optional input fails with "Expected string, received null". Treat an absent
+// field and a blank one the same way.
+const optionalText = z.preprocess(
+  (v) => (v === null ? undefined : v),
+  z
+    .string()
+    .trim()
+    .max(5000)
+    .optional()
+    .transform((v) => (v === "" ? undefined : v)),
+);
 
 // Parses a newline- or comma-separated string into a deduped string array.
 function multilineToArray(input: unknown): string[] {

@@ -420,6 +420,15 @@ function RoomsPanel({
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor={`nr_notes_${type.id}`}>Notes (optional)</Label>
+              <Textarea
+                id={`nr_notes_${type.id}`}
+                name="notes"
+                rows={2}
+                placeholder="Corner room, garden view…"
+              />
+            </div>
             <FormActions>
               <SubmitButton size="sm">Add room</SubmitButton>
             </FormActions>
