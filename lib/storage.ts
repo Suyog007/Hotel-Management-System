@@ -38,6 +38,51 @@ export async function uploadPublicImage(
   return { url: publicUrl, path };
 }
 
+/**
+ * FormData gives back `File | string`; a file input that was left empty still
+ * submits an entry (a zero-byte File), so "was a file actually chosen?" has to
+ * be a size check, not a presence check.
+ */
+function chosenFiles(formData: FormData, field: string): File[] {
+  return formData
+    .getAll(field)
+    .filter((v): v is File => typeof v !== "string" && v !== null && v.size > 0);
+}
+
+/**
+ * Upload the file picked in a single-file field, if any.
+ *
+ * Returns the public URL, or null when the admin left the picker empty — which
+ * is the signal for callers to keep whatever URL was already on the record.
+ * Throws on a rejected file (too big / wrong type) so the caller can redirect
+ * with the message.
+ */
+export async function uploadFormImage(
+  formData: FormData,
+  field: string,
+  folder: string,
+): Promise<string | null> {
+  const [file] = chosenFiles(formData, field);
+  if (!file) return null;
+  const { url } = await uploadPublicImage(file, folder);
+  return url;
+}
+
+/** Same, for a `multiple` file input. Returns URLs in the order picked. */
+export async function uploadFormImages(
+  formData: FormData,
+  field: string,
+  folder: string,
+): Promise<string[]> {
+  const urls: string[] = [];
+  // Sequential on purpose: a parallel burst of 10 MB uploads is a good way to
+  // get rate-limited by Storage, and admins add photos a few at a time.
+  for (const file of chosenFiles(formData, field)) {
+    urls.push((await uploadPublicImage(file, folder)).url);
+  }
+  return urls;
+}
+
 export async function deletePublicImageByUrl(url: string): Promise<void> {
   const path = pathFromPublicUrl(url);
   if (!path) return;

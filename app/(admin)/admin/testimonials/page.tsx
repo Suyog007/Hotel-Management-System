@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { CreatePanel } from "@/components/ui/create-panel";
 import { FormActions } from "@/components/ui/form-actions";
@@ -91,9 +92,13 @@ export default async function AdminTestimonialsPage(props: {
               <Label htmlFor="new_rating">Rating (1-5)</Label>
               <Input id="new_rating" name="rating" type="number" min="1" max="5" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="new_image_url">Avatar URL</Label>
-              <Input id="new_image_url" name="image_url" placeholder="https://…" />
+            <div className="space-y-2 md:col-span-2">
+              <ImageUploadField
+                name="image_url"
+                fileName="image_file"
+                label="Avatar"
+                hint="Optional headshot. Max 10 MB."
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="new_sort_order">Order</Label>
@@ -145,9 +150,13 @@ export default async function AdminTestimonialsPage(props: {
                   <Label>Rating</Label>
                   <Input name="rating" type="number" min="1" max="5" defaultValue={t.rating ?? ""} />
                 </div>
-                <div className="space-y-2">
-                  <Label>Avatar URL</Label>
-                  <Input name="image_url" defaultValue={t.image_url ?? ""} />
+                <div className="space-y-2 md:col-span-2">
+                  <ImageUploadField
+                    name="image_url"
+                    fileName="image_file"
+                    label="Avatar"
+                    value={t.image_url ?? ""}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Order</Label>

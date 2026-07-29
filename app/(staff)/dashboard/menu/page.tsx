@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { CreatePanel } from "@/components/ui/create-panel";
@@ -94,10 +95,12 @@ export default async function DashboardMenuPage(props: {
             <Label htmlFor="new_description">Description</Label>
             <Textarea id="new_description" name="description" />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="new_image_url">Image URL</Label>
-            <Input id="new_image_url" name="image_url" placeholder="https://…" />
-          </div>
+          <ImageUploadField
+            name="image_url"
+            fileName="image_file"
+            label="Photo"
+            hint="Optional. PNG, JPEG, WebP or GIF, max 10 MB."
+          />
           <div className="flex items-center gap-3">
             <Switch id="new_is_available" name="is_available" defaultChecked />
             <Label htmlFor="new_is_available">Available</Label>
@@ -148,10 +151,12 @@ export default async function DashboardMenuPage(props: {
                 <Label>Description</Label>
                 <Textarea name="description" defaultValue={f.description ?? ""} />
               </div>
-              <div className="space-y-2">
-                <Label>Image URL</Label>
-                <Input name="image_url" defaultValue={f.image_url ?? ""} />
-              </div>
+              <ImageUploadField
+                name="image_url"
+                fileName="image_file"
+                label="Photo"
+                value={f.image_url ?? ""}
+              />
               <div className="flex items-center gap-3">
                 <Switch name="is_available" defaultChecked={f.is_available} />
                 <Label>Available</Label>

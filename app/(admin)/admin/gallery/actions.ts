@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
 import { galleryImageSchema } from "@/lib/validation/cms";
-import { deletePublicImageByUrl, uploadPublicImage } from "@/lib/storage";
+import { deletePublicImageByUrl, uploadFormImage, uploadPublicImage } from "@/lib/storage";
 
 export async function uploadGalleryImage(formData: FormData) {
   const file = formData.get("file") as File | null;
@@ -59,9 +59,19 @@ export async function uploadGalleryImage(formData: FormData) {
 }
 
 export async function updateGalleryImage(formData: FormData) {
+  // Optional: swap the underlying file while keeping the row (caption, order,
+  // and any page section that references this image by id, all stay put).
+  let replacement: string | null;
+  try {
+    replacement = await uploadFormImage(formData, "image_file", "gallery");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Upload failed";
+    redirect(`/admin/gallery?error=${encodeURIComponent(msg)}`);
+  }
+
   const parsed = galleryImageSchema.safeParse({
     id: (formData.get("id") as string) || undefined,
-    image_url: formData.get("image_url"),
+    image_url: replacement ?? formData.get("image_url"),
     caption: formData.get("caption"),
     category: formData.get("category"),
     sort_order: formData.get("sort_order"),
@@ -84,6 +94,12 @@ export async function updateGalleryImage(formData: FormData) {
     .update(update)
     .eq("id", id);
   if (error) redirect(`/admin/gallery?error=${encodeURIComponent(error.message)}`);
+
+  // Best-effort: the old file is unreachable now that the row points elsewhere.
+  const previousUrl = (oldRow as { image_url?: string } | null)?.image_url;
+  if (replacement && previousUrl && previousUrl !== replacement) {
+    await deletePublicImageByUrl(previousUrl);
+  }
 
   await writeAudit({
     action: "update",

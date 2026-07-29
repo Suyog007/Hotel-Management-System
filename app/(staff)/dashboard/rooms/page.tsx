@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { ImageListField } from "@/components/ui/image-list-field";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { CreatePanel } from "@/components/ui/create-panel";
@@ -144,10 +145,7 @@ export default async function DashboardRoomsPage(props: {
                 <Label htmlFor="nt_amenities">Amenities (one per line)</Label>
                 <Textarea id="nt_amenities" name="amenities" rows={4} placeholder={"Wi-Fi\nAC\nMini-fridge"} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="nt_images">Image URLs (one per line)</Label>
-                <Textarea id="nt_images" name="images" rows={4} placeholder={"https://…\nhttps://…"} />
-              </div>
+              <ImageListField name="images" fileName="image_files" label="Photos" />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -219,10 +217,12 @@ export default async function DashboardRoomsPage(props: {
                     <Label>Amenities (one per line)</Label>
                     <Textarea name="amenities" rows={4} defaultValue={(t.amenities ?? []).join("\n")} />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Image URLs (one per line)</Label>
-                    <Textarea name="images" rows={4} defaultValue={(t.images ?? []).join("\n")} />
-                  </div>
+                  <ImageListField
+                    name="images"
+                    fileName="image_files"
+                    label="Photos"
+                    value={t.images ?? []}
+                  />
                 </div>
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div className="space-y-2">
