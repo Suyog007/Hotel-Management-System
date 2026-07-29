@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { ChevronRight, Plus } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { DeleteButton } from "@/components/ui/delete-button";
@@ -14,7 +15,7 @@ import { CreatePanel } from "@/components/ui/create-panel";
 import { FormActions } from "@/components/ui/form-actions";
 import { ManageList } from "@/components/ui/manage-list";
 import { StatusNote } from "@/components/ui/status-note";
-import { roomStatusBadge } from "@/components/ui/badge";
+import { Badge, roomStatusBadge } from "@/components/ui/badge";
 import {
   createRoom,
   createRoomType,
@@ -85,281 +86,396 @@ export default async function DashboardRoomsPage(props: {
   const types = (typesRes.data as RoomTypeRow[] | null) ?? [];
   const rooms = (roomsRes.data as RoomRow[] | null) ?? [];
 
-  const typeName = new Map(types.map((t) => [t.id, t.name]));
-  const roomCount = new Map<string, number>();
-  for (const r of rooms) roomCount.set(r.type_id, (roomCount.get(r.type_id) ?? 0) + 1);
+  // Physical rooms hang off their type instead of living in a second list, so
+  // "Premium Suite" appears once on the page rather than twice.
+  const roomsByType = new Map<string, RoomRow[]>();
+  for (const r of rooms) {
+    const list = roomsByType.get(r.type_id);
+    if (list) list.push(r);
+    else roomsByType.set(r.type_id, [r]);
+  }
+
+  const typeIds = new Set(types.map((t) => t.id));
+  const orphans = rooms.filter((r) => !typeIds.has(r.type_id));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
         eyebrow="Inventory"
         title="Rooms"
-        description="Set room types (and their single base price) and assign physical rooms to each type."
+        description="One entry per room type. Open a type to set its price and photos, and to manage the physical rooms guests are checked into."
       />
 
       <StatusNote saved={sp.saved} error={sp.error} />
 
-      {/* ── Room types ──────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold">Room types</h2>
-          <p className="text-sm text-muted-foreground">
-            The bookable products — price, photos and amenities live here.
-          </p>
-        </div>
+      <StatusSummary rooms={rooms} />
 
-        <CreatePanel title="New room type" description="e.g. Deluxe, Premium Suite">
-          <form action={createRoomType} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="nt_name">Name</Label>
-                <Input id="nt_name" name="name" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nt_slug">Slug (auto if blank)</Label>
-                <Input id="nt_slug" name="slug" placeholder="deluxe" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nt_base_price">Base price</Label>
-                <Input id="nt_base_price" name="base_price" type="number" min="0" step="0.01" required />
-                <p className="text-xs text-muted-foreground">What the guest is charged per night.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nt_original_price">Original price (optional)</Label>
-                <Input id="nt_original_price" name="original_price" type="number" min="0" step="0.01" />
-                <p className="text-xs text-muted-foreground">
-                  Shown struck through next to the base price. Leave blank if no offer is running.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nt_max_guests">Max guests</Label>
-                <Input id="nt_max_guests" name="max_guests" type="number" min="1" max="20" defaultValue="2" required />
-              </div>
+      <CreatePanel title="New room type" description="e.g. Deluxe, Premium Suite">
+        <form action={createRoomType} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="nt_name">Name</Label>
+              <Input id="nt_name" name="name" required />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="nt_base_price">Price per night</Label>
+              <Input id="nt_base_price" name="base_price" type="number" min="0" step="0.01" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nt_max_guests">Max guests</Label>
+              <Input id="nt_max_guests" name="max_guests" type="number" min="1" max="20" defaultValue="2" required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nt_slug">Web address (auto if blank)</Label>
+              <Input id="nt_slug" name="slug" placeholder="deluxe" />
+            </div>
+          </div>
+
+          <ImageListField name="images" fileName="image_files" label="Photos" />
+
+          <MoreDetails>
             <div className="space-y-2">
               <Label htmlFor="nt_description">Description</Label>
               <Textarea id="nt_description" name="description" />
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="nt_amenities">Amenities (one per line)</Label>
-                <Textarea id="nt_amenities" name="amenities" rows={4} placeholder={"Wi-Fi\nAC\nMini-fridge"} />
-              </div>
-              <ImageListField name="images" fileName="image_files" label="Photos" />
+            <div className="space-y-2">
+              <Label htmlFor="nt_amenities">Amenities (one per line)</Label>
+              <Textarea id="nt_amenities" name="amenities" rows={4} placeholder={"Wi-Fi\nAC\nMini-fridge"} />
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="nt_original_price">Was-price (optional)</Label>
+                <Input id="nt_original_price" name="original_price" type="number" min="0" step="0.01" />
+                <p className="text-xs text-muted-foreground">
+                  Shown struck through next to the price. Blank if no offer is running.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="nt_sort_order">Sort order</Label>
                 <Input id="nt_sort_order" name="sort_order" type="number" min="0" defaultValue="0" />
               </div>
-              <div className="flex items-end gap-3">
-                <Switch id="nt_is_active" name="is_active" defaultChecked />
-                <Label htmlFor="nt_is_active">Active</Label>
-              </div>
             </div>
-            <FormActions>
-              <SubmitButton size="sm">Add room type</SubmitButton>
-            </FormActions>
-          </form>
-        </CreatePanel>
+          </MoreDetails>
 
-        <ManageList
-          storageKey="room-types"
-          noun="room types"
-          searchPlaceholder="Search room types…"
-          emptyLabel="No room types yet."
-          items={types.map((t) => ({
+          <div className="flex items-center gap-3">
+            <Switch id="nt_is_active" name="is_active" defaultChecked />
+            <Label htmlFor="nt_is_active">Bookable on the website</Label>
+          </div>
+
+          <FormActions>
+            <SubmitButton size="sm">Add room type</SubmitButton>
+          </FormActions>
+        </form>
+      </CreatePanel>
+
+      <ManageList
+        storageKey="room-types"
+        noun="room types"
+        searchPlaceholder="Search room types and room numbers…"
+        emptyLabel="No room types yet — add one above to get started."
+        items={types.map((t) => {
+          const mine = roomsByType.get(t.id) ?? [];
+          return {
             id: t.id,
             title: t.name,
-            subtitle: `${t.slug} · sleeps ${t.max_guests} · ${roomCount.get(t.id) ?? 0} room(s)`,
+            subtitle: `Sleeps ${t.max_guests} · ${mine.length} room${mine.length === 1 ? "" : "s"}${
+              mine.length ? `: ${mine.map((r) => r.room_number).join(", ")}` : ""
+            }`,
             meta: String(t.base_price),
-            badge: t.is_active ? null : { label: "Inactive", variant: "outline" as const },
+            badge: t.is_active ? null : { label: "Not bookable", variant: "outline" as const },
             thumbnail: t.images?.[0] ?? null,
-            search: t.description ?? "",
+            search: `${t.description ?? ""} ${t.slug} ${mine.map((r) => r.room_number).join(" ")}`,
             children: (
-              <form action={updateRoomType} className="space-y-4">
-                <input type="hidden" name="id" value={t.id} />
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <Input name="name" defaultValue={t.name} required />
+              <div className="space-y-6">
+                <form action={updateRoomType} className="space-y-4">
+                  <input type="hidden" name="id" value={t.id} />
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Name</Label>
+                      <Input name="name" defaultValue={t.name} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Price per night</Label>
+                      <Input name="base_price" type="number" min="0" step="0.01" defaultValue={String(t.base_price)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Max guests</Label>
+                      <Input name="max_guests" type="number" min="1" max="20" defaultValue={t.max_guests} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Web address</Label>
+                      <Input name="slug" defaultValue={t.slug} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Slug</Label>
-                    <Input name="slug" defaultValue={t.slug} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Base price</Label>
-                    <Input name="base_price" type="number" min="0" step="0.01" defaultValue={String(t.base_price)} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Original price (optional)</Label>
-                    <Input
-                      name="original_price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      defaultValue={t.original_price === null ? "" : String(t.original_price)}
-                    />
-                    <p className="text-xs text-muted-foreground">Struck through on the site. Blank = no offer.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Max guests</Label>
-                    <Input name="max_guests" type="number" min="1" max="20" defaultValue={t.max_guests} required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea name="description" defaultValue={t.description ?? ""} />
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Amenities (one per line)</Label>
-                    <Textarea name="amenities" rows={4} defaultValue={(t.amenities ?? []).join("\n")} />
-                  </div>
+
                   <ImageListField
                     name="images"
                     fileName="image_files"
                     label="Photos"
                     value={t.images ?? []}
                   />
-                </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Sort order</Label>
-                    <Input name="sort_order" type="number" min="0" defaultValue={t.sort_order} />
-                  </div>
-                  <div className="flex items-end gap-3">
+
+                  <MoreDetails>
+                    <div className="space-y-2">
+                      <Label>Description</Label>
+                      <Textarea name="description" defaultValue={t.description ?? ""} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Amenities (one per line)</Label>
+                      <Textarea name="amenities" rows={4} defaultValue={(t.amenities ?? []).join("\n")} />
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Was-price (optional)</Label>
+                        <Input
+                          name="original_price"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          defaultValue={t.original_price === null ? "" : String(t.original_price)}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Struck through on the site. Blank = no offer.
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Sort order</Label>
+                        <Input name="sort_order" type="number" min="0" defaultValue={t.sort_order} />
+                      </div>
+                    </div>
+                  </MoreDetails>
+
+                  <div className="flex items-center gap-3">
                     <Switch name="is_active" defaultChecked={t.is_active} />
-                    <Label>Active</Label>
+                    <Label>Bookable on the website</Label>
                   </div>
-                </div>
-                <FormActions>
-                  <SubmitButton size="sm">Save</SubmitButton>
-                  <DeleteButton
-                    action={deleteRoomType}
-                    confirmMessage={`Delete the “${t.name}” room type? Rooms assigned to it may be affected.`}
-                    className="ml-auto"
-                  >
-                    Delete room type
-                  </DeleteButton>
-                </FormActions>
-              </form>
+
+                  <FormActions>
+                    <SubmitButton size="sm">Save room type</SubmitButton>
+                    <DeleteButton
+                      action={deleteRoomType}
+                      confirmMessage={
+                        mine.length
+                          ? `Delete the “${t.name}” type? Its ${mine.length} room(s) will be left without a type.`
+                          : `Delete the “${t.name}” room type?`
+                      }
+                      className="ml-auto"
+                    >
+                      Delete type
+                    </DeleteButton>
+                  </FormActions>
+                </form>
+
+                <RoomsPanel type={t} rooms={mine} types={types} />
+              </div>
             ),
-          }))}
-        />
-      </section>
+          };
+        })}
+      />
 
-      {/* ── Rooms ───────────────────────────────────────────────────────── */}
-      <section className="space-y-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl font-semibold">Rooms</h2>
+      {orphans.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-destructive">
+            Rooms with no type ({orphans.length})
+          </h2>
           <p className="text-sm text-muted-foreground">
-            The physical keys, grouped by type. {rooms.length} total.
+            Left behind when a room type was deleted. Reassign each to a type, or delete it.
           </p>
-        </div>
+          <div className="divide-y divide-border/60 overflow-hidden rounded-md border border-destructive/30 bg-card">
+            {orphans.map((r) => (
+              <div key={r.id} className="p-3">
+                <RoomForm room={r} types={types} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
 
-        <CreatePanel title="New room" description="assign a room number to a type">
-          <form action={createRoom} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+/** The fields you set once and rarely touch, folded away so the form opens short. */
+function MoreDetails({ children }: { children: React.ReactNode }) {
+  return (
+    <details className="group rounded-md border border-border/60 bg-muted/20">
+      <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium transition-colors hover:bg-muted/40 [&::-webkit-details-marker]:hidden">
+        <span className="group-open:hidden">Show description, amenities &amp; offer price</span>
+        <span className="hidden group-open:inline">Hide description, amenities &amp; offer price</span>
+      </summary>
+      <div className="space-y-4 border-t border-border/60 p-3">{children}</div>
+    </details>
+  );
+}
+
+/** Cross-type "what state is my inventory in" line, since rooms no longer have their own list. */
+function StatusSummary({ rooms }: { rooms: RoomRow[] }) {
+  if (rooms.length === 0) return null;
+  const counts = ROOM_STATUSES.map((status) => ({
+    status,
+    n: rooms.filter((r) => r.status === status).length,
+  })).filter((c) => c.n > 0);
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-border/60 bg-card px-3 py-2">
+      <span className="text-sm font-medium">
+        {rooms.length} room{rooms.length === 1 ? "" : "s"} in total
+      </span>
+      <span aria-hidden className="text-muted-foreground/40">
+        ·
+      </span>
+      {counts.map(({ status, n }) => {
+        const b = roomStatusBadge(status);
+        return (
+          <Badge key={status} variant={b.variant}>
+            {n} {b.label.toLowerCase()}
+          </Badge>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * The physical rooms belonging to one type, rendered inside that type's row.
+ *
+ * Each room is its own <form>, a sibling of the type's form and never nested —
+ * nested <form> elements are invalid HTML and the inner one silently won't submit.
+ */
+function RoomsPanel({
+  type,
+  rooms,
+  types,
+}: {
+  type: RoomTypeRow;
+  rooms: RoomRow[];
+  types: RoomTypeRow[];
+}) {
+  return (
+    <section className="overflow-hidden rounded-md border border-border/60 bg-card">
+      <header className="flex items-center justify-between gap-2 border-b border-border/60 bg-muted/40 px-3 py-2">
+        <h4 className="text-sm font-semibold">Rooms of this type</h4>
+        <span className="text-xs tabular-nums text-muted-foreground">
+          {rooms.length} room{rooms.length === 1 ? "" : "s"}
+        </span>
+      </header>
+
+      {rooms.length === 0 ? (
+        <p className="px-3 py-4 text-sm text-muted-foreground">
+          No physical rooms yet. Add the room numbers guests will actually stay in.
+        </p>
+      ) : (
+        <div className="divide-y divide-border/60">
+          {rooms.map((r) => {
+            const b = roomStatusBadge(r.status);
+            return (
+              <details key={r.id} className="group">
+                <summary className="flex cursor-pointer list-none items-center gap-3 px-3 py-2 transition-colors hover:bg-muted/50 [&::-webkit-details-marker]:hidden">
+                  <ChevronRight
+                    aria-hidden
+                    className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90"
+                  />
+                  <span className="text-sm font-medium">Room {r.room_number}</span>
+                  {r.floor !== null && (
+                    <span className="text-xs text-muted-foreground">Floor {r.floor}</span>
+                  )}
+                  <Badge variant={b.variant} className="ml-auto shrink-0">
+                    {b.label}
+                  </Badge>
+                </summary>
+                <div className="border-t border-border/60 bg-muted/20 px-3 py-3">
+                  <RoomForm room={r} types={types} />
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="border-t border-border/60 p-3">
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <Plus aria-hidden className="h-4 w-4 transition-transform group-open:rotate-45" />
+            Add a room to {type.name}
+          </summary>
+          <form action={createRoom} className="mt-3 space-y-3">
+            {/* The type is implied by where this form lives — no dropdown to get wrong. */}
+            <input type="hidden" name="type_id" value={type.id} />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="space-y-2">
-                <Label htmlFor="nr_room_number">Room number</Label>
-                <Input id="nr_room_number" name="room_number" required />
+                <Label htmlFor={`nr_number_${type.id}`}>Room number</Label>
+                <Input id={`nr_number_${type.id}`} name="room_number" required placeholder="601" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nr_type_id">Type</Label>
-                <Select id="nr_type_id" name="type_id" required>
-                  {types.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </Select>
+                <Label htmlFor={`nr_floor_${type.id}`}>Floor</Label>
+                <Input id={`nr_floor_${type.id}`} name="floor" type="number" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nr_floor">Floor</Label>
-                <Input id="nr_floor" name="floor" type="number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nr_status">Status</Label>
-                <Select id="nr_status" name="status" defaultValue="available">
+                <Label htmlFor={`nr_status_${type.id}`}>Status</Label>
+                <Select id={`nr_status_${type.id}`} name="status" defaultValue="available">
                   {ROOM_STATUSES.map((s) => (
-                    <option key={s} value={s}>{roomStatusBadge(s).label}</option>
+                    <option key={s} value={s}>
+                      {roomStatusBadge(s).label}
+                    </option>
                   ))}
                 </Select>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="nr_notes">Notes</Label>
-              <Textarea id="nr_notes" name="notes" />
             </div>
             <FormActions>
               <SubmitButton size="sm">Add room</SubmitButton>
             </FormActions>
           </form>
-        </CreatePanel>
+        </details>
+      </div>
+    </section>
+  );
+}
 
-        <ManageList
-          storageKey="rooms"
-          noun="rooms"
-          searchPlaceholder="Search by room number, floor, notes…"
-          groupAllLabel="All room types"
-          emptyLabel="No rooms yet."
-          items={rooms.map((r) => {
-            const badge = roomStatusBadge(r.status);
-            return {
-              id: r.id,
-              title: `Room ${r.room_number}`,
-              subtitle: r.notes,
-              meta: r.floor === null ? null : `Floor ${r.floor}`,
-              group: typeName.get(r.type_id) ?? "Unassigned",
-              badge: { label: badge.label, variant: badge.variant },
-              search: `${r.status} ${r.floor ?? ""}`,
-              children: (
-                <form action={updateRoom} className="space-y-4">
-                  <input type="hidden" name="id" value={r.id} />
-                  <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                    <div className="space-y-2">
-                      <Label>Room number</Label>
-                      <Input name="room_number" defaultValue={r.room_number} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Type</Label>
-                      <Select name="type_id" defaultValue={r.type_id}>
-                        {types.map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
-                        ))}
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Floor</Label>
-                      <Input name="floor" type="number" defaultValue={r.floor ?? ""} />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select name="status" defaultValue={r.status}>
-                        {ROOM_STATUSES.map((s) => (
-                          <option key={s} value={s}>{roomStatusBadge(s).label}</option>
-                        ))}
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Textarea name="notes" defaultValue={r.notes ?? ""} rows={2} />
-                  </div>
-                  <FormActions>
-                    <SubmitButton size="sm">Save</SubmitButton>
-                    <DeleteButton
-                      action={deleteRoom}
-                      confirmMessage={`Delete room ${r.room_number}? This can't be undone.`}
-                      className="ml-auto"
-                    />
-                  </FormActions>
-                </form>
-              ),
-            };
-          })}
+function RoomForm({ room, types }: { room: RoomRow; types: RoomTypeRow[] }) {
+  return (
+    <form action={updateRoom} className="space-y-3">
+      <input type="hidden" name="id" value={room.id} />
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="space-y-2">
+          <Label>Room number</Label>
+          <Input name="room_number" defaultValue={room.room_number} required />
+        </div>
+        <div className="space-y-2">
+          <Label>Floor</Label>
+          <Input name="floor" type="number" defaultValue={room.floor ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label>Status</Label>
+          <Select name="status" defaultValue={room.status}>
+            {ROOM_STATUSES.map((s) => (
+              <option key={s} value={s}>
+                {roomStatusBadge(s).label}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Type</Label>
+          <Select name="type_id" defaultValue={room.type_id}>
+            {types.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label>Notes</Label>
+        <Textarea name="notes" defaultValue={room.notes ?? ""} rows={2} />
+      </div>
+      <FormActions>
+        <SubmitButton size="sm">Save room</SubmitButton>
+        <DeleteButton
+          action={deleteRoom}
+          confirmMessage={`Delete room ${room.room_number}? This can't be undone.`}
+          className="ml-auto"
         />
-      </section>
-    </div>
+      </FormActions>
+    </form>
   );
 }
