@@ -14,10 +14,7 @@ import {
   bookingStatusBadge,
   paymentStatusBadge,
 } from "@/components/ui/badge";
-import { type ChatMessage } from "@/components/chat/realtime-chat";
-import { FloatingChatBubble } from "@/components/chat/floating-chat-bubble";
 import { cancelBooking } from "./actions";
-import { sendBookingChatMessage } from "./chat-actions";
 
 type BookingDetail = {
   id: string;
@@ -58,7 +55,6 @@ export default async function BookingDetailPage(props: {
     cancelled?: string;
     error?: string;
     service_requested?: string;
-    chat_error?: string;
     t?: string;
   }>;
 }) {
@@ -122,33 +118,6 @@ export default async function BookingDetailPage(props: {
     .select("currency_symbol")
     .single();
   const symbol = (settingsRow?.currency_symbol as string) ?? "Rs.";
-
-  // Chat thread: keyed on this booking's guest. Token viewers + owners use
-  // admin reads (RLS would block anon for messages); staff use their RLS
-  // path. The conversation may not exist yet — we surface an empty thread
-  // and the first sent message will create it.
-  const chatClient =
-    viewerMode === "token" ? createAdminClient() : supabase;
-  const { data: convRow } = await chatClient
-    .from("conversations")
-    .select("id")
-    .eq("guest_id", b.guest_id)
-    .maybeSingle();
-  const chatConversationId =
-    (convRow as { id: string } | null)?.id ?? null;
-
-  let chatMessages: ChatMessage[] = [];
-  if (chatConversationId) {
-    const { data: msgs } = await chatClient
-      .from("messages")
-      .select(
-        "id, conversation_id, sender_id, sender_role, body, created_at",
-      )
-      .eq("conversation_id", chatConversationId)
-      .order("created_at", { ascending: true })
-      .limit(200);
-    chatMessages = (msgs as ChatMessage[] | null) ?? [];
-  }
 
   const status = bookingStatusBadge(b.status);
   const payment = paymentStatusBadge(b.payment_status);
@@ -287,14 +256,6 @@ export default async function BookingDetailPage(props: {
               </dl>
             </section>
 
-            {sp.chat_error && (
-              <section className="border-t border-border pt-6">
-                <p className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                  Chat: {sp.chat_error}
-                </p>
-              </section>
-            )}
-
             {cancellable && (
               <section className="border-t border-border pt-6">
                 <h2 className="mb-2 text-sm font-semibold">Need to cancel?</h2>
@@ -324,17 +285,6 @@ export default async function BookingDetailPage(props: {
         </Card>
       </main>
       <SiteFooter />
-      <FloatingChatBubble
-        conversationId={chatConversationId}
-        initialMessages={chatMessages}
-        currentProfileId={b.guest_id}
-        sendAction={sendBookingChatMessage}
-        hiddenFields={
-          viewerMode === "token"
-            ? { booking_id: b.id, access_token: b.access_token }
-            : { booking_id: b.id }
-        }
-      />
     </>
   );
 }

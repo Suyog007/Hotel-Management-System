@@ -151,22 +151,6 @@ Functional,Unit,Staff management,test/staff-actions.test.ts,changeRole changes a
 Security,Unit,Staff management,test/staff-actions.test.ts,toggleActive refuses to let a super_admin disable themselves,Self-disable safeguard,npm test,Pass,2026-07-21
 Functional,Unit,Staff management,test/staff-actions.test.ts,toggleActive allows a super_admin to re-enable themselves,Self-reenable edge case,npm test,Pass,2026-07-21
 Functional,Unit,Staff management,test/staff-actions.test.ts,toggleActive disables another staff member and writes an audit log,Disable + audit trail,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage redirects to /login when unauthenticated,Unauthenticated actor rejected,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage rejects a guest (non-staff) session,Staff-role gate,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage redirects with an error when conversation_id is missing,Required field validation,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage silently no-ops on an empty message body,Empty-body no-op,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage rejects a message longer than 4000 chars,Message length cap,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendStaffMessage inserts the message with the staff sender's id and role,Message insert shape,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage redirects when the booking id isn't a uuid,Input validation,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage no-ops on an empty body redirecting back to the booking page,Empty-body no-op,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects a body over 4000 chars,Message length cap,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage redirects when the booking doesn't exist,Booking existence check,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects an unauthenticated request with no matching access_token,Anonymous auth rejected,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage accepts a matching access_token creates a conversation and sends as the guest,Token-based guest auth,npm test,Pass,2026-07-21
-Functional,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage reuses an existing conversation instead of creating a duplicate,Conversation dedupe by guest,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage lets the signed-in guest owner send without a token,Session-based guest auth,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage lets signed-in staff reply on the guest's behalf tagged with the staff sender,Staff-on-behalf-of-guest auth,npm test,Pass,2026-07-21
-Security,Unit,Chat/messaging,test/chat-actions.test.ts,sendBookingChatMessage rejects a signed-in guest who doesn't own the booking and has no token,Cross-guest isolation,npm test,Pass,2026-07-21
 Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,createAmenity inserts a row writes an audit log and redirects saved=1,Create happy path,npm test,Pass,2026-07-21
 Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,createAmenity rejects invalid input (empty name) without inserting,Input validation,npm test,Pass,2026-07-21
 Functional,Unit,Admin CMS CRUD (amenities),test/amenities-action.test.ts,updateAmenity updates the row and logs old + new values,Update + audit old/new values,npm test,Pass,2026-07-21

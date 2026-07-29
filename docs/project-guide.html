@@ -203,7 +203,7 @@
   </div>
   <div class="card">
     <h4>Staff dashboard</h4>
-    <p>Today's arrivals/departures, check-in / check-out, walk-in bookings, service requests, live chat with guests, reports.</p>
+    <p>Today's arrivals/departures, check-in / check-out, walk-in bookings, service requests, reports.</p>
   </div>
   <div class="card">
     <h4>Admin CMS</h4>
@@ -227,7 +227,7 @@
     <tr><td>Database</td><td>Supabase Postgres</td><td>Row-Level Security enforced everywhere</td></tr>
     <tr><td>Auth</td><td>Supabase Auth — email OTP only</td><td>No password, no SMS, no guest signup</td></tr>
     <tr><td>Storage</td><td>Supabase Storage</td><td>Bucket: <code>public-images</code></td></tr>
-    <tr><td>Realtime</td><td>Supabase Realtime</td><td>Used for guest ↔ staff chat</td></tr>
+    <tr><td>Guest messaging</td><td>WhatsApp (<code>wa.me</code> deep link)</td><td>Floating button on every public page — no in-app chat</td></tr>
     <tr><td>Email</td><td>Resend</td><td>Transactional + OTP</td></tr>
     <tr><td>Validation</td><td>Zod</td><td>Server-action + webhook entry points</td></tr>
     <tr><td>Payments</td><td>Khalti + eSewa + pay-at-hotel</td><td>Khalti/eSewa scaffolded, online flow deferred</td></tr>
@@ -241,7 +241,7 @@
   (staff)/dashboard/    Reception + manager operations
   (admin)/admin/        Super-admin CMS
   rooms/, menu/, ...    Public pages
-components/             UI primitives + shell + public + chat
+components/             UI primitives + shell + public
 lib/
   supabase/             Browser, server, admin, middleware clients
   pricing.ts            Total calculation
@@ -273,13 +273,13 @@ types/database.ts       Generated Supabase types (stub by default)</pre>
   <tbody>
     <tr>
       <td><span class="badge badge-info">guest</span></td>
-      <td>Public pages, <code>/booking/[id]</code>, <code>/my-bookings</code>, <code>/chat</code></td>
-      <td>Browse, book, cancel own booking, request services, chat with reception</td>
+      <td>Public pages, <code>/booking/[id]</code>, <code>/my-bookings</code></td>
+      <td>Browse, book, cancel own booking, request services, message the hotel on WhatsApp</td>
     </tr>
     <tr>
       <td><span class="badge badge-info">receptionist</span></td>
       <td><code>/dashboard/**</code></td>
-      <td>Check guests in/out, walk-in bookings, handle service requests, reply in chat</td>
+      <td>Check guests in/out, walk-in bookings, handle service requests</td>
     </tr>
     <tr>
       <td><span class="badge badge-info">manager</span></td>
@@ -367,7 +367,7 @@ types/database.ts       Generated Supabase types (stub by default)</pre>
   <li><code>/my-bookings</code> — list of all bookings tied to the signed-in email.</li>
   <li><code>/booking/[id]</code> — receipt with status, payment status, dates, total, and a <strong>Cancel</strong> button while status is pending or confirmed.</li>
   <li><strong>Request services</strong> — once a booking is confirmed or checked-in, a service-request widget appears on the booking page.</li>
-  <li><strong>Chat</strong> at <code>/chat</code> — a live conversation with reception over Supabase Realtime. The unread counter resets when you open the page.</li>
+  <li><strong>WhatsApp</strong> — a floating WhatsApp button sits bottom-right on every public page. Tapping it opens a chat with the hotel's mobile number (pre-filled greeting) in the WhatsApp app or web client.</li>
 </ul>
 
 <h3>5.4 Cancellation &amp; refunds</h3>
@@ -388,7 +388,7 @@ types/database.ts       Generated Supabase types (stub by default)</pre>
 
 <h3>6.1 Dashboard home</h3>
 <ul>
-  <li>Six <strong>metric tiles</strong>: today's arrivals, today's departures, occupancy %, open chats, pending refunds, open service requests.</li>
+  <li>Five <strong>metric tiles</strong>: today's arrivals, today's departures, occupancy %, pending refunds, open service requests.</li>
   <li>Below the tiles: a list of today's arrivals with check-in actions one click away.</li>
 </ul>
 
@@ -414,13 +414,8 @@ types/database.ts       Generated Supabase types (stub by default)</pre>
 <h3>6.4 Service requests (<code>/dashboard/service-requests</code>)</h3>
 <p>A simple Kanban-style status flow: <strong>received → in progress → completed</strong> (or <strong>cancelled</strong>). Each transition is audit-logged.</p>
 
-<h3>6.5 Chat (<code>/dashboard/chat</code>)</h3>
-<ul>
-  <li>Inbox of all guest conversations sorted by <code>last_message_at</code> descending.</li>
-  <li>Unread conversations show an accent border and a count badge.</li>
-  <li>Click into <code>/dashboard/chat/[conversationId]</code> for the live message thread (Supabase Realtime — no refresh needed).</li>
-  <li>Viewing the conversation resets the staff unread counter to 0 via a trigger.</li>
-</ul>
+<h3>6.5 Guest messaging</h3>
+<p>There is no in-app chat inbox. Guests who want to talk to the hotel tap the floating WhatsApp button on the public site, which opens a normal WhatsApp conversation with the hotel's mobile number — staff reply from WhatsApp, not from the dashboard.</p>
 
 <!-- ====== 7. MANAGERS ====== -->
 <h2>7. For managers — operations &amp; reports</h2>

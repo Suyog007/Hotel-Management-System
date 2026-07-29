@@ -1,6 +1,6 @@
 /**
- * Floating WhatsApp button anchored bottom-right (the chat bubble lives
- * bottom-left, so they don't collide on the same page).
+ * Floating WhatsApp button anchored bottom-right. This is the site's only
+ * guest→hotel messaging channel — there is no in-app chat.
  *
  * Clicking opens wa.me which redirects to the WhatsApp app on mobile / web
  * client on desktop. Open in a new tab so the hotel site is preserved.
