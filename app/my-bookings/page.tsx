@@ -8,9 +8,6 @@ import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge, bookingStatusBadge, paymentStatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { type ChatMessage } from "@/components/chat/realtime-chat";
-import { FloatingChatBubble } from "@/components/chat/floating-chat-bubble";
-import { sendBookingChatMessage } from "@/app/booking/[id]/chat-actions";
 import { readGuestSession } from "@/lib/guest-session";
 import { signOutGuest } from "./actions";
 
@@ -110,7 +107,7 @@ export default async function MyBookingsPage() {
     );
   }
 
-  // Admin client lets us read bookings + chat for cookie-based guests; auth
+  // Admin client lets us read bookings for cookie-based guests; auth
   // path would also work with the normal client, but admin works for both.
   const admin = createAdminClient();
   const { data: bookings } = await admin
@@ -127,26 +124,6 @@ export default async function MyBookingsPage() {
     .select("currency_symbol")
     .single();
   const symbol = (settings?.currency_symbol as string) ?? "Rs.";
-
-  let chatConversationId: string | null = null;
-  let chatMessages: ChatMessage[] = [];
-  if (rows.length > 0) {
-    const { data: convRow } = await admin
-      .from("conversations")
-      .select("id")
-      .eq("guest_id", guest.profileId)
-      .maybeSingle();
-    chatConversationId = (convRow as { id: string } | null)?.id ?? null;
-    if (chatConversationId) {
-      const { data: msgs } = await admin
-        .from("messages")
-        .select("id, conversation_id, sender_id, sender_role, body, created_at")
-        .eq("conversation_id", chatConversationId)
-        .order("created_at", { ascending: true })
-        .limit(200);
-      chatMessages = (msgs as ChatMessage[] | null) ?? [];
-    }
-  }
 
   return (
     <>
@@ -222,18 +199,6 @@ export default async function MyBookingsPage() {
               );
             })}
           </div>
-        )}
-        {rows.length > 0 && (
-          <FloatingChatBubble
-            conversationId={chatConversationId}
-            initialMessages={chatMessages}
-            currentProfileId={guest.profileId}
-            sendAction={sendBookingChatMessage}
-            hiddenFields={{
-              booking_id: rows[0].id,
-              access_token: rows[0].access_token,
-            }}
-          />
         )}
       </main>
       <SiteFooter />

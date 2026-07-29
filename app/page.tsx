@@ -634,7 +634,8 @@ export default async function HomePage() {
                   Questions, answered.
                 </h2>
                 <p className="mt-4 text-muted-foreground">
-                  Anything else? Reception is online — start a chat from any page.
+                  Anything else? Message us on WhatsApp — the button sits in the
+                  corner of every page.
                 </p>
               </div>
               <div className="lg:col-span-8">

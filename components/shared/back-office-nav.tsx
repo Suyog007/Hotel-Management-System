@@ -6,7 +6,6 @@ import {
   BedDouble,
   BarChart3,
   XCircle,
-  MessageCircle,
   UtensilsCrossed,
   Settings,
   Palette,
@@ -56,7 +55,6 @@ const GROUPS: NavGroup[] = [
       { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardList, minRole: "receptionist" },
       { href: "/dashboard/walk-in", label: "Walk-in", icon: UserPlus, minRole: "receptionist" },
       { href: "/dashboard/cancellations", label: "Cancellations", icon: XCircle, minRole: "receptionist" },
-      { href: "/dashboard/chat", label: "Chat", icon: MessageCircle, minRole: "receptionist" },
     ],
   },
   {

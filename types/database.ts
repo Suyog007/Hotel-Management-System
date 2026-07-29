@@ -560,92 +560,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      conversations: {
-        Row: {
-          id: string;
-          guest_id: string;
-          status: Database["public"]["Enums"]["conversation_status"];
-          last_message_at: string | null;
-          guest_unread_count: number;
-          staff_unread_count: number;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          guest_id: string;
-          status?: Database["public"]["Enums"]["conversation_status"];
-          last_message_at?: string | null;
-          guest_unread_count?: number;
-          staff_unread_count?: number;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          guest_id?: string;
-          status?: Database["public"]["Enums"]["conversation_status"];
-          last_message_at?: string | null;
-          guest_unread_count?: number;
-          staff_unread_count?: number;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "conversations_guest_id_fkey";
-            columns: ["guest_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      messages: {
-        Row: {
-          id: string;
-          conversation_id: string;
-          sender_id: string | null;
-          sender_role: Database["public"]["Enums"]["user_role"];
-          body: string;
-          read_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          conversation_id: string;
-          sender_id?: string | null;
-          sender_role: Database["public"]["Enums"]["user_role"];
-          body: string;
-          read_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          conversation_id?: string;
-          sender_id?: string | null;
-          sender_role?: Database["public"]["Enums"]["user_role"];
-          body?: string;
-          read_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey";
-            columns: ["conversation_id"];
-            isOneToOne: false;
-            referencedRelation: "conversations";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "messages_sender_id_fkey";
-            columns: ["sender_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       notifications: {
         Row: {
           id: string;
@@ -1202,7 +1116,6 @@ export type Database = {
         | "in_progress"
         | "completed"
         | "cancelled";
-      conversation_status: "open" | "closed";
     };
     CompositeTypes: {
       [_ in never]: never;

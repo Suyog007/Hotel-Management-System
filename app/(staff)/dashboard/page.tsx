@@ -5,7 +5,6 @@ import {
   CalendarMinus,
   XCircle,
   ConciergeBell,
-  MessageCircle,
   BedDouble,
 } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
@@ -32,7 +31,7 @@ export default async function DashboardHome() {
   const supabase = await createServerClient();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [arrivalsRes, departuresRes, occupiedRes, totalRoomsRes, openChatsRes, pendingRefundsRes, todayArrivalsRes] = await Promise.all([
+  const [arrivalsRes, departuresRes, occupiedRes, totalRoomsRes, pendingRefundsRes, todayArrivalsRes] = await Promise.all([
     supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
@@ -48,10 +47,6 @@ export default async function DashboardHome() {
       .select("*", { count: "exact", head: true })
       .eq("status", "occupied"),
     supabase.from("rooms").select("*", { count: "exact", head: true }),
-    supabase
-      .from("conversations")
-      .select("*", { count: "exact", head: true })
-      .gt("staff_unread_count", 0),
     supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
@@ -72,7 +67,6 @@ export default async function DashboardHome() {
   const departures = departuresRes.count ?? 0;
   const occupied = occupiedRes.count ?? 0;
   const totalRooms = totalRoomsRes.count ?? 0;
-  const openChats = openChatsRes.count ?? 0;
   const pendingRefunds = pendingRefundsRes.count ?? 0;
   const todayArrivals = (todayArrivalsRes.data as unknown as ArrivalRow[] | null) ?? [];
 
@@ -108,14 +102,6 @@ export default async function DashboardHome() {
           value={`${occupancy}%`}
           hint={`${occupied} / ${totalRooms}`}
           icon={BedDouble}
-        />
-        <Metric
-          label="Open chats"
-          value={openChats}
-          hint="unread"
-          icon={MessageCircle}
-          href="/dashboard/chat"
-          tone={openChats > 0 ? "accent" : "default"}
         />
         <Metric
           label="Pending refunds"
