@@ -61,6 +61,24 @@ const AMENITY_ICONS: Record<string, LucideIcon> = {
   coffee: Coffee,
 };
 
+/**
+ * The four dishes "What we cook" leads with.
+ *
+ * The section used to order by category name, so "Bar" won alphabetically and
+ * the kitchen teaser was four whisky bottles — which don't carry photos either,
+ * leaving four grey placeholders. Picking by category instead of letting sort
+ * order decide also keeps it from turning into four kinds of momo.
+ *
+ * `prefer` names the dish to lead with; if it's been renamed or turned off, the
+ * first available item in that category with a photo stands in.
+ */
+const SHOWCASE_DISHES = [
+  { category: "Khana Set", prefer: "Chicken Khana Set" },
+  { category: "Momo", prefer: "Chicken Steam Momo" },
+  { category: "Noodles & Chowmein", prefer: "Chicken Chowmein" },
+  { category: "Thukpa", prefer: "Chicken Thukpa" },
+];
+
 export default async function HomePage() {
   const supabase = await createServerClient();
 
@@ -107,9 +125,9 @@ export default async function HomePage() {
       .from("food_items")
       .select("id, name, description, price, category, image_url")
       .eq("is_available", true)
-      .order("category")
-      .order("sort_order")
-      .limit(4),
+      .in("category", SHOWCASE_DISHES.map((d) => d.category))
+      .not("image_url", "is", null)
+      .order("sort_order"),
   ]);
 
   const s = (settingsRes.data ?? {}) as {
@@ -142,7 +160,7 @@ export default async function HomePage() {
   const amenities = (amenitiesRes.data as Amenity[] | null) ?? [];
   const gallery = (galleryRes.data as GalleryItem[] | null) ?? [];
   const faqs = (faqsRes.data as Faq[] | null) ?? [];
-  const menuItems =
+  const dishes =
     (menuRes.data as Array<{
       id: string;
       name: string;
@@ -151,6 +169,11 @@ export default async function HomePage() {
       category: string;
       image_url: string | null;
     }> | null) ?? [];
+  // One dish per showcase category, in the order listed above.
+  const menuItems = SHOWCASE_DISHES.map(({ category, prefer }) => {
+    const inCategory = dishes.filter((d) => d.category === category);
+    return inCategory.find((d) => d.name === prefer) ?? inCategory[0];
+  }).filter(Boolean);
   const googleReviews =
     (reviewsRes.data as Array<{
       id: string;
