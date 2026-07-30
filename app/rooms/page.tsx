@@ -270,9 +270,12 @@ function RoomCard({
     : `/rooms/${rt.slug}`;
 
   return (
-    <Link href={href} className="group block">
-      <article className="overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
-        <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+    // h-full + flex-col all the way down: grid rows stretch every card to the
+    // tallest in the row, so a room with two lines of amenities can't leave the
+    // one beside it ending short.
+    <Link href={href} className="group flex h-full">
+      <article className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-border/60 bg-card shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
+        <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-muted">
           {images.length > 0 ? (
             <CardImageSlider
               images={images}
@@ -316,27 +319,31 @@ function RoomCard({
             )}
           </div>
         </div>
-        <div className="p-5">
+        <div className="flex flex-1 flex-col p-5">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="font-display text-xl font-semibold leading-tight">
               {rt.name}
             </h2>
             <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
           </div>
-          {rt.description && (
-            <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-              {rt.description}
-            </p>
-          )}
+          {/* Always rendered, always two lines tall: a room with no description
+              would otherwise pull everything below it up out of line. */}
+          <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">
+            {rt.description}
+          </p>
           {!stay && (
             <p className="mt-3 inline-flex items-center gap-1.5 text-xs text-accent">
               <CalendarDays className="h-3.5 w-3.5" />
               Add dates above to see your total price
             </p>
           )}
+          {/* mt-auto pins the chips to the bottom edge of every card, so the
+              rows line up even when one room lists three amenities and the
+              next lists six. Three chips is what fits on one line in a
+              lg:grid-cols-3 column — a fourth wrapped and made cards ragged. */}
           {(rt.amenities ?? []).length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-1.5">
-              {(rt.amenities ?? []).slice(0, 4).map((a) => (
+            <ul className="mt-auto flex flex-wrap gap-1.5 pt-4">
+              {(rt.amenities ?? []).slice(0, 3).map((a) => (
                 <li
                   key={a}
                   className="rounded-full border border-border bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground"
@@ -344,9 +351,9 @@ function RoomCard({
                   {a}
                 </li>
               ))}
-              {(rt.amenities ?? []).length > 4 && (
-                <li className="text-xs text-muted-foreground">
-                  +{(rt.amenities ?? []).length - 4} more
+              {(rt.amenities ?? []).length > 3 && (
+                <li className="px-1 py-0.5 text-xs text-muted-foreground">
+                  +{(rt.amenities ?? []).length - 3} more
                 </li>
               )}
             </ul>
