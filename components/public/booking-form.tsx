@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { CreditCard, Building2, ArrowRight, Snowflake, Wind } from "lucide-react";
+import { CreditCard, Building2, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +25,6 @@ export function BookingForm(props: {
   taxRate: number;
   serviceRate: number;
   currencySymbol: string;
-  /** > 0 enables the optional AC add-on (Standard rooms only). */
-  acAddonPrice?: number;
   action: (formData: FormData) => Promise<void>;
   initialCheckIn?: string;
   initialCheckOut?: string;
@@ -42,10 +40,6 @@ export function BookingForm(props: {
   // Online payment (Khalti / eSewa) deferred — locked to pay_at_hotel for v1.
   const paymentMethod = "pay_at_hotel" as const;
 
-  const acAddonPrice = props.acAddonPrice ?? 0;
-  const [ac, setAc] = useState(false);
-  const addonAmount = acAddonPrice > 0 && ac ? acAddonPrice : 0;
-
   const nights = nightsBetween(checkIn, checkOut);
   const roomCharge = round2(props.basePrice * nights);
   const totals = calculateBookingTotal({
@@ -53,7 +47,6 @@ export function BookingForm(props: {
     nights,
     taxRate: props.taxRate,
     serviceRate: props.serviceRate,
-    addonAmount,
   });
   const datesValid = nights >= 1;
 
@@ -116,31 +109,6 @@ export function BookingForm(props: {
           Max {props.maxGuests} per booking for this room.
         </p>
       </div>
-
-      {acAddonPrice > 0 && (
-        <div className="border-t border-border pt-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            Air conditioning
-          </p>
-          <input type="hidden" name="ac_addon" value={ac ? "on" : "off"} />
-          <div className="grid grid-cols-2 gap-2">
-            <PaymentChoice
-              icon={Wind}
-              label="Non-AC"
-              hint="Included"
-              selected={!ac}
-              onClick={() => setAc(false)}
-            />
-            <PaymentChoice
-              icon={Snowflake}
-              label="AC"
-              hint={`+${props.currencySymbol} ${acAddonPrice.toLocaleString()}`}
-              selected={ac}
-              onClick={() => setAc(true)}
-            />
-          </div>
-        </div>
-      )}
 
       <div className="border-t border-border pt-4">
         <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -223,12 +191,6 @@ export function BookingForm(props: {
               </dt>
               <dd>{props.currencySymbol} {roomCharge.toLocaleString()}</dd>
             </div>
-            {addonAmount > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <dt>Air conditioning</dt>
-                <dd>+{props.currencySymbol} {addonAmount.toLocaleString()}</dd>
-              </div>
-            )}
             {props.taxRate > 0 && (
               <div className="flex justify-between text-muted-foreground">
                 <dt>Tax ({(props.taxRate * 100).toFixed(1)}%)</dt>

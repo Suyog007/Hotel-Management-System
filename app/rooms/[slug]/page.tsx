@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { BookingForm } from "@/components/public/booking-form";
 import { RoomGallery } from "@/components/public/room-gallery";
 import { GoogleRatingChip } from "@/components/public/google-rating-chip";
-import { AC_ADDON_PRICE, isAcAddonEligible, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
+import { TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { HotelRoomJsonLd } from "@/components/seo/json-ld";
 import { getSiteUrl } from "@/lib/site-url";
 import { initiateBooking } from "./actions";
@@ -217,7 +217,6 @@ export default async function RoomDetailPage(props: {
                   taxRate={taxRate}
                   serviceRate={serviceRate}
                   currencySymbol={symbol}
-                  acAddonPrice={isAcAddonEligible(rt.slug) ? AC_ADDON_PRICE : 0}
                   action={initiateBooking}
                   initialCheckIn={sp.check_in}
                   initialCheckOut={sp.check_out}

@@ -97,8 +97,6 @@ export const bookingFormSchema = z
     // create an unpayable `pending` booking. Restore the enum when online pay ships.
     payment_method: z.literal("pay_at_hotel"),
     special_requests: optionalText,
-    // Optional AC upgrade (Standard rooms only; re-validated server-side).
-    ac_addon: z.boolean().default(false),
   })
   .refine((d) => d.check_out > d.check_in, {
     path: ["check_out"],
@@ -120,7 +118,6 @@ export const bookingIntentSchema = z.object({
   service_amount: z.number(),
   total_amount: z.number(),
   special_requests: z.string().optional(),
-  ac_addon: z.boolean().default(false),
   expires_at: z.number(),
 });
 

@@ -6,7 +6,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sign } from "@/lib/signed-cookie";
 import { findAvailableRoom } from "@/lib/availability";
-import { calculateBookingTotal, nightsBetween, AC_ADDON_PRICE, isAcAddonEligible, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
+import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { bookingFormSchema, type BookingIntent } from "@/lib/validation/rooms";
 import {
   createBookingOtp,
@@ -31,7 +31,6 @@ export async function initiateBooking(formData: FormData) {
     guest_phone: formData.get("guest_phone"),
     payment_method: formData.get("payment_method"),
     special_requests: formData.get("special_requests"),
-    ac_addon: formData.get("ac_addon") === "on",
   });
   if (!parsed.success) {
     const msg = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
@@ -51,10 +50,6 @@ export async function initiateBooking(formData: FormData) {
   }
   const roomType = rt as { id: string; slug: string; base_price: number; max_guests: number };
 
-  // AC is a paid upgrade on Standard rooms only — re-validate server-side so a
-  // tampered form can't add it (or its 500 charge) to other room types.
-  const acSelected = input.ac_addon === true && isAcAddonEligible(roomType.slug);
-  const addonAmount = acSelected ? AC_ADDON_PRICE : 0;
   if (input.guests_count > roomType.max_guests) {
     redirect(`${back}?error=${encodeURIComponent(`Max ${roomType.max_guests} guests for this room type`)}`);
   }
@@ -75,13 +70,9 @@ export async function initiateBooking(formData: FormData) {
     nights,
     taxRate,
     serviceRate,
-    addonAmount,
   });
 
-  // Record the AC choice on the booking (no dedicated column needed pre-launch).
-  const acNote = acSelected ? `Air conditioning add-on (+${AC_ADDON_PRICE})` : null;
-  const specialRequests =
-    [acNote, input.special_requests].filter(Boolean).join(" — ") || undefined;
+  const specialRequests = input.special_requests || undefined;
 
   const admin = createAdminClient();
   const roomId = await findAvailableRoom(admin, roomType.id, input.check_in, input.check_out);
@@ -104,7 +95,6 @@ export async function initiateBooking(formData: FormData) {
     service_amount: totals.serviceAmount,
     total_amount: totals.total,
     special_requests: specialRequests,
-    ac_addon: acSelected,
     expires_at: Date.now() + INTENT_TTL_SECONDS * 1000,
   };
 

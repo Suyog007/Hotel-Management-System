@@ -40,7 +40,6 @@ function baseIntent(overrides: Partial<Record<string, unknown>> = {}) {
     tax_amount: 500,
     service_amount: 250,
     total_amount: 5750,
-    ac_addon: false,
     expires_at: Date.now() + 10 * 60 * 1000,
     ...overrides,
   };
