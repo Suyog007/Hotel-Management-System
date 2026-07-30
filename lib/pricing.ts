@@ -21,21 +21,6 @@ export type BookingTotals = {
 export const TAX_RATE = 0;
 export const SERVICE_CHARGE_RATE = 0;
 
-/**
- * Optional air-conditioning add-on. Offered on Standard rooms only (Deluxe and
- * Suite already include AC). A flat amount added to the subtotal.
- */
-export const AC_ADDON_PRICE = 500;
-
-/**
- * Standard rooms qualify for the optional AC upgrade. Matches any slug that
- * starts with "standard" (e.g. "standard", "standard-single", "standard-double")
- * so renamed/variant Standard room types still get the option.
- */
-export function isAcAddonEligible(slug: string | null | undefined): boolean {
-  return (slug ?? "").toLowerCase().startsWith("standard");
-}
-
 export function nightsBetween(checkIn: string, checkOut: string): number {
   const a = Date.parse(checkIn);
   const b = Date.parse(checkOut);

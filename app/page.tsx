@@ -717,9 +717,9 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
   return (
     <Link
       href={`/rooms/${room.slug}`}
-      className="group block overflow-hidden rounded-[4px] border border-foreground/10 bg-card transition-all hover:-translate-y-1 hover:shadow-soft-lg motion-reduce:hover:translate-y-0"
+      className="group flex h-full flex-col overflow-hidden rounded-[4px] border border-foreground/10 bg-card transition-all hover:-translate-y-1 hover:shadow-soft-lg motion-reduce:hover:translate-y-0"
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-linen">
+      <div className="relative aspect-[4/5] shrink-0 overflow-hidden bg-linen">
         {hero ? (
           <Image
             src={hero}
@@ -737,14 +737,14 @@ function RoomCard({ room, currency }: { room: RoomType; currency: string }) {
           Sleeps {room.max_guests}
         </div>
       </div>
-      <div className="p-6">
+      <div className="flex flex-1 flex-col p-6">
         <h3 className="font-display text-display-md font-bold">{room.name}</h3>
-        {room.description && (
-          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-            {room.description}
-          </p>
-        )}
-        <div className="divide-dashed-ink mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-4">
+        {/* Always two lines tall, and the price row pinned to the bottom, so a
+            short description can't leave this card ending above its neighbour. */}
+        <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-muted-foreground">
+          {room.description}
+        </p>
+        <div className="divide-dashed-ink mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-5">
           <p className="whitespace-nowrap leading-none">
             {room.original_price !== null && (
               <span className="mr-1.5 text-base text-muted-foreground line-through">

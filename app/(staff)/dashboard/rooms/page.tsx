@@ -9,6 +9,7 @@ import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ImageListField } from "@/components/ui/image-list-field";
+import { AmenityPicker, COMMON_ROOM_AMENITIES } from "@/components/ui/amenity-picker";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { CreatePanel } from "@/components/ui/create-panel";
@@ -98,6 +99,17 @@ export default async function DashboardRoomsPage(props: {
   const typeIds = new Set(types.map((t) => t.id));
   const orphans = rooms.filter((r) => !typeIds.has(r.type_id));
 
+  // Tick-list options: the usual suspects, plus whatever the existing types
+  // already use. Sourcing from the data is what stops a second spelling of an
+  // amenity ("AC" next to "Air conditioning") from creeping onto the site.
+  const knownAmenities = [...COMMON_ROOM_AMENITIES.map((a) => a.toLowerCase())];
+  const amenityOptions = [
+    ...COMMON_ROOM_AMENITIES,
+    ...[...new Set(types.flatMap((t) => t.amenities ?? []))].filter(
+      (a) => !knownAmenities.includes(a.toLowerCase()),
+    ),
+  ];
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       <PageHeader
@@ -138,10 +150,7 @@ export default async function DashboardRoomsPage(props: {
               <Label htmlFor="nt_description">Description</Label>
               <Textarea id="nt_description" name="description" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="nt_amenities">Amenities (one per line)</Label>
-              <Textarea id="nt_amenities" name="amenities" rows={4} placeholder={"Wi-Fi\nAC\nMini-fridge"} />
-            </div>
+            <AmenityPicker name="amenities" options={amenityOptions} />
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nt_original_price">Was-price (optional)</Label>
@@ -220,10 +229,11 @@ export default async function DashboardRoomsPage(props: {
                       <Label>Description</Label>
                       <Textarea name="description" defaultValue={t.description ?? ""} />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Amenities (one per line)</Label>
-                      <Textarea name="amenities" rows={4} defaultValue={(t.amenities ?? []).join("\n")} />
-                    </div>
+                    <AmenityPicker
+                      name="amenities"
+                      options={amenityOptions}
+                      value={t.amenities ?? []}
+                    />
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
                         <Label>Was-price (optional)</Label>
