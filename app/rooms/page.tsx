@@ -300,21 +300,29 @@ function RoomCard({
               {rt.availableCount} room{rt.availableCount === 1 ? "" : "s"} left
             </div>
           )}
-          <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-full bg-foreground/90 px-3 py-1 text-xs font-medium text-background backdrop-blur">
+          {/* The price is the deciding fact on this card, so it gets display
+              type and the gold accent instead of hiding in a caption-sized
+              pill. Struck original sits above in small type: the discount
+              reads at a glance without stealing width from the real price. */}
+          <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg bg-onyx/90 px-3.5 py-2 text-right text-cream shadow-soft backdrop-blur">
             {stay && rt.totalForStay !== null ? (
               <>
-                {symbol} {rt.totalForStay.toLocaleString()}{" "}
-                <span className="opacity-70">total</span>
+                <span className="font-display text-2xl font-bold leading-none text-gold-light">
+                  {symbol} {rt.totalForStay.toLocaleString()}
+                </span>{" "}
+                <span className="text-xs opacity-80">total</span>
               </>
             ) : (
               <>
                 {rt.original_price !== null && (
-                  <span className="mr-1.5 line-through opacity-60">
+                  <span className="block text-xs leading-tight text-cream/60 line-through">
                     {symbol} {Number(rt.original_price).toLocaleString()}
                   </span>
                 )}
-                {symbol} {Number(rt.base_price).toLocaleString()}{" "}
-                <span className="opacity-70">/ night</span>
+                <span className="font-display text-2xl font-bold leading-none text-gold-light">
+                  {symbol} {Number(rt.base_price).toLocaleString()}
+                </span>{" "}
+                <span className="text-xs opacity-80">/ night</span>
               </>
             )}
           </div>
