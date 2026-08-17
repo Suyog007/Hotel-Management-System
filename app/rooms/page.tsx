@@ -301,28 +301,29 @@ function RoomCard({
             </div>
           )}
           {/* The price is the deciding fact on this card, so it gets display
-              type and the gold accent instead of hiding in a caption-sized
-              pill. Struck original sits above in small type: the discount
-              reads at a glance without stealing width from the real price. */}
-          <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg bg-onyx/90 px-3.5 py-2 text-right text-cream shadow-soft backdrop-blur">
+              type on a solid gold pill — the same gold-on-onyx pairing as the
+              "Book a room" button, so the price visually points at booking.
+              Struck original sits above in small type: the discount reads at
+              a glance without stealing width from the real price. */}
+          <div className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-lg bg-gold px-3.5 py-2 text-right text-onyx shadow-soft">
             {stay && rt.totalForStay !== null ? (
               <>
-                <span className="font-display text-2xl font-bold leading-none text-gold-light">
+                <span className="font-display text-2xl font-bold leading-none">
                   {symbol} {rt.totalForStay.toLocaleString()}
                 </span>{" "}
-                <span className="text-xs opacity-80">total</span>
+                <span className="text-xs font-medium text-onyx/70">total</span>
               </>
             ) : (
               <>
                 {rt.original_price !== null && (
-                  <span className="block text-xs leading-tight text-cream/60 line-through">
+                  <span className="block text-xs leading-tight text-onyx/60 line-through">
                     {symbol} {Number(rt.original_price).toLocaleString()}
                   </span>
                 )}
-                <span className="font-display text-2xl font-bold leading-none text-gold-light">
+                <span className="font-display text-2xl font-bold leading-none">
                   {symbol} {Number(rt.base_price).toLocaleString()}
                 </span>{" "}
-                <span className="text-xs opacity-80">/ night</span>
+                <span className="text-xs font-medium text-onyx/70">/ night</span>
               </>
             )}
           </div>
