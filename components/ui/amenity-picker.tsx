@@ -7,27 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-/**
- * The amenities every room is likely to have, so the picker isn't empty on a
- * fresh install. The page merges these with whatever the existing room types
- * already use, which is what keeps the vocabulary from drifting into "AC",
- * "A/C" and "Air conditioning" all meaning the same thing.
- */
-export const COMMON_ROOM_AMENITIES = [
-  "Wi-Fi",
-  "Hot shower",
-  "Attached bathroom",
-  "Television",
-  "Tea/Coffee",
-  "Air conditioning",
-  "Ceiling fan",
-  "Mini-fridge",
-  "Workspace",
-  "Balcony",
-  "City view",
-  "Room service",
-];
-
 /** Same split the server-side schema uses, so what you see is what gets saved. */
 function parse(text: string): string[] {
   return [
