@@ -1,6 +1,7 @@
 import Link from "next/link";
 import {
   Home,
+  Building2,
   ClipboardList,
   UserPlus,
   BedDouble,
@@ -53,6 +54,7 @@ const GROUPS: NavGroup[] = [
     items: [
       { href: "/dashboard", label: "Overview", icon: Home, minRole: "receptionist", exact: true },
       { href: "/dashboard/bookings", label: "Bookings", icon: ClipboardList, minRole: "receptionist" },
+      { href: "/dashboard/room-map", label: "Room map", icon: Building2, minRole: "receptionist" },
       { href: "/dashboard/walk-in", label: "Walk-in", icon: UserPlus, minRole: "receptionist" },
       { href: "/dashboard/cancellations", label: "Cancellations", icon: XCircle, minRole: "receptionist" },
     ],
