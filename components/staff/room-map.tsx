@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Building2, Wrench, Sparkles, CalendarClock, User } from "lucide-react";
+import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -8,13 +9,15 @@ export type RoomRow = {
   room_number: string;
   floor: number | null;
   status: string;
-  room_types: { name: string; slug: string } | null;
+  room_types: { name: string; slug: string; max_guests: number; base_price: number } | null;
 };
 
 export type StayRow = {
   id: string;
   room_id: string;
+  booking_code: string;
   guest_name: string;
+  guests_count: number;
   status: string;
   check_in: string;
   check_out: string;
@@ -46,6 +49,11 @@ const TILE_ICON: Record<TileState, React.ComponentType<{ className?: string }> |
   available: null,
 };
 
+// The premium wing is one physical building (floors 3-4); every standard
+// type lives in the second building (floors 6-9). Assignment is by room
+// type, not floor, so a future re-shuffle follows the type automatically.
+const BUILDING_A_SLUGS = ["premium-suite", "premium", "deluxe-twin", "deluxe-double"];
+
 export function tileState(room: RoomRow, stay: StayRow | undefined): TileState {
   if (stay?.status === "checked_in" || room.status === "occupied") return "occupied";
   if (stay) return "due"; // pending/confirmed stay covering today, guest not checked in yet
@@ -54,24 +62,60 @@ export function tileState(room: RoomRow, stay: StayRow | undefined): TileState {
   return "available";
 }
 
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+function HoverCard({ room, stay, state }: { room: RoomRow; stay: StayRow | undefined; state: TileState }) {
+  return (
+    <span
+      className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 hidden w-60 -translate-x-1/2 flex-col gap-1.5 rounded-md border border-foreground/10 bg-card p-3 text-left shadow-soft-lg group-hover:flex group-focus-within:flex"
+      role="tooltip"
+    >
+      <span className="flex items-center justify-between gap-2">
+        <span className="font-mono text-sm font-semibold text-foreground">#{room.room_number}</span>
+        <span className="flex items-center gap-1.5 text-xs font-medium text-foreground/80">
+          <span className={cn("h-2.5 w-2.5 rounded-full border", TILE_STYLE[state])} />
+          {TILE_LABEL[state]}
+        </span>
+      </span>
+      <span className="text-sm font-medium text-foreground">{room.room_types?.name ?? "No type"}</span>
+      {room.room_types && (
+        <span className="text-xs text-muted-foreground">
+          Sleeps {room.room_types.max_guests} · Rs {Number(room.room_types.base_price).toLocaleString("en-IN")} / night
+        </span>
+      )}
+      {stay ? (
+        <span className="mt-1 flex flex-col gap-0.5 border-t border-border/60 pt-1.5">
+          <span className="text-sm font-medium text-foreground">{stay.guest_name}</span>
+          <span className="text-xs text-muted-foreground">
+            <span className="font-mono">{stay.booking_code}</span> · {stay.guests_count}{" "}
+            {stay.guests_count === 1 ? "guest" : "guests"}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            {shortDate(stay.check_in)} → {shortDate(stay.check_out)}
+            {stay.status === "checked_in" ? " · in house" : " · due today"}
+          </span>
+          <span className="text-xs font-medium text-accent-foreground/70">Click to open booking</span>
+        </span>
+      ) : (
+        <span className="mt-1 border-t border-border/60 pt-1.5 text-xs text-muted-foreground">
+          No booking today
+        </span>
+      )}
+    </span>
+  );
+}
+
 function RoomTile({ room, stay }: { room: RoomRow; stay: StayRow | undefined }) {
   const state = tileState(room, stay);
   const Icon = TILE_ICON[state];
-  const tooltip = [
-    `#${room.room_number} · ${room.room_types?.name ?? "No type"}`,
-    TILE_LABEL[state],
-    stay ? `${stay.guest_name} · ${stay.check_in} → ${stay.check_out}` : null,
-  ]
-    .filter(Boolean)
-    .join(" — ");
 
   const tile = (
     <span
-      title={tooltip}
       className={cn(
         "flex h-14 w-16 flex-col items-center justify-center gap-0.5 rounded-lg border font-mono text-sm font-semibold shadow-soft transition-transform",
         TILE_STYLE[state],
-        stay && "hover:-translate-y-0.5",
+        stay && "group-hover:-translate-y-0.5",
       )}
     >
       {room.room_number}
@@ -84,7 +128,12 @@ function RoomTile({ room, stay }: { room: RoomRow; stay: StayRow | undefined }) 
   );
 
   // A tile with a live stay is a shortcut to that booking, bus-seat style.
-  return stay ? <Link href={`/booking/${stay.id}`}>{tile}</Link> : tile;
+  return (
+    <span className="group relative inline-block">
+      {stay ? <Link href={`/booking/${stay.id}`}>{tile}</Link> : tile}
+      <HoverCard room={room} stay={stay} state={state} />
+    </span>
+  );
 }
 
 export function RoomMapLegend() {
@@ -114,8 +163,8 @@ export function BuildingCard({
   const occupied = rooms.filter((r) => tileState(r, stays.get(r.id)) === "occupied").length;
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b border-border/60 bg-muted/40">
+    <Card>
+      <CardHeader className="rounded-t-[4px] border-b border-border/60 bg-muted/40">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 font-display">
             <Building2 className="h-5 w-5 text-accent" />
@@ -150,5 +199,61 @@ export function BuildingCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/** Self-contained live room map: fetches rooms + today's stays and renders
+ *  both buildings. Dropped into the dashboard overview as a section. */
+export async function RoomMapSection() {
+  const supabase = await createServerClient();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [roomsRes, checkedInRes, arrivalsRes] = await Promise.all([
+    supabase
+      .from("rooms")
+      .select("id, room_number, floor, status, room_types:type_id(name, slug, max_guests, base_price)")
+      .order("room_number"),
+    // Guests physically in a room right now — no date filter, so an overdue
+    // checkout still shows as occupying its room.
+    supabase
+      .from("bookings")
+      .select("id, room_id, booking_code, guest_name, guests_count, status, check_in, check_out")
+      .eq("status", "checked_in"),
+    // Not-yet-arrived bookings whose stay covers today.
+    supabase
+      .from("bookings")
+      .select("id, room_id, booking_code, guest_name, guests_count, status, check_in, check_out")
+      .in("status", ["pending", "confirmed"])
+      .lte("check_in", today)
+      .gt("check_out", today),
+  ]);
+
+  const rooms = (roomsRes.data as unknown as RoomRow[] | null) ?? [];
+  const bookings = [
+    ...((checkedInRes.data as unknown as StayRow[] | null) ?? []),
+    ...((arrivalsRes.data as unknown as StayRow[] | null) ?? []),
+  ];
+
+  // One stay per room; a checked-in guest beats a same-day arrival.
+  const stays = new Map<string, StayRow>();
+  for (const b of bookings) {
+    const current = stays.get(b.room_id);
+    if (!current || b.status === "checked_in") stays.set(b.room_id, b);
+  }
+
+  const buildingA = rooms.filter((r) => BUILDING_A_SLUGS.includes(r.room_types?.slug ?? ""));
+  const buildingB = rooms.filter((r) => !BUILDING_A_SLUGS.includes(r.room_types?.slug ?? ""));
+
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h2 className="font-display text-2xl font-semibold tracking-tight">Room map</h2>
+        <RoomMapLegend />
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <BuildingCard name="Building A" rooms={buildingA} stays={stays} />
+        <BuildingCard name="Building B" rooms={buildingB} stays={stays} />
+      </div>
+    </section>
   );
 }
