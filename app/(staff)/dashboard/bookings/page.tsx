@@ -24,6 +24,7 @@ type BookingRow = {
   payment_status: string;
   payment_method: string;
   total_amount: number;
+  paid_amount: number | string | null;
   rooms: { id: string; room_number: string; status: string; room_types: { name: string } } | null;
 };
 
@@ -36,7 +37,7 @@ export default async function DashboardBookingsPage(props: {
 
   const selectClause = `
     id, booking_code, guest_name, guest_phone, check_in, check_out,
-    status, payment_status, payment_method, total_amount,
+    status, payment_status, payment_method, total_amount, paid_amount,
     rooms:room_id(id, room_number, status, room_types:type_id(name))
   `;
 
@@ -47,10 +48,13 @@ export default async function DashboardBookingsPage(props: {
       .eq("check_in", today)
       .in("status", ["pending", "confirmed"])
       .order("check_in"),
+    // lte, not eq: a guest whose check-out date has passed but who was never
+    // checked out must stay in this list (badged "Overdue") instead of
+    // silently dropping off it the next morning.
     supabase
       .from("bookings")
       .select(selectClause)
-      .eq("check_out", today)
+      .lte("check_out", today)
       .eq("status", "checked_in")
       .order("check_out"),
     supabase
@@ -137,15 +141,15 @@ export default async function DashboardBookingsPage(props: {
       <section>
         <SectionHead
           icon={CalendarMinus}
-          title="Departures today"
+          title="Departures due"
           count={departures.length}
         />
         {departures.length === 0 ? (
-          <EmptyState title="No departures today" />
+          <EmptyState title="No departures due" />
         ) : (
           <div className="space-y-2">
             {departures.map((b) => (
-              <BookingItem key={b.id} b={b} symbol={symbol} action="checkout" />
+              <BookingItem key={b.id} b={b} symbol={symbol} action="checkout" today={today} />
             ))}
           </div>
         )}
@@ -199,6 +203,7 @@ export default async function DashboardBookingsPage(props: {
                 b={b}
                 symbol={symbol}
                 action={inferAction(b.status)}
+                today={today}
               />
             ))}
           </div>
@@ -251,16 +256,20 @@ function BookingItem({
 }) {
   const s = bookingStatusBadge(b.status);
   const ps = paymentStatusBadge(b.payment_status);
-  const nightsLeft =
+  const daysDiff =
     today && b.status === "checked_in"
-      ? Math.max(
-          0,
-          Math.round(
-            (new Date(b.check_out).getTime() - new Date(today).getTime()) /
-              86400000,
-          ),
+      ? Math.round(
+          (new Date(b.check_out).getTime() - new Date(today).getTime()) /
+            86400000,
         )
       : null;
+  const nightsLeft = daysDiff !== null ? Math.max(0, daysDiff) : null;
+  const overdueDays = daysDiff !== null && daysDiff < 0 ? -daysDiff : 0;
+  const outstanding = Math.max(0, Number(b.total_amount) - Number(b.paid_amount ?? 0));
+  const checkoutConfirm =
+    b.payment_status !== "paid" && outstanding > 0
+      ? `${symbol} ${outstanding.toLocaleString()} is still outstanding (${ps.label.toLowerCase()}). Collect payment before the guest leaves.\n\nCheck out anyway?`
+      : undefined;
   return (
     <Card className="transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
@@ -281,6 +290,11 @@ function BookingItem({
         <div className="flex flex-wrap items-center gap-1">
           <Badge variant={s.variant}>{s.label}</Badge>
           <Badge variant={ps.variant}>{ps.label}</Badge>
+          {overdueDays > 0 && (
+            <Badge variant="danger">
+              Overdue · {overdueDays} day{overdueDays === 1 ? "" : "s"}
+            </Badge>
+          )}
           {nightsLeft !== null && nightsLeft > 0 && (
             <Badge variant="outline">
               {nightsLeft} night{nightsLeft === 1 ? "" : "s"} left
@@ -301,7 +315,12 @@ function BookingItem({
         {action === "checkout" && (
           <form action={checkOut}>
             <input type="hidden" name="id" value={b.id} />
-            <SubmitButton size="sm" variant="accent" pendingLabel="Checking out…">
+            <SubmitButton
+              size="sm"
+              variant="accent"
+              pendingLabel="Checking out…"
+              confirmMessage={checkoutConfirm}
+            >
               Check out
             </SubmitButton>
           </form>

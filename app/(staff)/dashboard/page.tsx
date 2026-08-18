@@ -6,6 +6,7 @@ import {
   XCircle,
   ConciergeBell,
   BedDouble,
+  AlarmClock,
 } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui/page-header";
@@ -32,7 +33,7 @@ export default async function DashboardHome() {
   const supabase = await createServerClient();
   const today = new Date().toISOString().slice(0, 10);
 
-  const [arrivalsRes, departuresRes, occupiedRes, totalRoomsRes, pendingRefundsRes, todayArrivalsRes] = await Promise.all([
+  const [arrivalsRes, departuresRes, occupiedRes, totalRoomsRes, pendingRefundsRes, todayArrivalsRes, overdueRes] = await Promise.all([
     supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
@@ -62,6 +63,14 @@ export default async function DashboardHome() {
       .in("status", ["pending", "confirmed"])
       .order("check_in")
       .limit(5),
+    // Guests past their check-out date who were never checked out — surfaced
+    // as a banner so a missed departure can't hide once its day has passed.
+    supabase
+      .from("bookings")
+      .select("id, booking_code, guest_name, check_out, rooms:room_id(room_number)")
+      .eq("status", "checked_in")
+      .lt("check_out", today)
+      .order("check_out"),
   ]);
 
   const arrivals = arrivalsRes.count ?? 0;
@@ -70,6 +79,10 @@ export default async function DashboardHome() {
   const totalRooms = totalRoomsRes.count ?? 0;
   const pendingRefunds = pendingRefundsRes.count ?? 0;
   const todayArrivals = (todayArrivalsRes.data as unknown as ArrivalRow[] | null) ?? [];
+  const overdue =
+    (overdueRes.data as unknown as
+      | { id: string; booking_code: string; guest_name: string; check_out: string; rooms: { room_number: string } | null }[]
+      | null) ?? [];
 
   const occupancy =
     totalRooms > 0 ? Math.round((occupied / totalRooms) * 100) : 0;
@@ -81,6 +94,29 @@ export default async function DashboardHome() {
         title="Today at the front desk"
         description={`${today} · A snapshot of arrivals, departures, and pending work.`}
       />
+
+      {overdue.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm">
+          <AlarmClock className="h-5 w-5 shrink-0 text-danger" />
+          <div className="flex-1 min-w-[220px]">
+            <p className="font-semibold text-danger">
+              {overdue.length} overdue checkout{overdue.length === 1 ? "" : "s"}
+            </p>
+            <p className="text-foreground/80">
+              {overdue
+                .map((b) => `#${b.rooms?.room_number ?? "—"} ${b.guest_name} (due ${b.check_out})`)
+                .join(" · ")}{" "}
+              — check them out or extend the stay.
+            </p>
+          </div>
+          <Link
+            href="/dashboard/bookings"
+            className="rounded-md border border-danger/40 bg-card px-3 py-1.5 text-sm font-medium text-danger transition-colors hover:bg-danger hover:text-danger-foreground"
+          >
+            Review departures
+          </Link>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Metric

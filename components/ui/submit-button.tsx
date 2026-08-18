@@ -14,18 +14,33 @@ import { Button, type ButtonProps } from "@/components/ui/button";
  */
 type Props = Omit<ButtonProps, "type"> & {
   pendingLabel?: string;
+  /** When set, submission asks for confirmation first and aborts on Cancel. */
+  confirmMessage?: string;
   children: React.ReactNode;
 };
 
 export function SubmitButton({
   children,
   pendingLabel = "Working…",
+  confirmMessage,
   disabled,
+  onClick,
   ...rest
 }: Props) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending || disabled} {...rest}>
+    <Button
+      type="submit"
+      disabled={pending || disabled}
+      onClick={(e) => {
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+          e.preventDefault();
+          return;
+        }
+        onClick?.(e);
+      }}
+      {...rest}
+    >
       {pending ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
