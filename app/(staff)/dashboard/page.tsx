@@ -102,6 +102,7 @@ export default async function DashboardHome() {
           value={`${occupancy}%`}
           hint={`${occupied} / ${totalRooms}`}
           icon={BedDouble}
+          href="/dashboard/room-map"
         />
         <Metric
           label="Pending refunds"
