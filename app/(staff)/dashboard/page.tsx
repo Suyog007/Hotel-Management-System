@@ -16,6 +16,7 @@ import {
   bookingStatusBadge,
   paymentStatusBadge,
 } from "@/components/ui/badge";
+import { RoomMapSection } from "@/components/staff/room-map";
 
 type ArrivalRow = {
   id: string;
@@ -102,7 +103,6 @@ export default async function DashboardHome() {
           value={`${occupancy}%`}
           hint={`${occupied} / ${totalRooms}`}
           icon={BedDouble}
-          href="/dashboard/room-map"
         />
         <Metric
           label="Pending refunds"
@@ -118,6 +118,8 @@ export default async function DashboardHome() {
           href="/dashboard/service-requests"
         />
       </div>
+
+      <RoomMapSection />
 
       <section>
         <div className="mb-4 flex items-baseline justify-between gap-3">
