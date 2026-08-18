@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { NavLink } from "@/components/public/nav-link";
+import { NotificationBellArea } from "@/components/staff/notification-area";
 
 export type Role = "receptionist" | "manager" | "super_admin";
 
@@ -117,13 +118,20 @@ export function BackOfficeNav({
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card">
-      <Link href="/dashboard" className="flex items-center gap-3 border-b border-border/60 p-5">
-        <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
-        <div className="min-w-0">
-          <p className="truncate font-display text-base font-semibold">{hotelName}</p>
-          <p className="text-xs text-muted-foreground">Back office</p>
+      <div className="flex items-center gap-2 border-b border-border/60 p-5 pr-3">
+        <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-3">
+          <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-accent" />
+          <div className="min-w-0">
+            <p className="truncate font-display text-base font-semibold">{hotelName}</p>
+            <p className="text-xs text-muted-foreground">Back office</p>
+          </div>
+        </Link>
+        {/* The mobile drawer's close button occupies this corner, so the bell
+            is desktop-only; the Overview's overdue banner covers mobile. */}
+        <div className="hidden lg:block">
+          <NotificationBellArea />
         </div>
-      </Link>
+      </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto p-3">
         {visibleGroups.map((g) => (

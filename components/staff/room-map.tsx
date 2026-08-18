@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Building2, Wrench, Sparkles, CalendarClock, User } from "lucide-react";
+import { Building2, Wrench, Sparkles, CalendarClock, User, AlarmClock } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -23,10 +23,12 @@ export type StayRow = {
   check_out: string;
 };
 
-export type TileState = "occupied" | "due" | "cleaning" | "maintenance" | "available";
+export type TileState = "occupied" | "overdue" | "due" | "cleaning" | "maintenance" | "available";
 
 const TILE_STYLE: Record<TileState, string> = {
   occupied: "border-transparent bg-danger text-danger-foreground",
+  overdue:
+    "border-transparent bg-danger text-danger-foreground ring-2 ring-warning ring-offset-1 ring-offset-background",
   due: "border-transparent bg-warning text-warning-foreground",
   cleaning: "border-dashed border-silver bg-silver/15 text-foreground/60",
   maintenance: "border-transparent bg-onyx-soft text-cream/80",
@@ -35,6 +37,7 @@ const TILE_STYLE: Record<TileState, string> = {
 
 const TILE_LABEL: Record<TileState, string> = {
   occupied: "Occupied",
+  overdue: "Overdue checkout",
   due: "Arriving today",
   cleaning: "Being cleaned",
   maintenance: "Maintenance",
@@ -43,6 +46,7 @@ const TILE_LABEL: Record<TileState, string> = {
 
 const TILE_ICON: Record<TileState, React.ComponentType<{ className?: string }> | null> = {
   occupied: User,
+  overdue: AlarmClock,
   due: CalendarClock,
   cleaning: Sparkles,
   maintenance: Wrench,
@@ -54,8 +58,11 @@ const TILE_ICON: Record<TileState, React.ComponentType<{ className?: string }> |
 // type, not floor, so a future re-shuffle follows the type automatically.
 const BUILDING_A_SLUGS = ["premium-suite", "premium", "deluxe-twin", "deluxe-double"];
 
-export function tileState(room: RoomRow, stay: StayRow | undefined): TileState {
-  if (stay?.status === "checked_in" || room.status === "occupied") return "occupied";
+export function tileState(room: RoomRow, stay: StayRow | undefined, today: string): TileState {
+  if (stay?.status === "checked_in") {
+    return stay.check_out < today ? "overdue" : "occupied";
+  }
+  if (room.status === "occupied") return "occupied";
   if (stay) return "due"; // pending/confirmed stay covering today, guest not checked in yet
   if (room.status === "cleaning") return "cleaning";
   if (room.status === "maintenance") return "maintenance";
@@ -91,9 +98,13 @@ function HoverCard({ room, stay, state }: { room: RoomRow; stay: StayRow | undef
             <span className="font-mono">{stay.booking_code}</span> · {stay.guests_count}{" "}
             {stay.guests_count === 1 ? "guest" : "guests"}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className={cn("text-xs", state === "overdue" ? "font-medium text-danger" : "text-muted-foreground")}>
             {shortDate(stay.check_in)} → {shortDate(stay.check_out)}
-            {stay.status === "checked_in" ? " · in house" : " · due today"}
+            {state === "overdue"
+              ? " · past check-out, not checked out"
+              : stay.status === "checked_in"
+                ? " · in house"
+                : " · due today"}
           </span>
           <span className="text-xs font-medium text-accent-foreground/70">Click to open booking</span>
         </span>
@@ -106,8 +117,8 @@ function HoverCard({ room, stay, state }: { room: RoomRow; stay: StayRow | undef
   );
 }
 
-function RoomTile({ room, stay }: { room: RoomRow; stay: StayRow | undefined }) {
-  const state = tileState(room, stay);
+function RoomTile({ room, stay, today }: { room: RoomRow; stay: StayRow | undefined; today: string }) {
+  const state = tileState(room, stay, today);
   const Icon = TILE_ICON[state];
 
   const tile = (
@@ -153,14 +164,19 @@ export function BuildingCard({
   name,
   rooms,
   stays,
+  today,
 }: {
   name: string;
   rooms: RoomRow[];
   stays: Map<string, StayRow>;
+  today: string;
 }) {
   const floors = [...new Set(rooms.map((r) => r.floor ?? 0))].sort((a, b) => b - a);
   const typeNames = [...new Set(rooms.map((r) => r.room_types?.name).filter(Boolean))];
-  const occupied = rooms.filter((r) => tileState(r, stays.get(r.id)) === "occupied").length;
+  const occupied = rooms.filter((r) => {
+    const state = tileState(r, stays.get(r.id), today);
+    return state === "occupied" || state === "overdue";
+  }).length;
 
   return (
     <Card>
@@ -189,7 +205,7 @@ export function BuildingCard({
               {rooms
                 .filter((r) => (r.floor ?? 0) === floor)
                 .map((r) => (
-                  <RoomTile key={r.id} room={r} stay={stays.get(r.id)} />
+                  <RoomTile key={r.id} room={r} stay={stays.get(r.id)} today={today} />
                 ))}
             </div>
           </div>
@@ -251,8 +267,8 @@ export async function RoomMapSection() {
         <RoomMapLegend />
       </div>
       <div className="grid gap-6 xl:grid-cols-2">
-        <BuildingCard name="Building A" rooms={buildingA} stays={stays} />
-        <BuildingCard name="Building B" rooms={buildingB} stays={stays} />
+        <BuildingCard name="Building A" rooms={buildingA} stays={stays} today={today} />
+        <BuildingCard name="Building B" rooms={buildingB} stays={stays} today={today} />
       </div>
     </section>
   );
