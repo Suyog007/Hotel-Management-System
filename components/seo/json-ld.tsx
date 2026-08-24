@@ -79,10 +79,26 @@ function buildHotelLd(p: HotelLdParams) {
   return base;
 }
 
+// Google's site-name feature (the label shown above the URL in search
+// results) reads WebSite structured data from the homepage — without it,
+// results fall back to the bare domain ("hotelvardani.com"). og:site_name
+// alone is not enough.
+function buildWebSiteLd(hotelName: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: hotelName,
+    alternateName: ["Hotel Vardani", "hotelvardani.com"],
+    url: SITE_URL,
+  };
+}
+
 /**
- * Server component that emits a Hotel schema JSON-LD script tag. Mount in
- * the root layout so every page carries the same hotel-level structured data.
- * Google can then surface name + rating + price range in search results.
+ * Server component that emits Hotel + WebSite schema JSON-LD script tags.
+ * Mount in the root layout so every page carries the same hotel-level
+ * structured data. Google can then surface name + rating + price range in
+ * search results, and the WebSite schema drives the site name shown above
+ * the URL.
  */
 export async function HotelJsonLd() {
   const supabase = await createServerClient();
@@ -119,8 +135,9 @@ export async function HotelJsonLd() {
     ) ?? [];
   const sorted = [...prices].sort((a, b) => a - b);
 
+  const hotelName = (s.hotel_name as string) ?? "Hotel Vardani";
   const ld = buildHotelLd({
-    hotelName: (s.hotel_name as string) ?? "Hotel Vardani",
+    hotelName,
     description:
       (s.tagline as string) ??
       "Boutique stay in Gaushala, Kathmandu — 5 minutes from Pashupatinath and 10 minutes from Tribhuvan International Airport.",
@@ -145,14 +162,25 @@ export async function HotelJsonLd() {
   });
 
   return (
-    <script
-      type="application/ld+json"
-      // Escape `<` so a `</script>` inside admin-editable content (hotel name,
-      // tagline, amenity/room text) can't break out of the script tag.
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
-      }}
-    />
+    <>
+      <script
+        type="application/ld+json"
+        // Escape `<` so a `</script>` inside admin-editable content (hotel name,
+        // tagline, amenity/room text) can't break out of the script tag.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(ld).replace(/</g, "\\u003c"),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(buildWebSiteLd(hotelName)).replace(
+            /</g,
+            "\\u003c",
+          ),
+        }}
+      />
+    </>
   );
 }
 
