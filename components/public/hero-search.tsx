@@ -4,6 +4,11 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { Loader2, Search } from "lucide-react";
 
+// Matches the guests_count ceiling in lib/validation/rooms.ts and staff.ts.
+// Parties above the largest room's capacity get the group-stay banner on
+// /rooms, so a big number here is a valid search, not an error.
+const MAX_GUESTS = 20;
+
 function toIsoDate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -134,7 +139,7 @@ export function HeroSearch({
             <button
               type="button"
               aria-label="Increase guests"
-              onClick={() => setGuests((g) => Math.min(10, g + 1))}
+              onClick={() => setGuests((g) => Math.min(MAX_GUESTS, g + 1))}
               className="grid h-7 w-7 place-items-center rounded-full border border-border text-sm text-muted-foreground hover:border-accent/40 hover:text-foreground"
             >
               +
