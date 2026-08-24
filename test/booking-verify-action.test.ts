@@ -27,8 +27,6 @@ const ROOM_TYPE_ID = "22222222-2222-2222-2222-222222222222";
 
 function baseIntent(overrides: Partial<Record<string, unknown>> = {}) {
   return {
-    room_id: ROOM_ID,
-    room_type_id: ROOM_TYPE_ID,
     check_in: "2026-08-01",
     check_out: "2026-08-03",
     guests_count: 2,
@@ -36,10 +34,17 @@ function baseIntent(overrides: Partial<Record<string, unknown>> = {}) {
     guest_email: "ada@example.com",
     guest_phone: "+9779800000000",
     payment_method: "pay_at_hotel",
-    subtotal: 5000,
-    tax_amount: 500,
-    service_amount: 250,
-    total_amount: 5750,
+    rooms: [
+      {
+        room_id: ROOM_ID,
+        room_type_id: ROOM_TYPE_ID,
+        guests_count: 2,
+        subtotal: 5000,
+        tax_amount: 500,
+        service_amount: 250,
+        total_amount: 5750,
+      },
+    ],
     expires_at: Date.now() + 10 * 60 * 1000,
     ...overrides,
   };
@@ -171,5 +176,51 @@ describe("verifyAndCreateBooking", () => {
       full_name: "Ada Lovelace", // backfilled, was null
     });
     expect(admin.__tables.bookings[0]).toMatchObject({ guest_id: "profile-existing" });
+  });
+
+  it("creates one booking per room for a group intent and redirects to /my-bookings", async () => {
+    const ROOM_ID_2 = "33333333-3333-3333-3333-333333333333";
+    const ROOM_TYPE_ID_2 = "44444444-4444-4444-4444-444444444444";
+    setCookie(
+      baseIntent({
+        guests_count: 11,
+        rooms: [
+          {
+            room_id: ROOM_ID,
+            room_type_id: ROOM_TYPE_ID,
+            guests_count: 6,
+            subtotal: 5000,
+            tax_amount: 0,
+            service_amount: 0,
+            total_amount: 5000,
+          },
+          {
+            room_id: ROOM_ID_2,
+            room_type_id: ROOM_TYPE_ID_2,
+            guests_count: 5,
+            subtotal: 4000,
+            tax_amount: 0,
+            service_amount: 0,
+            total_amount: 4000,
+          },
+        ],
+      }),
+    );
+    const admin = seedAdmin({
+      otp: { email: "ada@example.com", code_hash: hashOf("424242"), expires_at: future(), attempts: 0, purpose: "booking", consumed_at: null },
+    });
+    admin.__tables.room_types.push({ id: ROOM_TYPE_ID_2, name: "Family" });
+
+    const url = await expectRedirectTo(() => verifyAndCreateBooking(formWithToken("424242")));
+    expect(url).toBe("/my-bookings?booked=2");
+
+    const bookings = admin.__tables.bookings;
+    expect(bookings).toHaveLength(2);
+    expect(bookings.map((b) => b.room_id).sort()).toEqual([ROOM_ID, ROOM_ID_2].sort());
+    expect(bookings.map((b) => b.guests_count).sort()).toEqual([5, 6]);
+    expect(bookings.every((b) => b.status === "confirmed")).toBe(true);
+    // One audit row and one confirmation email per booking.
+    expect(h.writeAudit).toHaveBeenCalledTimes(2);
+    expect(h.sendTemplatedEmail).toHaveBeenCalledTimes(2);
   });
 });

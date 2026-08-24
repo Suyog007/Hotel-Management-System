@@ -11,7 +11,9 @@ export const metadata: Metadata = {
 };
 import { SiteHeader } from "@/components/public/site-header";
 import { CardImageSlider } from "@/components/public/card-image-slider";
+import { GroupRoomPicker } from "@/components/public/group-room-picker";
 import { HeroSearch } from "@/components/public/hero-search";
+import { initiateGroupBooking } from "./group-actions";
 import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -211,8 +213,9 @@ export default async function RoomsListPage({
               <span className="font-medium">Travelling as a group?</span> Our
               largest room sleeps {largestCapacity}, so a party of{" "}
               {stay.guests} stays across at least{" "}
-              {Math.ceil(stay.guests / largestCapacity)} rooms. Book your first
-              room below, then repeat for the rest
+              {Math.ceil(stay.guests / largestCapacity)} rooms. Add rooms below
+              with the <span className="font-medium">+</span> buttons until
+              everyone has a bed, then book them all together in one go
               {contactPhone ? (
                 <>
                   {" "}
@@ -282,6 +285,24 @@ export default async function RoomsListPage({
               }
             />
           )
+        ) : groupStay && stay ? (
+          <GroupRoomPicker
+            rooms={visible.map((rt) => ({
+              id: rt.id,
+              name: rt.name,
+              slug: rt.slug,
+              description: rt.description,
+              maxGuests: rt.max_guests,
+              availableCount: rt.availableCount ?? 0,
+              totalForStay: rt.totalForStay ?? 0,
+            }))}
+            roomImages={Object.fromEntries(
+              visible.map((rt) => [rt.id, rt.images ?? []]),
+            )}
+            stay={stay}
+            symbol={symbol}
+            action={initiateGroupBooking}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {visible.map((rt) => (

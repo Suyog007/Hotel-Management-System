@@ -20,13 +20,29 @@ export async function findAvailableRoom(
   checkIn: string,
   checkOut: string,
 ): Promise<string | null> {
+  const found = await findAvailableRooms(supabase, roomTypeId, checkIn, checkOut, 1);
+  return found[0] ?? null;
+}
+
+/**
+ * Returns up to `count` distinct available room ids of the given type for the
+ * requested range (fewer if the type doesn't have that many free). Used by the
+ * group-booking flow to reserve several rooms of one type in a single intent.
+ */
+export async function findAvailableRooms(
+  supabase: Client,
+  roomTypeId: string,
+  checkIn: string,
+  checkOut: string,
+  count: number,
+): Promise<string[]> {
   const { data: rooms } = await supabase
     .from("rooms")
     .select("id")
     .eq("type_id", roomTypeId)
     .neq("status", "maintenance");
   const all = (rooms as { id: string }[] | null) ?? [];
-  if (all.length === 0) return null;
+  if (all.length === 0) return [];
 
   const ids = all.map((r) => r.id);
   const { data: blocked } = await supabase
@@ -39,8 +55,10 @@ export async function findAvailableRoom(
   const blockedIds = new Set(
     ((blocked as { room_id: string }[] | null) ?? []).map((b) => b.room_id),
   );
-  const free = all.find((r) => !blockedIds.has(r.id));
-  return free?.id ?? null;
+  return all
+    .filter((r) => !blockedIds.has(r.id))
+    .slice(0, count)
+    .map((r) => r.id);
 }
 
 /**
