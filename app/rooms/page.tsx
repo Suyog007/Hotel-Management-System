@@ -65,7 +65,7 @@ export default async function RoomsListPage({
       .order("sort_order"),
     supabase
       .from("site_settings")
-      .select("currency_symbol, tax_rate, service_charge_rate")
+      .select("currency_symbol, tax_rate, service_charge_rate, contact_phone")
       .single(),
   ]);
   const rows = ((types as RoomTypeRow[] | null) ?? []).map((r) => ({
@@ -77,8 +77,13 @@ export default async function RoomsListPage({
     currency_symbol?: string;
     tax_rate?: number | string;
     service_charge_rate?: number | string;
+    contact_phone?: string | null;
   };
   const symbol = s.currency_symbol ?? "Rs.";
+  // contact_phone may list several numbers ("+977 974… · 01-59…"); a tel:
+  // link needs exactly one, so take the first.
+  const contactPhone =
+    (s.contact_phone ?? "").split(/[·,/|]/)[0]?.trim() || null;
   // Room rate only — no tax or service charge (see lib/pricing constants).
   const taxRate = TAX_RATE;
   const serviceRate = SERVICE_CHARGE_RATE;
@@ -139,11 +144,20 @@ export default async function RoomsListPage({
     }),
   );
 
+  // A party bigger than the largest room can never fit in one room, on any
+  // dates — dropping every room would read as "sold out" and dead-end the
+  // guest. Keep available rooms on screen instead and explain (via the
+  // group-stay banner below) that the party books across several rooms.
+  const largestCapacity =
+    rows.length > 0 ? Math.max(...rows.map((r) => r.max_guests)) : 0;
+  const groupStay = stay !== null && rows.length > 0 && stay.guests > largestCapacity;
+
   // With a stay selected, show only what the guest can actually book —
   // sold-out and too-small rooms are dropped, not dimmed.
   const visible = stay
     ? enriched.filter(
-        (rt) => (rt.availableCount ?? 0) > 0 && !rt.exceedsCapacity,
+        (rt) =>
+          (rt.availableCount ?? 0) > 0 && (groupStay || !rt.exceedsCapacity),
       )
     : enriched;
 
@@ -190,6 +204,34 @@ export default async function RoomsListPage({
           />
         </div>
 
+        {groupStay && stay && visible.length > 0 && (
+          <div className="mb-8 flex items-start gap-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-sm">
+            <Users className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+            <p>
+              <span className="font-medium">Travelling as a group?</span> Our
+              largest room sleeps {largestCapacity}, so a party of{" "}
+              {stay.guests} stays across at least{" "}
+              {Math.ceil(stay.guests / largestCapacity)} rooms. Book your first
+              room below, then repeat for the rest
+              {contactPhone ? (
+                <>
+                  {" "}
+                  — or call us at{" "}
+                  <a
+                    href={`tel:${contactPhone.replace(/[^+\d]/g, "")}`}
+                    className="font-medium text-accent hover:underline"
+                  >
+                    {contactPhone}
+                  </a>{" "}
+                  and we&apos;ll arrange the whole group at once.
+                </>
+              ) : (
+                "."
+              )}
+            </p>
+          </div>
+        )}
+
         {visible.length === 0 ? (
           rows.length === 0 ? (
             <EmptyState
@@ -208,7 +250,9 @@ export default async function RoomsListPage({
               description={
                 maxPrice !== null
                   ? `No rooms up to ${symbol} ${maxPrice.toLocaleString()} / night are free for your dates. Try raising the price cap or picking different dates.`
-                  : "Every room that fits your party is booked for these dates. Try different dates."
+                  : groupStay
+                    ? "All rooms are booked for these dates. Try different dates."
+                    : "Every room that fits your party is booked for these dates. Try different dates."
               }
               action={
                 <div className="flex flex-wrap justify-center gap-4 text-sm font-medium text-accent">
