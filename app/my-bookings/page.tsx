@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Calendar, BedDouble, LogOut } from "lucide-react";
+import { Calendar, BedDouble, CheckCircle2, LogOut } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SiteHeader } from "@/components/public/site-header";
@@ -78,7 +78,14 @@ async function resolveGuest(): Promise<ResolvedGuest | null> {
   return null;
 }
 
-export default async function MyBookingsPage() {
+export default async function MyBookingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ booked?: string }>;
+}) {
+  const sp = await searchParams;
+  // Set by the group-booking flow's redirect: how many rooms were just booked.
+  const justBooked = parseInt(sp.booked ?? "", 10) || 0;
   const guest = await resolveGuest();
 
   if (!guest) {
@@ -148,6 +155,19 @@ export default async function MyBookingsPage() {
             ) : undefined
           }
         />
+
+        {justBooked > 1 && rows.length > 0 && (
+          <div className="mb-8 flex items-start gap-3 rounded-xl border border-success/30 bg-success/5 px-4 py-3 text-sm">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" />
+            <p>
+              <span className="font-medium">
+                All {justBooked} rooms are booked.
+              </span>{" "}
+              We&apos;ve emailed a confirmation for each room — every booking below
+              has its own link, so you can share or manage them individually.
+            </p>
+          </div>
+        )}
 
         {rows.length === 0 ? (
           <EmptyState

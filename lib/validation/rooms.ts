@@ -103,9 +103,79 @@ export const bookingFormSchema = z
     message: "Check-out must be after check-in",
   });
 
-export const bookingIntentSchema = z.object({
+// Group bookings: cap how many rooms one intent may hold. The intent lives in
+// a signed cookie (~4KB browser limit), and each room entry carries two UUIDs
+// plus amounts — 6 rooms stays comfortably under the limit while covering a
+// 20-guest party in the current inventory (largest rooms sleep 5-6).
+export const MAX_ROOMS_PER_BOOKING = 6;
+
+const groupSelectionSchema = z
+  .array(
+    z.object({
+      room_type_id: z.string().uuid(),
+      quantity: z.coerce.number().int().min(1).max(MAX_ROOMS_PER_BOOKING),
+    }),
+  )
+  .min(1)
+  .max(MAX_ROOMS_PER_BOOKING)
+  .refine(
+    (sel) => new Set(sel.map((s) => s.room_type_id)).size === sel.length,
+    "Duplicate room type in selection",
+  )
+  .refine(
+    (sel) => sel.reduce((n, s) => n + s.quantity, 0) <= MAX_ROOMS_PER_BOOKING,
+    `At most ${MAX_ROOMS_PER_BOOKING} rooms per booking`,
+  );
+
+// The group cart submits its selection as a JSON hidden field.
+export const groupBookingFormSchema = z
+  .object({
+    check_in: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Check-in must be a date")
+      .refine((v) => v >= today(), "Check-in must be today or later"),
+    check_out: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Check-out must be a date"),
+    guests_count: z.coerce.number().int().min(1).max(20),
+    guest_name: z.string().trim().min(2).max(120),
+    guest_email: z.string().trim().toLowerCase().email().max(320),
+    guest_phone: z
+      .string()
+      .trim()
+      .min(7)
+      .max(32)
+      .regex(/^[+\d][\d\s\-()]+$/, "Enter a valid phone number"),
+    payment_method: z.literal("pay_at_hotel"),
+    special_requests: optionalText,
+    selection: z.preprocess((v) => {
+      if (typeof v !== "string") return v;
+      try {
+        return JSON.parse(v);
+      } catch {
+        return undefined;
+      }
+    }, groupSelectionSchema),
+  })
+  .refine((d) => d.check_out > d.check_in, {
+    path: ["check_out"],
+    message: "Check-out must be after check-in",
+  });
+
+const bookingIntentRoomSchema = z.object({
   room_id: z.string().uuid(),
   room_type_id: z.string().uuid(),
+  guests_count: z.number().int(),
+  subtotal: z.number(),
+  tax_amount: z.number(),
+  service_amount: z.number(),
+  total_amount: z.number(),
+});
+
+// One intent = one verified email = one or more rooms. The single-room flow
+// stores a one-element `rooms` array; the group cart stores several. Finalize
+// inserts one bookings row per entry.
+export const bookingIntentSchema = z.object({
   check_in: z.string(),
   check_out: z.string(),
   guests_count: z.number().int(),
@@ -113,10 +183,7 @@ export const bookingIntentSchema = z.object({
   guest_email: z.string(),
   guest_phone: z.string(),
   payment_method: z.literal("pay_at_hotel"),
-  subtotal: z.number(),
-  tax_amount: z.number(),
-  service_amount: z.number(),
-  total_amount: z.number(),
+  rooms: z.array(bookingIntentRoomSchema).min(1).max(MAX_ROOMS_PER_BOOKING),
   special_requests: z.string().optional(),
   expires_at: z.number(),
 });
@@ -124,4 +191,6 @@ export const bookingIntentSchema = z.object({
 export type RoomTypeInput = z.infer<typeof roomTypeSchema>;
 export type RoomInput = z.infer<typeof roomSchema>;
 export type BookingFormInput = z.infer<typeof bookingFormSchema>;
+export type GroupBookingFormInput = z.infer<typeof groupBookingFormSchema>;
 export type BookingIntent = z.infer<typeof bookingIntentSchema>;
+export type BookingIntentRoom = z.infer<typeof bookingIntentRoomSchema>;

@@ -81,8 +81,6 @@ export async function initiateBooking(formData: FormData) {
   }
 
   const intent: BookingIntent = {
-    room_id: roomId,
-    room_type_id: roomType.id,
     check_in: input.check_in,
     check_out: input.check_out,
     guests_count: input.guests_count,
@@ -90,10 +88,17 @@ export async function initiateBooking(formData: FormData) {
     guest_email: input.guest_email,
     guest_phone: input.guest_phone,
     payment_method: input.payment_method,
-    subtotal: totals.subtotal,
-    tax_amount: totals.taxAmount,
-    service_amount: totals.serviceAmount,
-    total_amount: totals.total,
+    rooms: [
+      {
+        room_id: roomId,
+        room_type_id: roomType.id,
+        guests_count: input.guests_count,
+        subtotal: totals.subtotal,
+        tax_amount: totals.taxAmount,
+        service_amount: totals.serviceAmount,
+        total_amount: totals.total,
+      },
+    ],
     special_requests: specialRequests,
     expires_at: Date.now() + INTENT_TTL_SECONDS * 1000,
   };

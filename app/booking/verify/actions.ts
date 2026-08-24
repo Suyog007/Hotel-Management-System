@@ -61,15 +61,23 @@ export async function verifyAndCreateBooking(formData: FormData) {
 
   // Re-check availability — guard against concurrent bookings during the OTP window.
   const admin = createAdminClient();
-  const stillFree = await isStillAvailable(
-    admin,
-    intent.room_id,
-    intent.check_in,
-    intent.check_out,
-  );
-  if (!stillFree) {
-    cookieStore.delete(INTENT_COOKIE);
-    redirect(`/rooms?error=${encodeURIComponent("That room was just taken. Please pick again.")}`);
+  for (const room of intent.rooms) {
+    const stillFree = await isStillAvailable(
+      admin,
+      room.room_id,
+      intent.check_in,
+      intent.check_out,
+    );
+    if (!stillFree) {
+      cookieStore.delete(INTENT_COOKIE);
+      redirect(
+        `/rooms?error=${encodeURIComponent(
+          intent.rooms.length > 1
+            ? "One of your rooms was just taken. Please pick again."
+            : "That room was just taken. Please pick again.",
+        )}`,
+      );
+    }
   }
 
   // Find or create stub profile. Matches the walk-in flow: no auth_user_id.
@@ -108,44 +116,62 @@ export async function verifyAndCreateBooking(formData: FormData) {
   }
 
   const status = intent.payment_method === "pay_at_hotel" ? "confirmed" : "pending";
-  const insertPayload: TablesInsert<"bookings"> = {
-    guest_id: guestId,
-    guest_name: intent.guest_name,
-    guest_email: intent.guest_email,
-    guest_phone: intent.guest_phone,
-    room_id: intent.room_id,
-    check_in: intent.check_in,
-    check_out: intent.check_out,
-    guests_count: intent.guests_count,
-    subtotal: intent.subtotal,
-    tax_amount: intent.tax_amount,
-    service_amount: intent.service_amount,
-    total_amount: intent.total_amount,
-    status,
-    payment_status: "unpaid",
-    payment_method: intent.payment_method,
-    verification_method: "otp",
-    special_requests: intent.special_requests ?? null,
-  };
+  const created: Array<{
+    id: string;
+    booking_code: string;
+    access_token: string;
+    room: (typeof intent.rooms)[number];
+    payload: TablesInsert<"bookings">;
+  }> = [];
 
-  const { data: booking, error: bErr } = await admin
-    .from("bookings")
-    .insert(insertPayload)
-    .select("id, booking_code, access_token")
-    .single();
-  if (bErr || !booking) {
-    cookieStore.delete(INTENT_COOKIE);
-    // 23P01 = the bookings_no_overlap exclusion constraint fired: another guest
-    // won the race for this room in the moment between our availability recheck
-    // and this insert. Show a friendly, actionable message rather than the raw
-    // Postgres error (and never leak internal DB text to the guest).
-    const friendly =
-      bErr?.code === "23P01"
-        ? "That room was just taken. Please choose your dates again."
-        : "Sorry, we couldn't complete your booking. Please try again.";
-    redirect(`/rooms?error=${encodeURIComponent(friendly)}`);
+  for (const room of intent.rooms) {
+    const insertPayload: TablesInsert<"bookings"> = {
+      guest_id: guestId,
+      guest_name: intent.guest_name,
+      guest_email: intent.guest_email,
+      guest_phone: intent.guest_phone,
+      room_id: room.room_id,
+      check_in: intent.check_in,
+      check_out: intent.check_out,
+      guests_count: room.guests_count,
+      subtotal: room.subtotal,
+      tax_amount: room.tax_amount,
+      service_amount: room.service_amount,
+      total_amount: room.total_amount,
+      status,
+      payment_status: "unpaid",
+      payment_method: intent.payment_method,
+      verification_method: "otp",
+      special_requests: intent.special_requests ?? null,
+    };
+
+    const { data: booking, error: bErr } = await admin
+      .from("bookings")
+      .insert(insertPayload)
+      .select("id, booking_code, access_token")
+      .single();
+    if (bErr || !booking) {
+      // A group booking is all-or-nothing: roll back rooms already inserted so
+      // the guest isn't left holding half a reservation they never confirmed.
+      for (const c of created) {
+        await admin.from("bookings").delete().eq("id", c.id);
+      }
+      cookieStore.delete(INTENT_COOKIE);
+      // 23P01 = the bookings_no_overlap exclusion constraint fired: another guest
+      // won the race for this room in the moment between our availability recheck
+      // and this insert. Show a friendly, actionable message rather than the raw
+      // Postgres error (and never leak internal DB text to the guest).
+      const friendly =
+        bErr?.code === "23P01"
+          ? intent.rooms.length > 1
+            ? "One of your rooms was just taken. Please choose again."
+            : "That room was just taken. Please choose your dates again."
+          : "Sorry, we couldn't complete your booking. Please try again.";
+      redirect(`/rooms?error=${encodeURIComponent(friendly)}`);
+    }
+    const b = booking as { id: string; booking_code: string; access_token: string };
+    created.push({ ...b, room, payload: insertPayload });
   }
-  const b = booking as { id: string; booking_code: string; access_token: string };
 
   cookieStore.delete(INTENT_COOKIE);
 
@@ -153,20 +179,27 @@ export async function verifyAndCreateBooking(formData: FormData) {
   // this browser without login. 90-day TTL; user can clear via "Not you?".
   await setGuestSession(guestId, intent.guest_email);
 
-  await writeAudit({
-    action: "create",
-    entityType: "bookings",
-    entityId: b.id,
-    newValues: { ...insertPayload, status },
-  });
+  for (const c of created) {
+    await writeAudit({
+      action: "create",
+      entityType: "bookings",
+      entityId: c.id,
+      newValues: { ...c.payload, status },
+    });
+  }
 
-  // Confirmation email — link includes the access_token so the guest can return
-  // to view their booking without an account.
-  const { data: rt } = await admin
+  // Confirmation emails — one per booking, each linking its own access_token
+  // so the guest can return to view that booking without an account.
+  const { data: rts } = await admin
     .from("room_types")
-    .select("name")
-    .eq("id", intent.room_type_id)
-    .single();
+    .select("id, name")
+    .in(
+      "id",
+      intent.rooms.map((r) => r.room_type_id),
+    );
+  const typeNames = new Map(
+    ((rts as Array<{ id: string; name: string }> | null) ?? []).map((t) => [t.id, t.name]),
+  );
   const { data: settings } = await admin
     .from("site_settings")
     .select("currency_symbol, google_place_uri")
@@ -175,20 +208,27 @@ export async function verifyAndCreateBooking(formData: FormData) {
     currency_symbol?: string;
     google_place_uri?: string | null;
   };
-  const viewUrl = `${getSiteUrl()}/booking/${b.id}?t=${b.access_token}`;
-  await sendTemplatedEmail("booking_confirmation", intent.guest_email, {
-    guest_name: intent.guest_name,
-    booking_code: b.booking_code,
-    room_name: (rt as { name?: string } | null)?.name ?? "",
-    check_in: intent.check_in,
-    check_out: intent.check_out,
-    total_amount: intent.total_amount.toLocaleString(),
-    currency_symbol: settingsX.currency_symbol ?? "Rs.",
-    view_url: viewUrl,
-    google_review_url: settingsX.google_place_uri ?? "",
-  });
+  for (const c of created) {
+    const viewUrl = `${getSiteUrl()}/booking/${c.id}?t=${c.access_token}`;
+    await sendTemplatedEmail("booking_confirmation", intent.guest_email, {
+      guest_name: intent.guest_name,
+      booking_code: c.booking_code,
+      room_name: typeNames.get(c.room.room_type_id) ?? "",
+      check_in: intent.check_in,
+      check_out: intent.check_out,
+      total_amount: c.room.total_amount.toLocaleString(),
+      currency_symbol: settingsX.currency_symbol ?? "Rs.",
+      view_url: viewUrl,
+      google_review_url: settingsX.google_place_uri ?? "",
+    });
+  }
 
-  redirect(`/booking/${b.id}?t=${b.access_token}`);
+  // Single room lands on that booking's page; a group lands on the combined
+  // list (the guest_session cookie set above makes it show all of them).
+  if (created.length === 1) {
+    redirect(`/booking/${created[0].id}?t=${created[0].access_token}`);
+  }
+  redirect(`/my-bookings?booked=${created.length}`);
 }
 
 export async function resendBookingOtp() {
