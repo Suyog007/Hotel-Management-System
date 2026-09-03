@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
+import { notifyStaff } from "@/lib/notify-staff";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { sign, verify } from "@/lib/signed-cookie";
 import { setGuestSession } from "@/lib/guest-session";
 import { isStillAvailable } from "@/lib/availability";
@@ -110,7 +112,9 @@ export async function verifyAndCreateBooking(formData: FormData) {
       .select("id")
       .single();
     if (pErr || !created) {
-      redirect(`/rooms?error=${encodeURIComponent(`Profile create failed: ${pErr?.message ?? "unknown"}`)}`);
+      redirect(
+        `/rooms?error=${encodeURIComponent(friendlyDbError(pErr, "Sorry, we couldn't complete your booking. Please try again."))}`,
+      );
     }
     guestId = (created as { id: string }).id;
   }
@@ -222,6 +226,25 @@ export async function verifyAndCreateBooking(formData: FormData) {
       google_review_url: settingsX.google_place_uri ?? "",
     });
   }
+
+  // Ring the back-office bell — one notification covering the whole group so
+  // a multi-room cart doesn't fan out N near-identical rows per staff member.
+  const first = created[0];
+  await notifyStaff({
+    type: "staff_new_booking",
+    vars: {
+      guest_name: intent.guest_name,
+      booking_code:
+        created.length > 1 ? `${first.booking_code} +${created.length - 1} more` : first.booking_code,
+      room_name:
+        created.length > 1
+          ? `${created.length} rooms`
+          : (typeNames.get(first.room.room_type_id) ?? "room"),
+      check_in: intent.check_in,
+      check_out: intent.check_out,
+    },
+    data: { booking_ids: created.map((c) => c.id), source: "online" },
+  });
 
   // Single room lands on that booking's page; a group lands on the combined
   // list (the guest_session cookie set above makes it show all of them).

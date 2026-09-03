@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -36,7 +37,7 @@ export async function updateEmailTemplate(formData: FormData) {
     .from("email_templates")
     .update(parsed.data)
     .eq("key", key);
-  if (error) redirect(`/admin/templates?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/templates?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",
@@ -76,7 +77,7 @@ export async function updateNotificationTemplate(formData: FormData) {
     .from("notification_templates")
     .update(parsed.data)
     .eq("key", key);
-  if (error) redirect(`/admin/templates?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/templates?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",

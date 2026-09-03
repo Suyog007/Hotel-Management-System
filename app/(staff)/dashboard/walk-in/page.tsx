@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { StatusNote } from "@/components/ui/status-note";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,7 +37,7 @@ export default async function WalkInPage(props: {
         description="Create a booking on behalf of a guest at the desk or on the phone. A stub profile is created if no email is given."
       />
 
-      {sp.error && <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">{sp.error}</div>}
+      <StatusNote error={sp.error} />
 
       <Card>
         <CardHeader>

@@ -126,8 +126,9 @@ export function BackOfficeNav({
             <p className="text-xs text-muted-foreground">Back office</p>
           </div>
         </Link>
-        {/* The mobile drawer's close button occupies this corner, so the bell
-            is desktop-only; the Overview's overdue banner covers mobile. */}
+        {/* The mobile drawer's close button occupies this corner, so this
+            instance is desktop-only; on mobile the bell lives in the top bar
+            (ResponsiveShell's topbarAction). */}
         <div className="hidden lg:block">
           <NotificationBellArea />
         </div>

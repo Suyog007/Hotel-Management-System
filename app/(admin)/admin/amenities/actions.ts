@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -31,7 +32,7 @@ export async function createAmenity(formData: FormData) {
     .insert(insert)
     .select()
     .single();
-  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "create",
@@ -62,7 +63,7 @@ export async function updateAmenity(formData: FormData) {
     .from("amenities")
     .update(update)
     .eq("id", id);
-  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",
@@ -88,7 +89,7 @@ export async function deleteAmenity(formData: FormData) {
     .single();
 
   const { error } = await supabase.from("amenities").delete().eq("id", id!);
-  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/amenities?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "delete",

@@ -1,6 +1,7 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { renderTemplate, sendEmail } from "@/lib/email";
+import { writeAudit } from "@/lib/audit";
 
 /** Escape the five HTML-significant characters so guest-supplied values
  * (e.g. guest_name from the public booking form) can't inject markup into the
@@ -40,8 +41,20 @@ export async function sendTemplatedEmail(
       body_text: string | null;
       is_active: boolean;
     } | null;
-    if (!t || !t.is_active) {
-      console.warn(`[email] template "${key}" not found or inactive`);
+    if (!t) {
+      // A missing template is a config problem, not a transient one — leave a
+      // trail an admin can find in /admin/audit instead of only a log line.
+      console.warn(`[email] template "${key}" not found`);
+      await writeAudit({
+        action: "email_failed",
+        entityType: "email",
+        entityId: key,
+        newValues: { to, reason: "template missing" },
+      });
+      return;
+    }
+    if (!t.is_active) {
+      console.warn(`[email] template "${key}" inactive — send skipped`);
       return;
     }
 
@@ -57,5 +70,17 @@ export async function sendTemplatedEmail(
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(`[email] send "${key}" failed:`, msg);
+    // Surface the failure where an admin can see it (/admin/audit) — a guest
+    // silently missing their confirmation/refund email is worse than noise.
+    try {
+      await writeAudit({
+        action: "email_failed",
+        entityType: "email",
+        entityId: key,
+        newValues: { to, error: msg },
+      });
+    } catch {
+      // Auditing the failure is itself best-effort.
+    }
   }
 }

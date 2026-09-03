@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -44,7 +45,7 @@ export async function uploadGalleryImage(formData: FormData) {
   if (error) {
     // Roll back the storage object so we don't leak orphans
     await deletePublicImageByUrl(uploaded.url);
-    redirect(`/admin/gallery?error=${encodeURIComponent(error.message)}`);
+    redirect(`/admin/gallery?error=${encodeURIComponent(friendlyDbError(error))}`);
   }
 
   await writeAudit({
@@ -93,7 +94,7 @@ export async function updateGalleryImage(formData: FormData) {
     .from("gallery_images")
     .update(update)
     .eq("id", id);
-  if (error) redirect(`/admin/gallery?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/gallery?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   // Best-effort: the old file is unreachable now that the row points elsewhere.
   const previousUrl = (oldRow as { image_url?: string } | null)?.image_url;
@@ -126,7 +127,7 @@ export async function deleteGalleryImage(formData: FormData) {
   if (!oldRow) redirect(`/admin/gallery?error=Not+found`);
 
   const { error } = await supabase.from("gallery_images").delete().eq("id", id!);
-  if (error) redirect(`/admin/gallery?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/gallery?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   // Best-effort: remove the storage object too
   await deletePublicImageByUrl((oldRow as { image_url: string }).image_url);

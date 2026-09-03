@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
+import { notifyStaff } from "@/lib/notify-staff";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { findAvailableRoom } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { walkInBookingSchema } from "@/lib/validation/staff";
@@ -53,10 +55,10 @@ export async function createWalkInBooking(formData: FormData) {
   // Room type lookup
   const { data: rt } = await admin
     .from("room_types")
-    .select("id, base_price, max_guests, is_active")
+    .select("id, name, base_price, max_guests, is_active")
     .eq("id", input.room_type_id)
     .single();
-  const roomType = rt as { id: string; base_price: number; max_guests: number; is_active: boolean } | null;
+  const roomType = rt as { id: string; name: string; base_price: number; max_guests: number; is_active: boolean } | null;
   if (!roomType || !roomType.is_active) bail("Room type not available");
   if (input.guests_count > roomType.max_guests) {
     bail(`Max ${roomType.max_guests} guests for this room type`);
@@ -105,7 +107,7 @@ export async function createWalkInBooking(formData: FormData) {
         })
         .select("id")
         .single();
-      if (error) bail(error.message);
+      if (error) bail(friendlyDbError(error));
       guestId = (stub as { id: string }).id;
     }
   } else {
@@ -119,7 +121,7 @@ export async function createWalkInBooking(formData: FormData) {
       })
       .select("id")
       .single();
-    if (error) bail(error.message);
+    if (error) bail(friendlyDbError(error));
     guestId = (stub as { id: string }).id;
   }
 
@@ -157,7 +159,15 @@ export async function createWalkInBooking(formData: FormData) {
     .insert(insertPayload)
     .select("id, booking_code")
     .single();
-  if (bookingErr) bail(bookingErr.message);
+  if (bookingErr) {
+    // 23P01 = the no-overlap constraint fired: the room was taken between the
+    // availability check and this insert. Anything else stays server-side.
+    bail(
+      bookingErr.code === "23P01"
+        ? "That room was just taken for those dates — pick a different room type or dates."
+        : friendlyDbError(bookingErr, "Couldn't create the booking. Please try again."),
+    );
+  }
   const bookingId = (booking as { id: string; booking_code: string }).id;
 
   // Optional payment row
@@ -183,6 +193,18 @@ export async function createWalkInBooking(formData: FormData) {
     entityType: "bookings",
     entityId: bookingId,
     newValues: insertPayload,
+  });
+
+  await notifyStaff({
+    type: "staff_new_booking",
+    vars: {
+      guest_name: input.guest_name,
+      booking_code: (booking as { booking_code: string }).booking_code,
+      room_name: roomType.name,
+      check_in: input.check_in,
+      check_out: input.check_out,
+    },
+    data: { booking_ids: [bookingId], source: "walk_in" },
   });
 
   revalidatePath("/dashboard/bookings");

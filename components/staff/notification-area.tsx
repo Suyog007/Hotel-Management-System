@@ -4,7 +4,7 @@ import { NotificationBell, type NotificationItem } from "./notification-bell";
 /** Fetches the signed-in staff member's latest notifications and renders the
  *  bell. RLS ("notifications self read") already scopes rows to the user, but
  *  we still resolve the profile so a signed-out render costs nothing. */
-export async function NotificationBellArea() {
+export async function NotificationBellArea({ align }: { align?: "left" | "right" }) {
   const supabase = await createServerClient();
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return null;
@@ -16,5 +16,5 @@ export async function NotificationBellArea() {
     .limit(15);
 
   const items = (data as NotificationItem[] | null) ?? [];
-  return <NotificationBell items={items} />;
+  return <NotificationBell items={items} align={align} />;
 }

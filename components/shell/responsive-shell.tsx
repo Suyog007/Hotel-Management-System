@@ -3,20 +3,25 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { Toaster } from "sonner";
 import { cn } from "@/lib/utils";
 
 /**
  * Dashboard / admin layout shell with a desktop sidebar and a mobile drawer.
  * Receives the sidebar as a server-rendered child so the sidebar itself can
  * still do DB lookups; only the open/close state lives client-side.
+ * `topbarAction` fills the right corner of the mobile top bar (the
+ * notification bell — the sidebar's bell is desktop-only).
  */
 export function ResponsiveShell({
   sidebar,
   brand,
+  topbarAction,
   children,
 }: {
   sidebar: React.ReactNode;
   brand: string;
+  topbarAction?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -47,7 +52,7 @@ export function ResponsiveShell({
           <Menu className="h-5 w-5" />
         </button>
         <p className="font-display text-base font-semibold">{brand}</p>
-        <span className="w-9" aria-hidden />
+        {topbarAction ?? <span className="w-9" aria-hidden />}
       </div>
 
       <div className="flex min-h-[calc(100vh-3.5rem)] lg:min-h-screen">
@@ -85,6 +90,8 @@ export function ResponsiveShell({
           <div className="p-5 md:p-8 lg:p-10">{children}</div>
         </main>
       </div>
+
+      <Toaster position="top-right" closeButton />
     </>
   );
 }
