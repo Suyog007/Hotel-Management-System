@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { isStillAvailable } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import type { TablesUpdate } from "@/types/database";
@@ -78,16 +79,34 @@ export async function checkIn(formData: FormData) {
   redirect("/dashboard/bookings?saved=1");
 }
 
+const PAYMENT_PROVIDERS = new Set(["cash", "khalti", "esewa"]);
+
+/**
+ * Check a guest out, optionally settling the outstanding balance in the same
+ * step (pay-at-hotel guests settle at the desk on the way out). When the form
+ * carries `collect=1` and the booking still owes money, the outstanding amount
+ * is recorded as paid: `paid_amount` topped up, `payment_status` → paid, and a
+ * `payments` row inserted — the same shape the walk-in flow writes.
+ */
 export async function checkOut(formData: FormData) {
   const id = formData.get("id") as string;
   if (!id) bail("Missing id");
   await staffActor();
 
+  const collect = formData.get("collect") === "1";
+  const providerRaw = ((formData.get("payment_provider") as string) || "cash").trim();
+  const provider = PAYMENT_PROVIDERS.has(providerRaw) ? providerRaw : null;
+  if (collect && !provider) bail("Pick a valid payment method (cash / Khalti / eSewa)");
+  const reference =
+    (((formData.get("payment_reference") as string) || "").trim() || null)?.slice(0, 200) ?? null;
+
   const supabase = await createServerClient();
   const admin = createAdminClient();
   const { data: booking } = await supabase
     .from("bookings")
-    .select("status, room_id, booking_code, guest_email, guest_name")
+    .select(
+      "status, room_id, booking_code, guest_email, guest_name, total_amount, paid_amount, payment_status, payment_method",
+    )
     .eq("id", id)
     .single();
   const b = booking as {
@@ -96,35 +115,78 @@ export async function checkOut(formData: FormData) {
     booking_code: string;
     guest_email: string;
     guest_name: string;
+    total_amount: number | string;
+    paid_amount: number | string | null;
+    payment_status: string;
+    payment_method: "pay_at_hotel" | "online";
   } | null;
   if (!b) bail("Booking not found");
   if (b.status !== "checked_in") bail(`Cannot check out a ${b.status} booking`);
 
+  const outstanding = Math.max(0, Number(b.total_amount) - Number(b.paid_amount ?? 0));
+  const settling = collect && outstanding > 0;
+
   const now = new Date().toISOString();
-  const { error: e1 } = await admin
-    .from("bookings")
-    .update({ status: "checked_out", checked_out_at: now })
-    .eq("id", id);
-  if (e1) bail(e1.message);
+  const payload: TablesUpdate<"bookings"> = {
+    status: "checked_out",
+    checked_out_at: now,
+    ...(settling
+      ? { paid_amount: Number(b.total_amount), payment_status: "paid" as const }
+      : {}),
+  };
+  const { error: e1 } = await admin.from("bookings").update(payload).eq("id", id);
+  if (e1) bail(friendlyDbError(e1, "Couldn't check the guest out. Please try again."));
+
+  if (settling) {
+    const { error: payErr } = await admin.from("payments").insert({
+      booking_id: id,
+      amount: outstanding,
+      method: b.payment_method,
+      provider: provider as "cash" | "khalti" | "esewa",
+      transaction_id: reference,
+      status: "paid",
+      completed_at: now,
+    });
+    // The booking is already marked paid — a failed ledger row must not strand
+    // the guest mid-checkout, but it has to be visible somewhere.
+    if (payErr) {
+      console.error("[checkOut] payments insert failed:", payErr.message);
+    }
+  }
 
   const { error: e2 } = await admin
     .from("rooms")
     .update({ status: "cleaning" })
     .eq("id", b.room_id);
-  if (e2) bail(e2.message);
+  if (e2) bail(friendlyDbError(e2, "Guest checked out, but the room status didn't update — set it on the Rooms page."));
 
   await writeAudit({
     action: "update",
     entityType: "bookings",
     entityId: id,
-    oldValues: { status: b.status },
-    newValues: { status: "checked_out", checked_out_at: now, room_status: "cleaning" },
+    oldValues: {
+      status: b.status,
+      payment_status: b.payment_status,
+      paid_amount: b.paid_amount ?? 0,
+    },
+    newValues: {
+      status: "checked_out",
+      checked_out_at: now,
+      room_status: "cleaning",
+      ...(settling
+        ? { payment_status: "paid", collected: outstanding, provider, reference }
+        : {}),
+    },
   });
 
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard");
   revalidatePath(`/booking/${id}`);
-  redirect("/dashboard/bookings?saved=1");
+  redirect(
+    settling
+      ? `/dashboard/bookings?saved=1&collected=${outstanding}`
+      : "/dashboard/bookings?saved=1",
+  );
 }
 
 /**
