@@ -50,7 +50,9 @@ export async function verifyOtp(formData: FormData) {
 
   const dest = safeNextPath(parsed.data.next);
   if (dest) redirect(dest);
-  if (role === "super_admin") redirect("/admin");
-  if (role === "manager" || role === "receptionist") redirect("/dashboard");
+  // Every back-office role lands on the shared Overview.
+  if (role === "super_admin" || role === "manager" || role === "receptionist") {
+    redirect("/dashboard");
+  }
   redirect("/");
 }
