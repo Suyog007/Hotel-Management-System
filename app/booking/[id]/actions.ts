@@ -7,6 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { computeRefund, type CancellationTier } from "@/lib/cancellation";
 import { sendTemplatedEmail } from "@/lib/email-from-template";
+import { notifyStaff } from "@/lib/notify-staff";
+import { friendlyDbError } from "@/lib/friendly-error";
 import type { TablesUpdate } from "@/types/database";
 
 const STAFF_ROLES = new Set(["receptionist", "manager", "super_admin"]);
@@ -107,7 +109,9 @@ export async function cancelBooking(formData: FormData) {
     .select("id");
   if (error) {
     const tail = isTokenHolder ? `?t=${token}&` : "?";
-    redirect(`/booking/${id}${tail}error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `/booking/${id}${tail}error=${encodeURIComponent(friendlyDbError(error, "Couldn't cancel the booking. Please try again."))}`,
+    );
   }
   if (!cancelled || cancelled.length === 0) {
     const tail = isTokenHolder ? `?t=${token}&` : "?";
@@ -134,6 +138,17 @@ export async function cancelBooking(formData: FormData) {
     booking_code: (b.booking_code as string) ?? "",
     refund_amount_due: refund.refundAmount.toLocaleString(),
     currency_symbol: symbol,
+  });
+
+  await notifyStaff({
+    type: "staff_cancellation",
+    vars: {
+      guest_name: (b.guest_name as string) ?? "Guest",
+      booking_code: (b.booking_code as string) ?? "",
+      check_in: (b.check_in as string) ?? "",
+      refund_amount_due: `${symbol} ${refund.refundAmount.toLocaleString()}`,
+    },
+    data: { booking_ids: [id], actor: isTokenHolder ? "guest_token" : actorRole },
   });
 
   revalidatePath(`/booking/${id}`);

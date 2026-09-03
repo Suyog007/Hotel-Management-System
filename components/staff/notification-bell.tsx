@@ -23,7 +23,14 @@ function timeAgo(iso: string) {
   return `${Math.round(hours / 24)}d ago`;
 }
 
-export function NotificationBell({ items }: { items: NotificationItem[] }) {
+export function NotificationBell({
+  items,
+  align = "left",
+}: {
+  items: NotificationItem[];
+  /** Which edge the dropdown hugs — "right" for the mobile top-bar corner. */
+  align?: "left" | "right";
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const unread = items.filter((n) => !n.read_at).length;
@@ -56,7 +63,12 @@ export function NotificationBell({ items }: { items: NotificationItem[] }) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-80 overflow-hidden rounded-md border border-foreground/10 bg-card shadow-soft-lg">
+        <div
+          className={cn(
+            "absolute top-full z-50 mt-2 w-80 max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-md border border-foreground/10 bg-card shadow-soft-lg",
+            align === "right" ? "right-0" : "left-0",
+          )}
+        >
           <div className="flex items-center justify-between border-b border-border/60 px-4 py-2.5">
             <p className="text-sm font-semibold">Notifications</p>
             {unread > 0 && (

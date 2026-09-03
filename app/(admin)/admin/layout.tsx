@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import { BackOfficeNav } from "@/components/shared/back-office-nav";
+import { NotificationBellArea } from "@/components/staff/notification-area";
+import { NotificationListenerArea } from "@/components/staff/notification-live";
 import { ResponsiveShell } from "@/components/shell/responsive-shell";
 
 export default async function AdminLayout({
@@ -29,7 +31,9 @@ export default async function AdminLayout({
     <ResponsiveShell
       sidebar={<BackOfficeNav hotelName={hotelName} role="super_admin" />}
       brand={hotelName}
+      topbarAction={<NotificationBellArea align="right" />}
     >
+      <NotificationListenerArea />
       {children}
     </ResponsiveShell>
   );

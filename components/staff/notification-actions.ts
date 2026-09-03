@@ -10,19 +10,27 @@ export async function markAllNotificationsRead() {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) return;
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("id")
     .eq("auth_user_id", auth.user.id)
     .single();
+  if (profileErr) {
+    console.error("[notifications] profile lookup failed:", profileErr.message);
+    return;
+  }
   const profileId = (profile as { id: string } | null)?.id;
   if (!profileId) return;
 
-  await supabase
+  const { error } = await supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("user_id", profileId)
     .is("read_at", null);
+  if (error) {
+    console.error("[notifications] mark-all-read failed:", error.message);
+    return;
+  }
 
   revalidatePath("/dashboard", "layout");
   revalidatePath("/admin", "layout");

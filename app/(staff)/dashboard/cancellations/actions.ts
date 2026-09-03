@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerClient } from "@/lib/supabase/server";
@@ -96,7 +97,7 @@ export async function recordRefund(formData: FormData) {
     .is("refunded_at", null)
     .select("id");
   if (error) {
-    redirect(`/dashboard/cancellations?error=${encodeURIComponent(error.message)}`);
+    redirect(`/dashboard/cancellations?error=${encodeURIComponent(friendlyDbError(error))}`);
   }
   if (!updated || updated.length === 0) {
     redirect(`/dashboard/cancellations?error=${encodeURIComponent("Refund already recorded")}`);

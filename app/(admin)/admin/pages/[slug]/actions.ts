@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -35,7 +36,7 @@ export async function updatePageMeta(formData: FormData) {
     .from("pages")
     .update(parsed.data)
     .eq("slug", slug);
-  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",
@@ -86,7 +87,7 @@ export async function createSection(formData: FormData) {
     .insert(insert)
     .select()
     .single();
-  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "create",
@@ -179,7 +180,7 @@ export async function updateSection(formData: FormData) {
     .from("page_sections")
     .update(update)
     .eq("id", id);
-  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",
@@ -207,7 +208,7 @@ export async function deleteSection(formData: FormData) {
     .single();
 
   const { error } = await supabase.from("page_sections").delete().eq("id", id);
-  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/pages/${slug}?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "delete",

@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -44,7 +45,7 @@ export async function createTestimonial(formData: FormData) {
     .insert(insert)
     .select()
     .single();
-  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "create",
@@ -78,7 +79,7 @@ export async function updateTestimonial(formData: FormData) {
     .from("testimonials")
     .update(update)
     .eq("id", id);
-  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "update",
@@ -104,7 +105,7 @@ export async function deleteTestimonial(formData: FormData) {
     .single();
 
   const { error } = await supabase.from("testimonials").delete().eq("id", id!);
-  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(error.message)}`);
+  if (error) redirect(`/admin/testimonials?error=${encodeURIComponent(friendlyDbError(error))}`);
 
   await writeAudit({
     action: "delete",

@@ -9,7 +9,8 @@ export type AuditAction =
   | "delete"
   | "login"
   | "logout"
-  | "refund_recorded";
+  | "refund_recorded"
+  | "email_failed";
 
 /**
  * Append a row to audit_logs. Resolves the actor from the current Supabase
@@ -40,7 +41,7 @@ export async function writeAudit(args: {
   }
 
   const admin = createAdminClient();
-  await admin.from("audit_logs").insert({
+  const { error } = await admin.from("audit_logs").insert({
     actor_id: actorId,
     actor_email: actorEmail,
     action: args.action,
@@ -49,4 +50,12 @@ export async function writeAudit(args: {
     old_values: (args.oldValues as Json | undefined) ?? null,
     new_values: (args.newValues as Json | undefined) ?? null,
   });
+  // The audit trail is best-effort (it must never fail the user's action),
+  // but a dropped write should at least be visible in the server logs.
+  if (error) {
+    console.error(
+      `[audit] insert failed for ${args.action} ${args.entityType}:`,
+      error.message,
+    );
+  }
 }

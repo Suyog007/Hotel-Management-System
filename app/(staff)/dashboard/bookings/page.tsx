@@ -11,6 +11,7 @@ import {
   paymentStatusBadge,
 } from "@/components/ui/badge";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { StatusNote } from "@/components/ui/status-note";
 import { checkIn, checkOut, extendStay, markRoomReady } from "./actions";
 
 type BookingRow = {
@@ -104,18 +105,15 @@ export default async function DashboardBookingsPage(props: {
         }
       />
 
-      {sp.saved && (
-        <div className="rounded-md border border-success/30 bg-success/10 px-4 py-3 text-sm">
-          {sp.extended && sp.nights
+      <StatusNote
+        saved={sp.saved}
+        error={sp.error}
+        savedLabel={
+          sp.extended && sp.nights
             ? `Extended booking ${sp.extended} by ${sp.nights} night${sp.nights === "1" ? "" : "s"}.`
-            : "Saved."}
-        </div>
-      )}
-      {sp.error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {sp.error}
-        </div>
-      )}
+            : "Saved."
+        }
+      />
 
       <section>
         <SectionHead

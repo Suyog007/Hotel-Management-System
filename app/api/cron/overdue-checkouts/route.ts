@@ -1,15 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyStaff } from "@/lib/notify-staff";
 
 export const dynamic = "force-dynamic";
 
 const NOTIFICATION_TYPE = "overdue_checkout";
-const DEFAULT_TITLE = "{{count}} overdue checkout(s)";
-const DEFAULT_BODY =
-  "Past their check-out date and still checked in: {{rooms}}. Check them out or extend the stay from the Bookings page.";
-
-const fill = (template: string, vars: Record<string, string>) =>
-  template.replace(/\{\{(\w+)\}\}/g, (m, key) => vars[key] ?? m);
 
 /**
  * Daily reminder for the front desk: finds checked-in bookings whose
@@ -62,49 +57,22 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ ok: true, overdue: 0, notified: 0, at: today });
   }
 
-  const { data: tpl } = await admin
-    .from("notification_templates")
-    .select("title, body, is_active")
-    .eq("key", NOTIFICATION_TYPE)
-    .maybeSingle();
-  const template = tpl as { title: string; body: string; is_active: boolean } | null;
-  if (template && !template.is_active) {
-    return NextResponse.json({ ok: true, overdue: overdue.length, notified: 0, skipped: "template inactive" });
+  const result = await notifyStaff({
+    type: NOTIFICATION_TYPE,
+    vars: {
+      count: String(overdue.length),
+      rooms: overdue
+        .map((b) => `#${b.rooms?.room_number ?? "?"} ${b.guest_name} (due ${b.check_out})`)
+        .join(", "),
+    },
+    data: { date: today, booking_ids: overdue.map((b) => b.id) },
+  });
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error ?? "notify failed" }, { status: 500 });
+  }
+  if (result.skipped) {
+    return NextResponse.json({ ok: true, overdue: overdue.length, notified: 0, skipped: result.skipped });
   }
 
-  const vars = {
-    count: String(overdue.length),
-    rooms: overdue
-      .map((b) => `#${b.rooms?.room_number ?? "?"} ${b.guest_name} (due ${b.check_out})`)
-      .join(", "),
-  };
-  const title = fill(template?.title ?? DEFAULT_TITLE, vars);
-  const body = fill(template?.body ?? DEFAULT_BODY, vars);
-
-  const { data: staffData, error: staffErr } = await admin
-    .from("profiles")
-    .select("id")
-    .in("role", ["receptionist", "manager", "super_admin"])
-    .neq("is_active", false);
-  if (staffErr) {
-    return NextResponse.json({ error: staffErr.message }, { status: 500 });
-  }
-  const staff = (staffData as { id: string }[] | null) ?? [];
-
-  if (staff.length > 0) {
-    const rows = staff.map((p) => ({
-      user_id: p.id,
-      title,
-      body,
-      link: "/dashboard/bookings",
-      type: NOTIFICATION_TYPE,
-      data: { date: today, booking_ids: overdue.map((b) => b.id) },
-    }));
-    const { error: insertErr } = await admin.from("notifications").insert(rows);
-    if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
-    }
-  }
-
-  return NextResponse.json({ ok: true, overdue: overdue.length, notified: staff.length, at: today });
+  return NextResponse.json({ ok: true, overdue: overdue.length, notified: result.notified, at: today });
 }

@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { NOTIFICATION_TYPES } from "@/lib/notification-types";
 import {
   updateEmailTemplate,
   updateNotificationTemplate,
@@ -95,37 +96,59 @@ export default async function AdminTemplatesPage(props: {
 
       <section>
         <h2 className="mb-3 text-xl font-semibold">In-app notification</h2>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Shown in the back-office bell. Only the notification types the system
+          actually sends are listed — one card per type, with when it fires.
+        </p>
         <div className="space-y-4">
-          {notifRows.map((t) => (
-            <Card key={t.key}>
-              <CardHeader>
-                <CardTitle className="font-mono text-base">{t.key}</CardTitle>
-                {(t.variables ?? []).length > 0 && (
+          {/* Driven by the code registry, not the raw table, so an admin never
+              edits copy for a key nothing consumes — and a consumed key whose
+              row is missing (migration 0017 not applied yet) is called out
+              instead of silently disappearing. */}
+          {Object.values(NOTIFICATION_TYPES).map((def) => {
+            const t = notifRows.find((r) => r.key === def.key);
+            return (
+              <Card key={def.key}>
+                <CardHeader>
+                  <CardTitle className="font-mono text-base">{def.key}</CardTitle>
                   <CardDescription>
-                    Variables: {(t.variables ?? []).map((v) => `{{${v}}}`).join(" ")}
+                    {def.description}
+                    {def.variables.length > 0 && (
+                      <> Variables: {def.variables.map((v) => `{{${v}}}`).join(" ")}</>
+                    )}
                   </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <form action={updateNotificationTemplate} className="space-y-4">
-                  <input type="hidden" name="key" value={t.key} />
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input name="title" defaultValue={t.title} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Body</Label>
-                    <Textarea name="body" defaultValue={t.body} rows={3} required />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Switch name="is_active" defaultChecked={t.is_active} />
-                    <Label>Active</Label>
-                  </div>
-                  <SubmitButton size="sm">Save</SubmitButton>
-                </form>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent>
+                  {t ? (
+                    <form action={updateNotificationTemplate} className="space-y-4">
+                      <input type="hidden" name="key" value={t.key} />
+                      <div className="space-y-2">
+                        <Label>Title</Label>
+                        <Input name="title" defaultValue={t.title} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Body</Label>
+                        <Textarea name="body" defaultValue={t.body} rows={3} required />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch name="is_active" defaultChecked={t.is_active} />
+                        <Label>Active</Label>
+                      </div>
+                      <SubmitButton size="sm">Save</SubmitButton>
+                    </form>
+                  ) : (
+                    <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm">
+                      Not editable yet — this template row hasn&apos;t been seeded in the
+                      database (apply migration <code>0017_notification_templates.sql</code>).
+                      Until then the built-in default copy is used:{" "}
+                      <span className="font-medium">{def.defaultTitle}</span> —{" "}
+                      {def.defaultBody}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </section>
     </div>

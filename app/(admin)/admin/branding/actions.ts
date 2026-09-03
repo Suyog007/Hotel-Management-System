@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { friendlyDbError } from "@/lib/friendly-error";
 import { revalidatePath } from "next/cache";
 import { createServerClient } from "@/lib/supabase/server";
 import { writeAudit } from "@/lib/audit";
@@ -27,7 +28,7 @@ export async function updateBranding(formData: FormData) {
     .update(parsed.data)
     .eq("id", true);
   if (error) {
-    redirect(`/admin/branding?error=${encodeURIComponent(error.message)}`);
+    redirect(`/admin/branding?error=${encodeURIComponent(friendlyDbError(error))}`);
   }
 
   await writeAudit({

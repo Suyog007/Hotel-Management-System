@@ -1,8 +1,10 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 /**
  * Submit button that shows a spinner + custom label while its parent <form>'s
@@ -11,6 +13,10 @@ import { Button, type ButtonProps } from "@/components/ui/button";
  * Use `pendingLabel` to override the spinner text; otherwise "Working…" shows.
  * `disabled` (passed in) is OR'd with the internal pending state so callers
  * can still gate the button on form validity.
+ *
+ * When `confirmMessage` is set, clicking opens an in-app ConfirmDialog (not
+ * `window.confirm`); confirming submits the form with this button as the
+ * submitter, which still runs the form's native validation.
  */
 type Props = Omit<ButtonProps, "type"> & {
   pendingLabel?: string;
@@ -28,27 +34,46 @@ export function SubmitButton({
   ...rest
 }: Props) {
   const { pending } = useFormStatus();
+  const [confirming, setConfirming] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
   return (
-    <Button
-      type="submit"
-      disabled={pending || disabled}
-      onClick={(e) => {
-        if (confirmMessage && !window.confirm(confirmMessage)) {
-          e.preventDefault();
-          return;
-        }
-        onClick?.(e);
-      }}
-      {...rest}
-    >
-      {pending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>{pendingLabel}</span>
-        </>
-      ) : (
-        children
+    <>
+      <Button
+        ref={btnRef}
+        type="submit"
+        disabled={pending || disabled}
+        onClick={(e) => {
+          if (confirmMessage) {
+            e.preventDefault();
+            setConfirming(true);
+            return;
+          }
+          onClick?.(e);
+        }}
+        {...rest}
+      >
+        {pending ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{pendingLabel}</span>
+          </>
+        ) : (
+          children
+        )}
+      </Button>
+      {confirmMessage && (
+        <ConfirmDialog
+          open={confirming}
+          message={confirmMessage}
+          confirmLabel="Continue"
+          onCancel={() => setConfirming(false)}
+          onConfirm={() => {
+            setConfirming(false);
+            btnRef.current?.form?.requestSubmit(btnRef.current);
+          }}
+        />
       )}
-    </Button>
+    </>
   );
 }
