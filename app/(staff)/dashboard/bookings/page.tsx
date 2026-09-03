@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/badge";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { StatusNote } from "@/components/ui/status-note";
+import { CheckOutButton } from "@/components/staff/checkout-button";
 import { checkIn, checkOut, extendStay, markRoomReady } from "./actions";
 
 type BookingRow = {
@@ -30,7 +31,7 @@ type BookingRow = {
 };
 
 export default async function DashboardBookingsPage(props: {
-  searchParams: Promise<{ saved?: string; error?: string; extended?: string; nights?: string }>;
+  searchParams: Promise<{ saved?: string; error?: string; extended?: string; nights?: string; collected?: string }>;
 }) {
   const sp = await props.searchParams;
   const supabase = await createServerClient();
@@ -111,7 +112,9 @@ export default async function DashboardBookingsPage(props: {
         savedLabel={
           sp.extended && sp.nights
             ? `Extended booking ${sp.extended} by ${sp.nights} night${sp.nights === "1" ? "" : "s"}.`
-            : "Saved."
+            : sp.collected
+              ? `Checked out — collected ${symbol} ${Number(sp.collected).toLocaleString()}.`
+              : "Saved."
         }
       />
 
@@ -264,10 +267,6 @@ function BookingItem({
   const nightsLeft = daysDiff !== null ? Math.max(0, daysDiff) : null;
   const overdueDays = daysDiff !== null && daysDiff < 0 ? -daysDiff : 0;
   const outstanding = Math.max(0, Number(b.total_amount) - Number(b.paid_amount ?? 0));
-  const checkoutConfirm =
-    b.payment_status !== "paid" && outstanding > 0
-      ? `${symbol} ${outstanding.toLocaleString()} is still outstanding (${ps.label.toLowerCase()}). Collect payment before the guest leaves.\n\nCheck out anyway?`
-      : undefined;
   return (
     <Card className="transition-all hover:-translate-y-0.5 hover:shadow-soft-lg">
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
@@ -311,17 +310,12 @@ function BookingItem({
           </form>
         )}
         {action === "checkout" && (
-          <form action={checkOut}>
-            <input type="hidden" name="id" value={b.id} />
-            <SubmitButton
-              size="sm"
-              variant="accent"
-              pendingLabel="Checking out…"
-              confirmMessage={checkoutConfirm}
-            >
-              Check out
-            </SubmitButton>
-          </form>
+          <CheckOutButton
+            bookingId={b.id}
+            action={checkOut}
+            outstanding={b.payment_status !== "paid" ? outstanding : 0}
+            symbol={symbol}
+          />
         )}
       </CardContent>
       {(b.status === "confirmed" || b.status === "checked_in") && (
