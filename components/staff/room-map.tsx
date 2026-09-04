@@ -138,10 +138,11 @@ function RoomTile({ room, stay, today }: { room: RoomRow; stay: StayRow | undefi
     </span>
   );
 
-  // A tile with a live stay is a shortcut to that booking, bus-seat style.
+  // A tile with a live stay is a shortcut to that booking's back-office detail
+  // (check in / out, extend, mark ready — all inline), bus-seat style.
   return (
     <span className="group relative inline-block">
-      {stay ? <Link href={`/booking/${stay.id}`}>{tile}</Link> : tile}
+      {stay ? <Link href={`/dashboard/bookings/${stay.id}`}>{tile}</Link> : tile}
       <HoverCard room={room} stay={stay} state={state} />
     </span>
   );

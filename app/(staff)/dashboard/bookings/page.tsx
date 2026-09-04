@@ -272,7 +272,7 @@ function BookingItem({
       <CardContent className="flex flex-wrap items-center gap-4 py-4">
         <Avatar name={b.guest_name} size={40} />
         <div className="flex-1 min-w-[200px]">
-          <Link href={`/booking/${b.id}`} className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline">
+          <Link href={`/dashboard/bookings/${b.id}`} className="font-mono text-xs text-muted-foreground hover:text-foreground hover:underline">
             {b.booking_code}
           </Link>
           <p className="font-medium">{b.guest_name}</p>

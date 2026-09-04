@@ -20,12 +20,16 @@ export function CheckOutButton({
   action,
   outstanding,
   symbol,
+  redirectTo,
 }: {
   bookingId: string;
   action: (formData: FormData) => void | Promise<void>;
   /** Amount still owed; 0 or less renders the plain one-click button. */
   outstanding: number;
   symbol: string;
+  /** Optional same-area path to return to after the action (e.g. this booking's
+   *  detail page); omitted, the action falls back to the bookings list. */
+  redirectTo?: string;
 }) {
   const [open, setOpen] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -43,6 +47,7 @@ export function CheckOutButton({
     return (
       <form action={action}>
         <input type="hidden" name="id" value={bookingId} />
+        {redirectTo && <input type="hidden" name="redirect_to" value={redirectTo} />}
         <SubmitButton size="sm" variant="accent" pendingLabel="Checking out…">
           Check out
         </SubmitButton>
@@ -85,6 +90,7 @@ export function CheckOutButton({
 
             <form action={action} className="mt-4 space-y-3">
               <input type="hidden" name="id" value={bookingId} />
+              {redirectTo && <input type="hidden" name="redirect_to" value={redirectTo} />}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Method</Label>

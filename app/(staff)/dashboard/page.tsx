@@ -188,7 +188,7 @@ export default async function DashboardHome() {
               return (
                 <Link
                   key={b.id}
-                  href={`/booking/${b.id}`}
+                  href={`/dashboard/bookings/${b.id}`}
                   className="flex flex-wrap items-center gap-4 rounded-lg border border-border/60 bg-card p-4 shadow-soft transition-all hover:-translate-y-0.5 hover:shadow-soft-lg"
                 >
                   <CalendarCheck className="h-5 w-5 text-accent" />
