@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Building2, Wrench, Sparkles, CalendarClock, User, AlarmClock } from "lucide-react";
 import { createServerClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RoomTileMenu } from "@/components/staff/room-tile-menu";
 import { cn } from "@/lib/utils";
 
 export type RoomRow = {
@@ -140,15 +141,44 @@ function RoomTile({ room, stay, today }: { room: RoomRow; stay: StayRow | undefi
 
   // A tile with a live stay is a shortcut to that booking's back-office detail
   // (check in / out, extend, mark ready — all inline), bus-seat style.
-  return (
-    <span className="group relative block">
-      {stay ? (
+  if (stay) {
+    return (
+      <span className="group relative block">
         <Link href={`/dashboard/bookings/${stay.id}`} className="block">
           {tile}
         </Link>
-      ) : (
-        tile
-      )}
+        <HoverCard room={room} stay={stay} state={state} />
+      </span>
+    );
+  }
+
+  // No guest today: free / cleaning / maintenance rooms get a click-to-open
+  // action menu (mark ready, send to cleaning, set maintenance) right here, so
+  // any room action is reachable from the map. Occupied without a stay row
+  // (rare/stale) is left non-actionable.
+  if (state === "cleaning" || state === "maintenance" || state === "available") {
+    const price = room.room_types
+      ? `Sleeps ${room.room_types.max_guests} · Rs ${Number(room.room_types.base_price).toLocaleString("en-IN")} / night`
+      : null;
+    return (
+      <RoomTileMenu
+        roomId={room.id}
+        state={state}
+        info={{
+          roomNumber: room.room_number,
+          stateLabel: TILE_LABEL[state],
+          typeName: room.room_types?.name ?? "No type",
+          priceText: price,
+        }}
+      >
+        {tile}
+      </RoomTileMenu>
+    );
+  }
+
+  return (
+    <span className="group relative block">
+      {tile}
       <HoverCard room={room} stay={stay} state={state} />
     </span>
   );
