@@ -1,6 +1,7 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { StatusNote } from "@/components/ui/status-note";
+import { WalkInRoomPicker } from "@/components/staff/walk-in-room-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -45,35 +46,7 @@ export default async function WalkInPage(props: {
         </CardHeader>
         <CardContent>
           <form action={createWalkInBooking} className="space-y-5">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label>Check-in</Label>
-                <Input name="check_in" type="date" min={today} defaultValue={today} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Check-out</Label>
-                <Input name="check_out" type="date" min={tomorrow} defaultValue={tomorrow} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Guests</Label>
-                <Input name="guests_count" type="number" min={1} max={20} defaultValue={1} required />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Room type</Label>
-              <select
-                name="room_type_id"
-                required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                {types.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.base_price} / night, sleeps {t.max_guests})
-                  </option>
-                ))}
-              </select>
-            </div>
+            <WalkInRoomPicker types={types} today={today} tomorrow={tomorrow} />
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
