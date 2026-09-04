@@ -29,6 +29,14 @@ const today = () => hotelToday();
 export const walkInBookingSchema = z
   .object({
     room_type_id: z.string().uuid(),
+    // Optional specific room. Blank / "any" means auto-assign the first free
+    // room of the chosen type. When set, the action verifies it belongs to
+    // that type and is still free before using it.
+    room_id: z
+      .string()
+      .uuid()
+      .optional()
+      .or(z.literal("").transform(() => undefined)),
     check_in: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Check-in must be a date")

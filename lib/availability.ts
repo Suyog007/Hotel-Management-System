@@ -95,6 +95,42 @@ export async function countAvailableRooms(
   return all.filter((r) => !blockedIds.has(r.id)).length;
 }
 
+/**
+ * Lists the rooms of a type that are free for the requested range, as
+ * `{ id, room_number }` sorted by room number — for the walk-in form's
+ * "specific room" picker. Excludes maintenance rooms; a currently-cleaning or
+ * occupied room still lists if no booking overlaps the requested dates (its
+ * physical status is a right-now snapshot, not a claim on future nights).
+ */
+export async function listAvailableRooms(
+  supabase: Client,
+  roomTypeId: string,
+  checkIn: string,
+  checkOut: string,
+): Promise<{ id: string; room_number: string }[]> {
+  const { data: rooms } = await supabase
+    .from("rooms")
+    .select("id, room_number")
+    .eq("type_id", roomTypeId)
+    .neq("status", "maintenance")
+    .order("room_number");
+  const all = (rooms as { id: string; room_number: string }[] | null) ?? [];
+  if (all.length === 0) return [];
+
+  const ids = all.map((r) => r.id);
+  const { data: blocked } = await supabase
+    .from("bookings")
+    .select("room_id")
+    .in("room_id", ids)
+    .in("status", [...BLOCKING_STATUSES])
+    .lt("check_in", checkOut)
+    .gt("check_out", checkIn);
+  const blockedIds = new Set(
+    ((blocked as { room_id: string }[] | null) ?? []).map((b) => b.room_id),
+  );
+  return all.filter((r) => !blockedIds.has(r.id));
+}
+
 export async function isStillAvailable(
   supabase: Client,
   roomId: string,

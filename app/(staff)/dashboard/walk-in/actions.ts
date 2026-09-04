@@ -7,7 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { writeAudit } from "@/lib/audit";
 import { notifyStaff } from "@/lib/notify-staff";
 import { friendlyDbError } from "@/lib/friendly-error";
-import { findAvailableRoom } from "@/lib/availability";
+import { findAvailableRoom, isStillAvailable } from "@/lib/availability";
 import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 import { walkInBookingSchema } from "@/lib/validation/staff";
 import type { TablesInsert } from "@/types/database";
@@ -32,6 +32,7 @@ export async function createWalkInBooking(formData: FormData) {
 
   const parsed = walkInBookingSchema.safeParse({
     room_type_id: formData.get("room_type_id"),
+    room_id: formData.get("room_id") || undefined,
     check_in: formData.get("check_in"),
     check_out: formData.get("check_out"),
     guests_count: formData.get("guests_count"),
@@ -76,8 +77,30 @@ export async function createWalkInBooking(formData: FormData) {
     serviceRate,
   });
 
-  // Available room
-  const roomId = await findAvailableRoom(admin, roomType.id, input.check_in, input.check_out);
+  // Room assignment. If staff picked a specific room, honour it only when it
+  // belongs to this type, isn't under maintenance, and is still free for the
+  // range — otherwise (e.g. taken between the form load and submit) fall back
+  // to auto-assigning the first free room of the type rather than hard-failing.
+  let roomId: string | null = null;
+  if (input.room_id) {
+    const { data: chosen } = await admin
+      .from("rooms")
+      .select("id, type_id, status")
+      .eq("id", input.room_id)
+      .maybeSingle();
+    const c = chosen as { id: string; type_id: string; status: string } | null;
+    if (
+      c &&
+      c.type_id === roomType.id &&
+      c.status !== "maintenance" &&
+      (await isStillAvailable(admin, c.id, input.check_in, input.check_out))
+    ) {
+      roomId = c.id;
+    }
+  }
+  if (!roomId) {
+    roomId = await findAvailableRoom(admin, roomType.id, input.check_in, input.check_out);
+  }
   if (!roomId) bail("No rooms available for those dates");
 
   // Resolve guest profile — reuse stub-by-email, else create stub
