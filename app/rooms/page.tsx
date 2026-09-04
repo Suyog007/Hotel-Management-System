@@ -18,6 +18,7 @@ import { SiteFooter } from "@/components/public/site-footer";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { countAvailableRooms } from "@/lib/availability";
+import { sortBySuitability } from "@/lib/room-suitability";
 import { calculateBookingTotal, nightsBetween, TAX_RATE, SERVICE_CHARGE_RATE } from "@/lib/pricing";
 
 type RoomTypeRow = {
@@ -156,12 +157,20 @@ export default async function RoomsListPage({
 
   // With a stay selected, show only what the guest can actually book —
   // sold-out and too-small rooms are dropped, not dimmed.
-  const visible = stay
+  const filtered = stay
     ? enriched.filter(
         (rt) =>
           (rt.availableCount ?? 0) > 0 && (groupStay || !rt.exceedsCapacity),
       )
     : enriched;
+
+  // Once a search fixes a guest count, lead with the best-fitting rooms
+  // (tightest capacity, then cheapest) instead of the admin's browse order —
+  // a solo guest shouldn't have to scroll past the six-bed suite. The group
+  // flow keeps the curated order (there, every room is combined, not chosen
+  // by fit). No search → keep the admin's `sort_order`.
+  const visible =
+    stay && !groupStay ? sortBySuitability(filtered, stay.guests) : filtered;
 
   const clearPriceHref = stay
     ? `/rooms?check_in=${stay.checkIn}&check_out=${stay.checkOut}&guests=${stay.guests}`
