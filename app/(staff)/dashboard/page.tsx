@@ -4,7 +4,6 @@ import {
   CalendarCheck,
   CalendarMinus,
   XCircle,
-  ConciergeBell,
   BedDouble,
   AlarmClock,
 } from "lucide-react";
@@ -118,7 +117,7 @@ export default async function DashboardHome() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         <Metric
           label="Arrivals"
           value={arrivals}
@@ -145,13 +144,6 @@ export default async function DashboardHome() {
           value={pendingRefunds}
           icon={XCircle}
           href="/dashboard/cancellations"
-        />
-        <Metric
-          label="Service requests"
-          value="—"
-          hint="see all"
-          icon={ConciergeBell}
-          href="/dashboard/service-requests"
         />
       </div>
 
