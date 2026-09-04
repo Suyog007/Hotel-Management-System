@@ -132,4 +132,21 @@ describe("checkOut with payment collection", () => {
     expect(url).toMatch(/error=Cannot/);
     expect(tables.payments).toHaveLength(0);
   });
+
+  it("returns to a dashboard redirect_to path when supplied", async () => {
+    seed();
+    const detail = `/dashboard/bookings/${BOOKING_ID}`;
+    const url = await expectRedirectTo(() =>
+      checkOut(form({ collect: "1", redirect_to: detail })),
+    );
+    expect(url).toBe(`${detail}?saved=1&collected=1200`);
+  });
+
+  it("ignores an off-site redirect_to and falls back to the bookings list", async () => {
+    seed();
+    const url = await expectRedirectTo(() =>
+      checkOut(form({ redirect_to: "https://evil.example/steal" })),
+    );
+    expect(url).toBe("/dashboard/bookings?saved=1");
+  });
 });

@@ -20,6 +20,11 @@ export async function cancelBooking(formData: FormData) {
   const id = formData.get("id") as string;
   const token = ((formData.get("token") as string) || "").trim() || null;
   const reason = ((formData.get("reason") as string) ?? "").trim() || null;
+  // Staff cancelling from the back-office booking detail pass this so the
+  // result lands back there instead of on the guest receipt page. Only
+  // same-area dashboard paths are honoured, and only for staff (below).
+  const dashRaw = ((formData.get("redirect_to") as string | null) ?? "").trim();
+  const dashReturn = /^\/dashboard\/[A-Za-z0-9/_-]*$/.test(dashRaw) ? dashRaw : null;
   if (!id) redirect("/?error=Missing+id");
 
   const admin = createAdminClient();
@@ -65,11 +70,17 @@ export async function cancelBooking(formData: FormData) {
   if (!isOwner && !isStaff && !isTokenHolder) {
     redirect(`/?error=${encodeURIComponent("Not authorized to cancel that booking.")}`);
   }
-  if (!(CANCELLABLE_STATUSES as readonly string[]).includes(b.status as string)) {
+
+  // Where a failure/success returns. Staff coming from the back-office detail
+  // page go back there; everyone else lands on the guest booking page.
+  const useDash = isStaff && dashReturn;
+  const to = (qs: string) => {
+    if (useDash) return `${dashReturn}?${qs}`;
     const tail = isTokenHolder ? `?t=${token}&` : "?";
-    redirect(
-      `/booking/${id}${tail}error=${encodeURIComponent("This booking can't be cancelled.")}`,
-    );
+    return `/booking/${id}${tail}${qs}`;
+  };
+  if (!(CANCELLABLE_STATUSES as readonly string[]).includes(b.status as string)) {
+    redirect(to(`error=${encodeURIComponent("This booking can't be cancelled.")}`));
   }
 
   const { data: tiers, error: tiersError } = await admin
@@ -81,8 +92,7 @@ export async function cancelBooking(formData: FormData) {
   // recording a wrong "no refund" for a guest who actually paid. Fail loudly so
   // the cancellation can be retried once the policy read succeeds.
   if (tiersError) {
-    const tail = isTokenHolder ? `?t=${token}&` : "?";
-    redirect(`/booking/${id}${tail}error=${encodeURIComponent("Couldn't load the refund policy. Please try again.")}`);
+    redirect(to(`error=${encodeURIComponent("Couldn't load the refund policy. Please try again.")}`));
   }
 
   const refund = computeRefund({
@@ -108,16 +118,10 @@ export async function cancelBooking(formData: FormData) {
     .in("status", [...CANCELLABLE_STATUSES])
     .select("id");
   if (error) {
-    const tail = isTokenHolder ? `?t=${token}&` : "?";
-    redirect(
-      `/booking/${id}${tail}error=${encodeURIComponent(friendlyDbError(error, "Couldn't cancel the booking. Please try again."))}`,
-    );
+    redirect(to(`error=${encodeURIComponent(friendlyDbError(error, "Couldn't cancel the booking. Please try again."))}`));
   }
   if (!cancelled || cancelled.length === 0) {
-    const tail = isTokenHolder ? `?t=${token}&` : "?";
-    redirect(
-      `/booking/${id}${tail}error=${encodeURIComponent("This booking can no longer be cancelled.")}`,
-    );
+    redirect(to(`error=${encodeURIComponent("This booking can no longer be cancelled.")}`));
   }
 
   await writeAudit({
@@ -154,6 +158,9 @@ export async function cancelBooking(formData: FormData) {
   revalidatePath(`/booking/${id}`);
   revalidatePath("/my-bookings");
   revalidatePath("/dashboard/cancellations");
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/bookings/${id}`);
+  if (useDash) redirect(`${dashReturn}?saved=1&cancelled=1`);
   const tail = isTokenHolder ? `?t=${token}&cancelled=1` : "?cancelled=1";
   redirect(`/booking/${id}${tail}`);
 }

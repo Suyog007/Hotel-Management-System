@@ -30,13 +30,24 @@ async function staffActor() {
   return a;
 }
 
-function bail(msg: string): never {
-  redirect(`/dashboard/bookings?error=${encodeURIComponent(msg)}`);
+// Where an action returns after it finishes. The bookings list is the default;
+// the room-map booking-detail page passes its own path via `redirect_to` so
+// staff stay put after acting. Only same-area dashboard paths are honoured —
+// never an off-site or attacker-supplied URL.
+function returnBase(formData: FormData): string {
+  const raw = ((formData.get("redirect_to") as string | null) ?? "").trim();
+  return /^\/dashboard\/[A-Za-z0-9/_-]*$/.test(raw) ? raw : "/dashboard/bookings";
+}
+
+function bailTo(base: string, msg: string): never {
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(`${base}${sep}error=${encodeURIComponent(msg)}`);
 }
 
 export async function checkIn(formData: FormData) {
+  const base = returnBase(formData);
   const id = formData.get("id") as string;
-  if (!id) bail("Missing id");
+  if (!id) bailTo(base, "Missing id");
   await staffActor();
 
   const supabase = await createServerClient();
@@ -47,9 +58,9 @@ export async function checkIn(formData: FormData) {
     .eq("id", id)
     .single();
   const b = booking as { status: string; room_id: string; booking_code: string } | null;
-  if (!b) bail("Booking not found");
+  if (!b) bailTo(base, "Booking not found");
   if (b.status !== "pending" && b.status !== "confirmed") {
-    bail(`Cannot check in a ${b.status} booking`);
+    bailTo(base, `Cannot check in a ${b.status} booking`);
   }
 
   const now = new Date().toISOString();
@@ -57,13 +68,13 @@ export async function checkIn(formData: FormData) {
     .from("bookings")
     .update({ status: "checked_in", checked_in_at: now })
     .eq("id", id);
-  if (e1) bail(e1.message);
+  if (e1) bailTo(base, friendlyDbError(e1, "Couldn't check the guest in. Please try again."));
 
   const { error: e2 } = await admin
     .from("rooms")
     .update({ status: "occupied" })
     .eq("id", b.room_id);
-  if (e2) bail(e2.message);
+  if (e2) bailTo(base, friendlyDbError(e2, "Guest checked in, but the room status didn't update."));
 
   await writeAudit({
     action: "update",
@@ -76,7 +87,8 @@ export async function checkIn(formData: FormData) {
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard");
   revalidatePath(`/booking/${id}`);
-  redirect("/dashboard/bookings?saved=1");
+  revalidatePath(`/dashboard/bookings/${id}`);
+  redirect(`${base}${base.includes("?") ? "&" : "?"}saved=1`);
 }
 
 const PAYMENT_PROVIDERS = new Set(["cash", "khalti", "esewa"]);
@@ -89,14 +101,15 @@ const PAYMENT_PROVIDERS = new Set(["cash", "khalti", "esewa"]);
  * `payments` row inserted — the same shape the walk-in flow writes.
  */
 export async function checkOut(formData: FormData) {
+  const base = returnBase(formData);
   const id = formData.get("id") as string;
-  if (!id) bail("Missing id");
+  if (!id) bailTo(base, "Missing id");
   await staffActor();
 
   const collect = formData.get("collect") === "1";
   const providerRaw = ((formData.get("payment_provider") as string) || "cash").trim();
   const provider = PAYMENT_PROVIDERS.has(providerRaw) ? providerRaw : null;
-  if (collect && !provider) bail("Pick a valid payment method (cash / Khalti / eSewa)");
+  if (collect && !provider) bailTo(base, "Pick a valid payment method (cash / Khalti / eSewa)");
   const reference =
     (((formData.get("payment_reference") as string) || "").trim() || null)?.slice(0, 200) ?? null;
 
@@ -120,8 +133,8 @@ export async function checkOut(formData: FormData) {
     payment_status: string;
     payment_method: "pay_at_hotel" | "online";
   } | null;
-  if (!b) bail("Booking not found");
-  if (b.status !== "checked_in") bail(`Cannot check out a ${b.status} booking`);
+  if (!b) bailTo(base, "Booking not found");
+  if (b.status !== "checked_in") bailTo(base, `Cannot check out a ${b.status} booking`);
 
   const outstanding = Math.max(0, Number(b.total_amount) - Number(b.paid_amount ?? 0));
   const settling = collect && outstanding > 0;
@@ -135,7 +148,7 @@ export async function checkOut(formData: FormData) {
       : {}),
   };
   const { error: e1 } = await admin.from("bookings").update(payload).eq("id", id);
-  if (e1) bail(friendlyDbError(e1, "Couldn't check the guest out. Please try again."));
+  if (e1) bailTo(base, friendlyDbError(e1, "Couldn't check the guest out. Please try again."));
 
   if (settling) {
     const { error: payErr } = await admin.from("payments").insert({
@@ -158,7 +171,7 @@ export async function checkOut(formData: FormData) {
     .from("rooms")
     .update({ status: "cleaning" })
     .eq("id", b.room_id);
-  if (e2) bail(friendlyDbError(e2, "Guest checked out, but the room status didn't update — set it on the Rooms page."));
+  if (e2) bailTo(base, friendlyDbError(e2, "Guest checked out, but the room status didn't update — set it on the Rooms page."));
 
   await writeAudit({
     action: "update",
@@ -182,11 +195,9 @@ export async function checkOut(formData: FormData) {
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard");
   revalidatePath(`/booking/${id}`);
-  redirect(
-    settling
-      ? `/dashboard/bookings?saved=1&collected=${outstanding}`
-      : "/dashboard/bookings?saved=1",
-  );
+  revalidatePath(`/dashboard/bookings/${id}`);
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(settling ? `${base}${sep}saved=1&collected=${outstanding}` : `${base}${sep}saved=1`);
 }
 
 /**
@@ -199,14 +210,15 @@ export async function checkOut(formData: FormData) {
  * and added to the snapshotted totals on the booking row.
  */
 export async function extendStay(formData: FormData) {
+  const base = returnBase(formData);
   const id = formData.get("id") as string;
   const newCheckOut = (formData.get("new_check_out") as string | null)?.trim() ?? "";
-  if (!id) bail("Missing booking id");
-  if (!ISO_DATE.test(newCheckOut)) bail("Pick a valid new check-out date");
+  if (!id) bailTo(base, "Missing booking id");
+  if (!ISO_DATE.test(newCheckOut)) bailTo(base, "Pick a valid new check-out date");
 
   const actor = await staffActor();
   if (!MANAGER_ROLES.has(actor.role)) {
-    bail("Manager access required to extend a stay");
+    bailTo(base, "Manager access required to extend a stay");
   }
 
   const admin = createAdminClient();
@@ -232,12 +244,12 @@ export async function extendStay(formData: FormData) {
     guest_name: string;
     booking_code: string;
   } | null;
-  if (!b) bail("Booking not found");
+  if (!b) bailTo(base, "Booking not found");
   if (b.status !== "confirmed" && b.status !== "checked_in") {
-    bail(`Cannot extend a ${b.status} booking`);
+    bailTo(base, `Cannot extend a ${b.status} booking`);
   }
   if (new Date(newCheckOut) <= new Date(b.check_out)) {
-    bail("New check-out must be after the current check-out");
+    bailTo(base, "New check-out must be after the current check-out");
   }
 
   // Verify same-room availability for the gap [current_check_out, new_check_out).
@@ -245,7 +257,8 @@ export async function extendStay(formData: FormData) {
   // overlap with itself — only other bookings would be flagged.
   const free = await isStillAvailable(admin, b.room_id, b.check_out, newCheckOut);
   if (!free) {
-    bail(
+    bailTo(
+      base,
       "This room is booked by another guest in that range. Move the guest to a free room first, then try again.",
     );
   }
@@ -260,7 +273,7 @@ export async function extendStay(formData: FormData) {
     (roomRow as { room_types?: { base_price?: number | string } } | null)
       ?.room_types?.base_price ?? 0,
   );
-  if (!basePrice) bail("Could not read the room's base price");
+  if (!basePrice) bailTo(base, "Could not read the room's base price");
 
   // Room rate only — no tax or service charge (see lib/pricing constants).
   const taxRate = TAX_RATE;
@@ -297,7 +310,7 @@ export async function extendStay(formData: FormData) {
   }
 
   const { error } = await admin.from("bookings").update(payload).eq("id", id);
-  if (error) bail(error.message);
+  if (error) bailTo(base, friendlyDbError(error, "Couldn't extend the stay. Please try again."));
 
   await writeAudit({
     action: "update",
@@ -318,14 +331,15 @@ export async function extendStay(formData: FormData) {
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard");
   revalidatePath(`/booking/${id}`);
-  redirect(
-    `/dashboard/bookings?saved=1&extended=${b.booking_code}&nights=${extraNights}`,
-  );
+  revalidatePath(`/dashboard/bookings/${id}`);
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(`${base}${sep}saved=1&extended=${b.booking_code}&nights=${extraNights}`);
 }
 
 export async function markRoomReady(formData: FormData) {
+  const base = returnBase(formData);
   const roomId = formData.get("room_id") as string;
-  if (!roomId) bail("Missing room id");
+  if (!roomId) bailTo(base, "Missing room id");
   await staffActor();
 
   const admin = createAdminClient();
@@ -338,7 +352,7 @@ export async function markRoomReady(formData: FormData) {
     .from("rooms")
     .update({ status: "available" })
     .eq("id", roomId);
-  if (error) bail(error.message);
+  if (error) bailTo(base, friendlyDbError(error, "Couldn't update the room. Please try again."));
 
   await writeAudit({
     action: "update",
@@ -350,5 +364,7 @@ export async function markRoomReady(formData: FormData) {
 
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard/rooms");
-  redirect("/dashboard/bookings?saved=1");
+  revalidatePath("/dashboard");
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(`${base}${sep}saved=1`);
 }
