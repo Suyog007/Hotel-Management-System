@@ -196,24 +196,19 @@ export function BuildingCard({
         </div>
         <CardDescription>{typeNames.join(" · ")}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3 pt-5">
+      {/* Rooms are grouped onto rows by number series (the leading digit) purely
+          for a tidy layout — no floor/row label, since the number's leading
+          digit isn't a real floor here. */}
+      <CardContent className="space-y-2 pt-5">
         {floors.map((floor) => (
-          <div key={floor} className="flex items-center gap-3">
-            <span className="w-8 shrink-0 text-right font-mono text-xs font-semibold text-muted-foreground">
-              {floor}F
-            </span>
-            <div className="flex flex-wrap gap-2 border-l border-dashed border-border/60 pl-3">
-              {rooms
-                .filter((r) => (r.floor ?? 0) === floor)
-                .map((r) => (
-                  <RoomTile key={r.id} room={r} stay={stays.get(r.id)} today={today} />
-                ))}
-            </div>
+          <div key={floor} className="flex flex-wrap gap-2">
+            {rooms
+              .filter((r) => (r.floor ?? 0) === floor)
+              .map((r) => (
+                <RoomTile key={r.id} room={r} stay={stays.get(r.id)} today={today} />
+              ))}
           </div>
         ))}
-        <div className="ml-11 border-t-2 border-border/80 pt-1 text-center text-[10px] uppercase tracking-wider text-muted-foreground">
-          Ground
-        </div>
       </CardContent>
     </Card>
   );
