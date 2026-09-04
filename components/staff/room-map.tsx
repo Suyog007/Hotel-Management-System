@@ -124,9 +124,9 @@ function RoomTile({ room, stay, today }: { room: RoomRow; stay: StayRow | undefi
   const tile = (
     <span
       className={cn(
-        "flex h-14 w-16 flex-col items-center justify-center gap-0.5 rounded-lg border font-mono text-sm font-semibold shadow-soft transition-transform",
+        "flex h-16 w-full flex-col items-center justify-center gap-0.5 rounded-lg border font-mono text-sm font-semibold shadow-soft transition-all duration-150",
         TILE_STYLE[state],
-        stay && "group-hover:-translate-y-0.5",
+        stay && "cursor-pointer hover:-translate-y-0.5 hover:shadow-soft-lg",
       )}
     >
       {room.room_number}
@@ -141,8 +141,14 @@ function RoomTile({ room, stay, today }: { room: RoomRow; stay: StayRow | undefi
   // A tile with a live stay is a shortcut to that booking's back-office detail
   // (check in / out, extend, mark ready — all inline), bus-seat style.
   return (
-    <span className="group relative inline-block">
-      {stay ? <Link href={`/dashboard/bookings/${stay.id}`}>{tile}</Link> : tile}
+    <span className="group relative block">
+      {stay ? (
+        <Link href={`/dashboard/bookings/${stay.id}`} className="block">
+          {tile}
+        </Link>
+      ) : (
+        tile
+      )}
       <HoverCard room={room} stay={stay} state={state} />
     </span>
   );
@@ -172,7 +178,6 @@ export function BuildingCard({
   stays: Map<string, StayRow>;
   today: string;
 }) {
-  const floors = [...new Set(rooms.map((r) => r.floor ?? 0))].sort((a, b) => b - a);
   const typeNames = [...new Set(rooms.map((r) => r.room_types?.name).filter(Boolean))];
   const occupied = rooms.filter((r) => {
     const state = tileState(r, stays.get(r.id), today);
@@ -196,19 +201,15 @@ export function BuildingCard({
         </div>
         <CardDescription>{typeNames.join(" · ")}</CardDescription>
       </CardHeader>
-      {/* Rooms are grouped onto rows by number series (the leading digit) purely
-          for a tidy layout — no floor/row label, since the number's leading
-          digit isn't a real floor here. */}
-      <CardContent className="space-y-2 pt-5">
-        {floors.map((floor) => (
-          <div key={floor} className="flex flex-wrap gap-2">
-            {rooms
-              .filter((r) => (r.floor ?? 0) === floor)
-              .map((r) => (
-                <RoomTile key={r.id} room={r} stay={stays.get(r.id)} today={today} />
-              ))}
-          </div>
-        ))}
+      {/* One responsive grid per building: tiles auto-fill and re-flow to fit
+          whatever width the card has (no fixed floor rows — the room number's
+          leading digit isn't a real floor here). */}
+      <CardContent className="pt-5">
+        <div className="grid gap-2.5 [grid-template-columns:repeat(auto-fill,minmax(3.25rem,1fr))]">
+          {rooms.map((r) => (
+            <RoomTile key={r.id} room={r} stay={stays.get(r.id)} today={today} />
+          ))}
+        </div>
       </CardContent>
     </Card>
   );
