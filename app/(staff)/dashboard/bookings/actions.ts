@@ -36,7 +36,7 @@ async function staffActor() {
 // never an off-site or attacker-supplied URL.
 function returnBase(formData: FormData): string {
   const raw = ((formData.get("redirect_to") as string | null) ?? "").trim();
-  return /^\/dashboard\/[A-Za-z0-9/_-]*$/.test(raw) ? raw : "/dashboard/bookings";
+  return /^\/dashboard(\/[A-Za-z0-9/_-]*)?$/.test(raw) ? raw : "/dashboard/bookings";
 }
 
 function bailTo(base: string, msg: string): never {
@@ -365,6 +365,53 @@ export async function markRoomReady(formData: FormData) {
   revalidatePath("/dashboard/bookings");
   revalidatePath("/dashboard/rooms");
   revalidatePath("/dashboard");
+  const sep = base.includes("?") ? "&" : "?";
+  redirect(`${base}${sep}saved=1`);
+}
+
+// Room-status changes staff can make straight from the room map, for rooms
+// with no active guest: free ↔ cleaning ↔ maintenance. An occupied room is
+// never touched here — it's managed from the guest's booking.
+const MAP_ROOM_STATUSES = new Set(["available", "cleaning", "maintenance"]);
+
+export async function setRoomStatus(formData: FormData) {
+  const base = returnBase(formData);
+  const roomId = formData.get("room_id") as string;
+  const status = ((formData.get("status") as string) || "").trim();
+  if (!roomId) bailTo(base, "Missing room id");
+  if (!MAP_ROOM_STATUSES.has(status)) bailTo(base, "Invalid room status");
+  await staffActor();
+
+  const admin = createAdminClient();
+  const { data: oldRoom } = await admin
+    .from("rooms")
+    .select("status")
+    .eq("id", roomId)
+    .single();
+  const prev = (oldRoom as { status?: string } | null)?.status;
+  // A guest is physically in an occupied room — changing its housekeeping
+  // status from the map would hide them. Route that through the booking.
+  if (prev === "occupied") {
+    bailTo(base, "That room is occupied — manage it from the guest's booking.");
+  }
+
+  const { error } = await admin
+    .from("rooms")
+    .update({ status: status as "available" | "cleaning" | "maintenance" })
+    .eq("id", roomId);
+  if (error) bailTo(base, friendlyDbError(error, "Couldn't update the room. Please try again."));
+
+  await writeAudit({
+    action: "update",
+    entityType: "rooms",
+    entityId: roomId,
+    oldValues: oldRoom,
+    newValues: { status },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/rooms");
+  revalidatePath("/dashboard/bookings");
   const sep = base.includes("?") ? "&" : "?";
   redirect(`${base}${sep}saved=1`);
 }
