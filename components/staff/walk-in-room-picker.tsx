@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 
 export type RoomTypeOpt = {
   id: string;
@@ -13,9 +14,6 @@ export type RoomTypeOpt = {
 };
 
 type AvailRoom = { id: string; room_number: string };
-
-const SELECT_CLASS =
-  "flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60";
 
 /**
  * The date + room-type + room-number block of the walk-in form. Owns these
@@ -104,31 +102,29 @@ export function WalkInRoomPicker({
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label>Room type</Label>
-          <select
+          <Select
             name="room_type_id"
             required
             value={typeId}
             onChange={(e) => setTypeId(e.target.value)}
-            className={SELECT_CLASS}
           >
             {types.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name} ({t.base_price} / night, sleeps {t.max_guests})
               </option>
             ))}
-          </select>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label className="flex items-center gap-2">
             Room number
             {loading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
           </Label>
-          <select
+          <Select
             name="room_id"
             value={roomId}
             onChange={(e) => setRoomId(e.target.value)}
             disabled={loading || noneFree}
-            className={SELECT_CLASS}
           >
             <option value="">
               {noneFree ? "No rooms free for these dates" : `Any available room${rooms.length ? ` (${rooms.length} free)` : ""}`}
@@ -138,7 +134,7 @@ export function WalkInRoomPicker({
                 #{r.room_number}
               </option>
             ))}
-          </select>
+          </Select>
           <p className="text-xs text-muted-foreground">
             Leave on &ldquo;Any available room&rdquo; to auto-assign, or pick a specific room.
           </p>

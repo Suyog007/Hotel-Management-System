@@ -11,6 +11,7 @@ import { CreatePanel } from "@/components/ui/create-panel";
 import { FormActions } from "@/components/ui/form-actions";
 import { ManageList } from "@/components/ui/manage-list";
 import { StatusNote } from "@/components/ui/status-note";
+import { Pager } from "@/components/ui/pager";
 import {
   createTestimonial,
   deleteTestimonial,
@@ -185,28 +186,3 @@ export default async function AdminTestimonialsPage(props: {
   );
 }
 
-function Pager({
-  page,
-  pages,
-  sp,
-}: {
-  page: number;
-  pages: number;
-  sp: Record<string, string | undefined>;
-}) {
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp)) {
-    if (v && k !== "page") params.set(k, v);
-  }
-  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
-  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span>Page {page} of {pages}</span>
-      <div className="flex gap-2">
-        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
-        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
-      </div>
-    </div>
-  );
-}

@@ -5,6 +5,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Pager } from "@/components/ui/pager";
 import { ScrollText } from "lucide-react";
 
 type AuditRow = {
@@ -135,28 +136,3 @@ export default async function AuditLogPage(props: {
   );
 }
 
-function Pager({
-  page,
-  pages,
-  sp,
-}: {
-  page: number;
-  pages: number;
-  sp: Record<string, string | undefined>;
-}) {
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp)) {
-    if (v && k !== "page") params.set(k, v);
-  }
-  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
-  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span>Page {page} of {pages}</span>
-      <div className="flex gap-2">
-        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
-        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
-      </div>
-    </div>
-  );
-}

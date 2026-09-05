@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { Pager } from "@/components/ui/pager";
 import { XCircle, CheckCircle2 } from "lucide-react";
 import { recordRefund } from "./actions";
 
@@ -204,32 +205,6 @@ export default async function CancellationsPage(props: {
       )}
 
       {pages > 1 && <Pager page={page} pages={pages} sp={sp} />}
-    </div>
-  );
-}
-
-function Pager({
-  page,
-  pages,
-  sp,
-}: {
-  page: number;
-  pages: number;
-  sp: Record<string, string | undefined>;
-}) {
-  const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(sp)) {
-    if (v && k !== "page") params.set(k, v);
-  }
-  const prev = page > 1 ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page - 1) })}` : null;
-  const next = page < pages ? `?${new URLSearchParams({ ...Object.fromEntries(params), page: String(page + 1) })}` : null;
-  return (
-    <div className="flex items-center justify-between text-sm">
-      <span>Page {page} of {pages}</span>
-      <div className="flex gap-2">
-        {prev && <a href={prev} className="rounded-md border px-3 py-1.5 hover:bg-muted">← Prev</a>}
-        {next && <a href={next} className="rounded-md border px-3 py-1.5 hover:bg-muted">Next →</a>}
-      </div>
     </div>
   );
 }

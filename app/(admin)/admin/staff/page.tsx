@@ -1,8 +1,10 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { FormActions } from "@/components/ui/form-actions";
 import { StatusNote } from "@/components/ui/status-note";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -62,23 +64,21 @@ export default async function AdminStaffPage(props: {
               </div>
               <div className="space-y-2">
                 <Label>Role</Label>
-                <select
-                  name="role"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  defaultValue="receptionist"
-                >
+                <Select name="role" defaultValue="receptionist">
                   <option value="receptionist">Receptionist</option>
                   <option value="manager">Manager</option>
                   <option value="super_admin">Super admin</option>
-                </select>
+                </Select>
               </div>
             </div>
-            <SubmitButton size="sm">Send invite</SubmitButton>
             <p className="text-xs text-muted-foreground">
               Creates a stub profile with the chosen role, then sends a Supabase invite
               email. When the invitee accepts, the trigger links their auth user to the
               stub and the role is preserved.
             </p>
+            <FormActions>
+              <SubmitButton size="sm">Send invite</SubmitButton>
+            </FormActions>
           </form>
         </CardContent>
       </Card>
@@ -110,15 +110,11 @@ export default async function AdminStaffPage(props: {
               <div className="flex flex-wrap gap-2 border-t pt-3">
                 <form action={changeRole} className="flex items-center gap-2">
                   <input type="hidden" name="profile_id" value={s.id} />
-                  <select
-                    name="role"
-                    defaultValue={s.role}
-                    className="flex h-9 rounded-md border border-input bg-background px-2 text-sm"
-                  >
+                  <Select name="role" defaultValue={s.role} className="h-9 w-auto">
                     <option value="receptionist">Receptionist</option>
                     <option value="manager">Manager</option>
                     <option value="super_admin">Super admin</option>
-                  </select>
+                  </Select>
                   <SubmitButton size="sm" variant="outline">Set role</SubmitButton>
                 </form>
                 <form action={toggleActive}>

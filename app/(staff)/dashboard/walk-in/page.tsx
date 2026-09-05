@@ -1,9 +1,11 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { FormActions } from "@/components/ui/form-actions";
 import { StatusNote } from "@/components/ui/status-note";
 import { WalkInRoomPicker } from "@/components/staff/walk-in-room-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -68,38 +70,35 @@ export default async function WalkInPage(props: {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <Label>Payment method</Label>
-                <select
+                <Select
                   name="payment_method"
                   required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   defaultValue="pay_at_hotel"
                 >
                   <option value="pay_at_hotel">Pay at hotel</option>
                   <option value="online">Online</option>
-                </select>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Payment status</Label>
-                <select
+                <Select
                   name="payment_status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   defaultValue="unpaid"
                 >
                   <option value="unpaid">Unpaid</option>
                   <option value="paid">Paid now</option>
-                </select>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Provider (if paid)</Label>
-                <select
+                <Select
                   name="payment_provider"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   defaultValue="cash"
                 >
                   <option value="cash">Cash</option>
                   <option value="khalti">Khalti</option>
                   <option value="esewa">eSewa</option>
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -110,14 +109,13 @@ export default async function WalkInPage(props: {
               </div>
               <div className="space-y-2">
                 <Label>Initial status</Label>
-                <select
+                <Select
                   name="initial_status"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   defaultValue="confirmed"
                 >
                   <option value="confirmed">Confirmed</option>
                   <option value="checked_in">Check in immediately</option>
-                </select>
+                </Select>
               </div>
             </div>
 
@@ -126,7 +124,9 @@ export default async function WalkInPage(props: {
               <Textarea name="special_requests" rows={2} />
             </div>
 
-            <SubmitButton pendingLabel="Creating booking…">Create booking</SubmitButton>
+            <FormActions>
+              <SubmitButton pendingLabel="Creating booking…">Create booking</SubmitButton>
+            </FormActions>
           </form>
         </CardContent>
       </Card>

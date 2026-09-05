@@ -1,5 +1,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { FormActions } from "@/components/ui/form-actions";
 import { StatusNote } from "@/components/ui/status-note";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,7 +71,9 @@ export default async function AdminBrandingPage(props: {
           </CardContent>
         </Card>
 
-        <SubmitButton size="sm">Save</SubmitButton>
+        <FormActions>
+          <SubmitButton size="sm">Save</SubmitButton>
+        </FormActions>
       </form>
     </div>
   );
